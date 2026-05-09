@@ -36,7 +36,7 @@ Dependencies (`click`, `requests`, `urllib3`) are installed automatically on fir
 | 1 | Checks Node.js ≥ v18, Python 3, and Git are installed (prints guided download links if any are missing) |
 | 2 | Adds Node.js bin and npm global package paths to the user-level `PATH` |
 | 3 | Installs `opencode-ai` globally via `npm install -g opencode-ai` |
-| 4 | Clones this repository to `%USERPROFILE%\.agents\skills\sap-adt-cli` (the opencode skills directory) |
+| 4 | Clones this repository to `%USERPROFILE%\.agents\sap-abap-cli` and creates a directory junction at `%USERPROFILE%\.agents\skills\sap-adt-cli` pointing to the `skills\sap-adt-cli` subfolder |
 | 5 | Installs Python dependencies: `click`, `requests`, `urllib3` |
 
 ### Prerequisites
@@ -121,8 +121,8 @@ and integrates with any agent framework that supports custom tools or skills:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/sap-adt-cli
-cd sap-adt-cli
+git clone https://github.com/shrek-abaper/sap-abap-cli
+cd sap-abap-cli
 
 # 2. Configure credentials (interactive wizard — password is not echoed)
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
@@ -226,13 +226,13 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 | `get-package <NAME>` | Package object list (JSON) |
 | `get-transaction <NAME>` | Transaction properties / package (XML) |
 | `search-object <QUERY> [--max-results N]` | Object name search — `*` wildcard supported |
-| `syntax-check <TYPE> <NAME>` | Syntax check — read-only, no confirmation |
-| `where-used <TYPE> <NAME> [--max-results N]` | Where-used list (JSON) |
-| `run-sql "<SQL>" [--max-rows N]` | Open SQL SELECT → JSON *(DML statements blocked)* |
-| `write-source <TYPE> <NAME> --file <PATH>` | Write source code *(allow_write + confirm each time)* |
-| `activate <TYPE> <NAME>` | Activate ABAP object *(allow_write + confirm each time)* |
-| `list-transports [--user U] [--status D\|R]` | List transport requests (JSON, read-only) |
-| `create-transport --description "<DESC>"` | Create transport *(allow_transport + confirm each time)* |
+| `syntax-check <TYPE> <NAME> [--group <FG>]` | Syntax check — read-only, no confirmation; `--group` required when TYPE is `function` |
+| `where-used <TYPE> <NAME> [--max-results N] [--group <FG>]` | Where-used list (JSON); `--group` required when TYPE is `function` |
+| `run-sql "<SQL>" [--max-rows N]` | Open SQL SELECT → JSON *(DML statements blocked)*; default 100 rows, max 10 000 |
+| `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | Write source code *(allow_write + confirm each time)*; `--activate` activates after writing; `--group` required when TYPE is `function`; `--transport` pins the transport request |
+| `activate <TYPE> <NAME> [--group <FG>]` | Activate ABAP object *(allow_write + confirm each time)*; `--group` required when TYPE is `function` |
+| `list-transports [--user U] [--status D\|R]` | List transport requests (JSON, read-only); default `--status D` (in development) |
+| `create-transport --description "<DESC>" [--category Workbench\|Customizing]` | Create transport *(allow_transport + confirm each time)*; default category: `Workbench` |
 | `release-transport <TRKORR> [--yes]` | Release transport — irreversible *(allow_transport + confirm each time)* |
 
 Run any command with `--help` for full details.
@@ -270,6 +270,7 @@ python3 $CLI run-sql "SELECT * FROM t001 UP TO 5 ROWS"
 
 # Write & activate (allow_write + confirm each time)
 python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
+python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # write + activate in one step
 python3 $CLI activate class ZCL_MY_CLASS
 
 # Transport management
@@ -306,10 +307,10 @@ In transaction `SICF`, activate the following service paths:
 
 | Commands | Output |
 |----------|--------|
-| Source code commands (`get-program`, `get-class`, `get-function`, `get-include`, `get-interface`, `get-cds-view`, `get-type-group`) | Plain text ABAP source |
+| Source code commands (`get-program`, `get-class`, `get-function-group`, `get-function`, `get-include`, `get-interface`, `get-cds-view`, `get-type-group`) | Plain text ABAP source |
 | `get-table`, `get-structure`, `get-type-info`, `get-transaction`, `search-object` | Raw ADT XML |
 | `get-package`, `where-used`, `list-transports`, `run-sql` | JSON array |
-| `syntax-check` | Plain text messages (`[ERROR]`, `[WARNING]`, `[INFO]` prefixed); `"Syntax OK"` if clean |
+| `syntax-check` | Plain text messages (`[ERROR]`, `[WARNING]`, `[INFO]` prefixed); `"Syntax OK — no issues found."` if clean |
 | `status` | Plain text key-value pairs |
 
 All output is written to **stdout**. Errors are written to **stderr** with a non-zero exit code.
@@ -353,7 +354,7 @@ All output is written to **stdout**. Errors are written to **stderr** with a non
 
 - **10 new commands**: `syntax-check`, `get-cds-view`, `get-type-group`, `write-source`, `activate`, `where-used`, `run-sql`, `list-transports`, `create-transport`, `release-transport`
 - **Dual-guard write protection**: capability flags (`allow_write` / `allow_transport`) must be enabled in config, AND each destructive operation requires explicit `[y/N]` confirmation at runtime
-- **DML-safe SQL**: `run-sql` accepts only `SELECT` statements; `INSERT`, `UPDATE`, `DELETE`, `MERGE` are blocked at the CLI layer regardless of system permissions
+- **DML-safe SQL**: `run-sql` accepts only `SELECT` statements; `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `MODIFY`, `TRUNCATE` are blocked at the CLI layer regardless of system permissions
 - **Renamed** from `sap-abap-cli` to `sap-adt-cli` to better reflect the ADT API scope
 - **Config directory** migrated from `~/.sap-abap-cli/` to `~/.sap-adt-cli/`; automatic migration on first run if old config exists
 

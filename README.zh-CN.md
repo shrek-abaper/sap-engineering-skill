@@ -32,7 +32,7 @@
 | 1 | 检测 Node.js ≥ v18、Python 3、Git 是否已安装（缺失时打印下载指引） |
 | 2 | 将 Node.js 可执行目录和 npm 全局包路径添加到用户级 `PATH` |
 | 3 | 通过 `npm install -g opencode-ai` 全局安装 opencode |
-| 4 | 将本仓库克隆到 `%USERPROFILE%\.agents\skills\sap-adt-cli`（opencode 技能目录） |
+| 4 | 将本仓库克隆到 `%USERPROFILE%\.agents\sap-abap-cli`，并在 `%USERPROFILE%\.agents\skills\sap-adt-cli` 创建目录联接（Junction），指向仓库内的 `skills\sap-adt-cli` 子目录 |
 | 5 | 安装 Python 依赖：`click`、`requests`、`urllib3` |
 
 ### 前置软件
@@ -114,8 +114,8 @@ opencode 仅作为示例。`sap-adt-cli` 实现了标准 Agent Skill 接口（`S
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/your-org/sap-adt-cli
-cd sap-adt-cli
+git clone https://github.com/shrek-abaper/sap-abap-cli
+cd sap-abap-cli
 
 # 2. 配置凭据（交互式向导 — 密码不回显）
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
@@ -214,13 +214,13 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 | `get-package <NAME>` | 包对象列表（JSON） |
 | `get-transaction <NAME>` | 事务码属性 / 包信息（XML） |
 | `search-object <QUERY> [--max-results N]` | 对象名称搜索，支持 `*` 通配符 |
-| `syntax-check <TYPE> <NAME>` | 语法检查——只读，无需确认 |
-| `where-used <TYPE> <NAME> [--max-results N]` | 引用查询（JSON） |
-| `run-sql "<SQL>" [--max-rows N]` | Open SQL SELECT → JSON *（DML 语句被拦截）* |
-| `write-source <TYPE> <NAME> --file <PATH>` | 写入源代码 *（需 allow_write + 每次确认）* |
-| `activate <TYPE> <NAME>` | 激活 ABAP 对象 *（需 allow_write + 每次确认）* |
-| `list-transports [--user U] [--status D\|R]` | 列出传输请求（JSON，只读） |
-| `create-transport --description "<DESC>"` | 创建传输请求 *（需 allow_transport + 每次确认）* |
+| `syntax-check <TYPE> <NAME> [--group <FG>]` | 语法检查——只读，无需确认；TYPE 为 `function` 时需指定 `--group` |
+| `where-used <TYPE> <NAME> [--max-results N] [--group <FG>]` | 引用查询（JSON）；TYPE 为 `function` 时需指定 `--group` |
+| `run-sql "<SQL>" [--max-rows N]` | Open SQL SELECT → JSON *（DML 语句被拦截）*；默认返回 100 行，最多 10 000 行 |
+| `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | 写入源代码 *（需 allow_write + 每次确认）*；`--activate` 可在写入后立即激活；TYPE 为 `function` 时需指定 `--group`；`--transport` 指定传输请求编号 |
+| `activate <TYPE> <NAME> [--group <FG>]` | 激活 ABAP 对象 *（需 allow_write + 每次确认）*；TYPE 为 `function` 时需指定 `--group` |
+| `list-transports [--user U] [--status D\|R]` | 列出传输请求（JSON，只读）；`--status` 默认为 `D`（开发中） |
+| `create-transport --description "<DESC>" [--category Workbench\|Customizing]` | 创建传输请求 *（需 allow_transport + 每次确认）*；默认类别：`Workbench` |
 | `release-transport <TRKORR> [--yes]` | 释放传输——不可逆 *（需 allow_transport + 每次确认）* |
 
 任意命令加 `--help` 查看完整参数说明。
@@ -258,6 +258,7 @@ python3 $CLI run-sql "SELECT * FROM t001 UP TO 5 ROWS"
 
 # 写入与激活（需 allow_write + 每次确认）
 python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
+python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # 写入并立即激活
 python3 $CLI activate class ZCL_MY_CLASS
 
 # 传输管理
@@ -294,10 +295,10 @@ python3 $CLI release-transport DEVK900001                           # 需 allow_
 
 | 命令 | 输出格式 |
 |------|----------|
-| 源代码类命令（`get-program`、`get-class`、`get-function`、`get-include`、`get-interface`、`get-cds-view`、`get-type-group`） | ABAP 源代码纯文本 |
+| 源代码类命令（`get-program`、`get-class`、`get-function-group`、`get-function`、`get-include`、`get-interface`、`get-cds-view`、`get-type-group`） | ABAP 源代码纯文本 |
 | `get-table`、`get-structure`、`get-type-info`、`get-transaction`、`search-object` | ADT 原始 XML |
 | `get-package`、`where-used`、`list-transports`、`run-sql` | JSON 数组 |
-| `syntax-check` | 纯文本消息（以 `[ERROR]`、`[WARNING]`、`[INFO]` 为前缀）；语法无误时输出 `"Syntax OK"` |
+| `syntax-check` | 纯文本消息（以 `[ERROR]`、`[WARNING]`、`[INFO]` 为前缀）；语法无误时输出 `"Syntax OK — no issues found."` |
 | `status` | 纯文本键值对 |
 
 所有输出写入 **stdout**。错误写入 **stderr**，并返回非零退出码。
@@ -341,7 +342,7 @@ python3 $CLI release-transport DEVK900001                           # 需 allow_
 
 - **新增 10 个命令**：`syntax-check`、`get-cds-view`、`get-type-group`、`write-source`、`activate`、`where-used`、`run-sql`、`list-transports`、`create-transport`、`release-transport`
 - **双重写入保护**：配置中需开启能力标志（`allow_write` / `allow_transport`），且每次破坏性操作均需在运行时显式输入 `[y/N]` 确认
-- **DML 安全 SQL**：`run-sql` 仅接受 `SELECT` 语句；`INSERT`、`UPDATE`、`DELETE`、`MERGE` 在 CLI 层被拦截，与系统权限无关
+- **DML 安全 SQL**：`run-sql` 仅接受 `SELECT` 语句；`INSERT`、`UPDATE`、`DELETE`、`MERGE`、`MODIFY`、`TRUNCATE` 在 CLI 层被拦截，与系统权限无关
 - **工具重命名**：从 `sap-abap-cli` 更名为 `sap-adt-cli`，更准确地反映 ADT API 的覆盖范围
 - **配置目录迁移**：从 `~/.sap-abap-cli/` 迁移至 `~/.sap-adt-cli/`；首次运行时若检测到旧目录则自动迁移
 
