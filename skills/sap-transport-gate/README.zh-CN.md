@@ -1,8 +1,6 @@
 # sap-transport-gate
 
-<p align="right">
-  <a href="README.md">English →</a>
-</p>
+[English](README.md) | [中文](README.zh-CN.md)
 
 > SAP 传输请求发布前门禁审查 AI 技能
 
@@ -208,7 +206,7 @@ sap-transport-gate/
 ├── changelog.md                      ← 版本历史与变更说明
 ├── LICENSE                           ← MIT 许可证
 ├── README.md                         ← English documentation
-├── README.zh.md                      ← 中文文档（本文件）
+├── README.zh-CN.md                   ← 中文文档（本文件）
 ├── SKILL.md                          ← 智能体加载指令
 ├── evals/
 │   ├── evals.json                    ← 评测用例（skill-creator 格式）

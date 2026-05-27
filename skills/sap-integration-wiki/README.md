@@ -7,7 +7,7 @@
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![SAP Versions](https://img.shields.io/badge/SAP-ECC%20%7C%20S%2F4HANA%20%7C%20Cloud-blue.svg)](references/troubleshoot/version-diff.md)
 
-[中文文档 →](README.zh.md)
+[English](README.md) | [中文](README.zh-CN.md)
 
 ---
 
@@ -137,7 +137,7 @@ The skill automatically:
 sap-integration-wiki/
 ├── SKILL.md                          ← AI routing logic and decision tree
 ├── README.md                         ← This file (English)
-├── README.zh.md                      ← Chinese version
+├── README.zh-CN.md                   ← Chinese version
 ├── CONTRIBUTING.md                   ← Contribution guide
 │
 ├── references/

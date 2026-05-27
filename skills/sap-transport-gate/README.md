@@ -1,8 +1,6 @@
 # sap-transport-gate
 
-<p align="right">
-  <a href="README.zh.md">中文 →</a>
-</p>
+[English](README.md) | [中文](README.zh-CN.md)
 
 > AI-assisted pre-release gate review for SAP Transport Requests.
 
@@ -209,7 +207,7 @@ sap-transport-gate/
 ├── changelog.md                      ← Version history and migration notes
 ├── LICENSE                           ← MIT License
 ├── README.md                         ← English documentation (this file)
-├── README.zh.md                      ← Chinese documentation
+├── README.zh-CN.md                   ← Chinese documentation
 ├── SKILL.md                          ← Agent instructions
 ├── evals/
 │   ├── evals.json                    ← Evaluation test cases (skill-creator format)

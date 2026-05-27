@@ -1,6 +1,6 @@
 # abap-code-review
 
-> 🇬🇧 [English Version](README.md)
+[English](README.md) | [中文](README.zh-CN.md)
 
 适用于 SAP ABAP 发布前代码审查的 AI Agent Skill。通过 9 个维度对 ABAP 程序进行全面的安全与质量评估，并生成可用于正式签字流转的 Markdown 报告。
 
@@ -105,7 +105,7 @@ Agent 会将 Markdown 报告保存至你指定的 `reports/` 目录：
 abap-code-review/
 ├── SKILL.md                          ← Agent 指令文件（SKILL 定义；由 Agent 运行时加载）
 ├── README.md                         ← 英文说明文档
-├── README.zh.md                      ← 本文件（中文）
+├── README.zh-CN.md                   ← 本文件（中文）
 └── references/
     ├── REF_ABAP_SECURITY.md          ← [SEC] 和 [AUTH] 维度的安全规则参考
     ├── REF_CLEAN_ABAP.md             ← [STD] 维度的 Clean ABAP 规则参考

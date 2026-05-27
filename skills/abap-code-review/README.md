@@ -1,6 +1,6 @@
 # abap-code-review
 
-> 🇨🇳 [中文版本](README.zh.md)
+[English](README.md) | [中文](README.zh-CN.md)
 
 An AI agent skill for SAP ABAP pre-release code review. Performs a comprehensive security and quality assessment across 9 dimensions and produces a formal, sign-off-ready Markdown report.
 
@@ -105,7 +105,7 @@ MEDIUM / LOW / INFO findings only      → GO
 abap-code-review/
 ├── SKILL.md                          ← Agent instructions (SKILL definition; loaded by the agent host)
 ├── README.md                         ← This file (English)
-├── README.zh.md                      ← Chinese version
+├── README.zh-CN.md                   ← Chinese version
 └── references/
     ├── REF_ABAP_SECURITY.md          ← Security rules for [SEC] and [AUTH] dimensions
     ├── REF_CLEAN_ABAP.md             ← Clean ABAP rules for [STD] dimension

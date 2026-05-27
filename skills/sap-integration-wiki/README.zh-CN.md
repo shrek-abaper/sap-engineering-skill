@@ -7,7 +7,7 @@
 [![欢迎共建](https://img.shields.io/badge/共建-欢迎-brightgreen.svg)](CONTRIBUTING.md)
 [![SAP 版本](https://img.shields.io/badge/SAP-ECC%20%7C%20S%2F4HANA%20%7C%20Cloud-blue.svg)](references/troubleshoot/version-diff.md)
 
-[English →](README.md)
+[English](README.md) | [中文](README.zh-CN.md)
 
 ---
 
@@ -135,7 +135,7 @@ Skill 会自动：
 sap-integration-wiki/
 ├── SKILL.md                          ← AI 路由逻辑与决策树
 ├── README.md                         ← 英文文档
-├── README.zh.md                      ← 本文件（中文）
+├── README.zh-CN.md                   ← 本文件（中文）
 ├── CONTRIBUTING.md                   ← 共建指南
 │
 ├── references/
