@@ -1,0 +1,95 @@
+skill_name: sap-transport-gate
+description: >
+  Q&A pairs for knowledge retrieval coverage verification.
+  Tests core concepts: Evidence Level, release decisions, review modes,
+  credential setup, TR ID pattern, and NO_GO triggers.
+
+pairs:
+  - id: 1
+    question: >
+      What are the four Evidence Levels in sap-transport-gate and what does each mean
+      for the final release decision?
+    expected: >
+      Evidence Level HIGH means TR objects, source code, dependencies, functional spec,
+      syntax/activation status, and test evidence are substantially complete — GO is
+      allowed. MEDIUM means key evidence is largely present but some items are missing
+      (e.g., no test evidence) — at best CONDITIONAL_GO. LOW means only source fragments,
+      incomplete object list, or missing release-critical evidence — GO and CONDITIONAL_GO
+      are forbidden; the decision must be NEED_MORE_EVIDENCE or NO_GO. UNKNOWN means input
+      materials are unstructured or scope cannot be determined — always NEED_MORE_EVIDENCE,
+      no dimensional review proceeds.
+
+  - id: 2
+    question: >
+      What are the four possible release decisions and when does each apply?
+    expected: >
+      GO: no blocking findings, evidence sufficient, safe to proceed.
+      CONDITIONAL_GO: risk exists but is mitigable before release (Evidence Level must be
+      MEDIUM or higher). NO_GO: serious risk present, do not release — triggered by any
+      CRITICAL finding or Evidence Level LOW with severe unmitigated HIGH risk.
+      NEED_MORE_EVIDENCE: insufficient evidence for a reliable judgment — always applies
+      when Evidence Level is UNKNOWN, and when Evidence Level is LOW it also applies unless
+      there is a clear NO_GO-level risk. Decision priority (highest wins): NO_GO →
+      NEED_MORE_EVIDENCE → CONDITIONAL_GO → GO.
+
+  - id: 3
+    question: >
+      Under what conditions does a Security or Authorization finding automatically force
+      a NO_GO decision, regardless of Evidence Level?
+    expected: >
+      Any CRITICAL finding in SECURITY, AUTHORIZATION, or TRANSACTION_CONSISTENCY
+      dimensions forces NO_GO. Additionally, HIGH severity findings in Security or
+      Authorization are treated as CRITICAL (also NO_GO). These rules are non-negotiable
+      — even if evidence is otherwise complete and all other dimensions are clean, a
+      CRITICAL security/auth/transaction finding overrides to NO_GO.
+
+  - id: 4
+    question: >
+      What files and artifacts are needed to qualify for Evidence Level HIGH (a complete
+      Review Package)?
+    expected: >
+      A complete Review Package requires all of: TR identity (ID, type, owner, source
+      system, target stage, creation time), object list (every object type, name, package,
+      changed-by, source file path), source code for all ABAP objects, dependency
+      information (intra-TR, extra-TR, table/interface/authorization dependencies),
+      functional specification or requirements document, and release evidence (syntax
+      check result, activation status, unit and/or manual test results). Missing items
+      in any category degrade Evidence Level from HIGH to MEDIUM or LOW.
+
+  - id: 5
+    question: >
+      What is the credential resolution order for Online Transport Mode and how does the
+      skill handle a connection failure?
+    expected: >
+      Credential resolution order: (1) <skill_dir>/.env file, (2)
+      ~/.sap-transport-gate/config.json, (3) process environment variables.
+      If no credentials are found, the skill guides setup via .env.example or the
+      interactive tr_collector.py configure command. If credentials exist but connection
+      fails (HTTP 401, 403, connection refused, SSL error), the skill falls back to
+      Offline Local Mode and directs the user to references/sap-connectivity.md §11 for
+      the manual SE01 → SE38/SE24/SE37 export guide.
+
+  - id: 6
+    question: >
+      What is the Transport Request ID pattern and what happens when no TR ID is found
+      in the user's input?
+    expected: >
+      TR IDs follow the pattern: 3–4 uppercase letters + K + 6 digits, for example
+      DEVK900123, ECDK943668, NPLK000045. When no TR ID is found in the input, the skill
+      asks the user to provide one before proceeding. If the user confirms no TR ID
+      exists, scope is declared as "Partial / No TR Identity", Evidence Level is capped
+      at LOW, and the skill proceeds only to produce a NEED_MORE_EVIDENCE report.
+
+  - id: 7
+    question: >
+      What are the three review modes and what distinguishes them?
+    expected: >
+      Offline Package Mode (preferred): user provides a structured Review Package
+      exported from SAP — includes manifest.json, object list, source files, and
+      optionally test evidence and spec. Best coverage and most reliable evidence.
+      Offline Local Mode: user provides only partial materials such as source files
+      without a manifest or full TR context. Evidence Level is typically LOW to MEDIUM.
+      Online Transport Mode: user provides a TR ID and SAP credentials are available;
+      the skill guides the user to run tr_collector.py collect <TR_ID> to export a
+      structured package, which is then reviewed as Offline Package Mode. The AI never
+      logs in to SAP directly in any mode.
