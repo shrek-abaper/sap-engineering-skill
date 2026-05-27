@@ -32,7 +32,7 @@
 | 1 | 检测 Node.js ≥ v18、Python 3、Git 是否已安装（缺失时打印下载指引） |
 | 2 | 将 Node.js 可执行目录和 npm 全局包路径添加到用户级 `PATH` |
 | 3 | 通过 `npm install -g opencode-ai` 全局安装 opencode |
-| 4 | 将本仓库克隆到 `%USERPROFILE%\.agents\sap-abap-cli`，并在 `%USERPROFILE%\.agents\skills\sap-adt-cli` 创建目录联接（Junction），指向仓库内的 `skills\sap-adt-cli` 子目录 |
+| 4 | 将本仓库克隆到 `%USERPROFILE%\.agents\sap-engineering-skill`，并在 `%USERPROFILE%\.agents\skills\sap-adt-cli` 创建目录联接（Junction），指向仓库内的 `skills\sap-adt-cli` 子目录 |
 | 5 | 安装 Python 依赖：`click`、`requests`、`urllib3` |
 
 ### 前置软件
@@ -114,8 +114,8 @@ opencode 仅作为示例。`sap-adt-cli` 实现了标准 Agent Skill 接口（`S
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/shrek-abaper/sap-abap-cli
-cd sap-abap-cli
+git clone https://github.com/shrek-abaper/sap-engineering-skill
+cd sap-engineering-skill
 
 # 2. 配置凭据（交互式向导 — 密码不回显）
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure

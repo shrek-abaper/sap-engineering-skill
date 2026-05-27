@@ -1,4 +1,4 @@
-# sap-abap-cli
+# sap-engineering-skill
 
 [English](README.md) | [中文](README.zh-CN.md)
 
@@ -8,7 +8,7 @@
 
 ## What Is This?
 
-`sap-abap-cli` is a monorepo of **AI agent skills** that cover the core workflow of SAP ABAP development: reading and writing source code, reviewing code quality and security before release, assessing transport requests at the gate, and answering SAP integration questions with production-ready precision.
+`sap-engineering-skill` is a monorepo of **AI agent skills** that cover the core workflow of SAP ABAP development: reading and writing source code, reviewing code quality and security before release, assessing transport requests at the gate, and answering SAP integration questions with production-ready precision.
 
 Each skill follows the standard `SKILL.md` specification and works with any compatible AI agent framework — [opencode](https://opencode.ai), [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Cursor, or any framework that supports custom tool/skill injection.
 
@@ -18,7 +18,7 @@ The three subtree skills are also maintained as independent public repositories 
 
 ## Skills
 
-### [`sap-adt-cli`](skills/sap-adt-cli/) &nbsp;·&nbsp; [GitHub](https://github.com/shrek-abaper/sap-abap-cli)
+### [`sap-adt-cli`](skills/sap-adt-cli/) &nbsp;·&nbsp; [GitHub](https://github.com/shrek-abaper/sap-engineering-skill)
 
 A command-line tool and AI agent skill for reading **and writing** ABAP source code, metadata, and transport requests from SAP systems via the [ADT REST API](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools).
 
@@ -81,7 +81,7 @@ A composable knowledge-base skill that turns any AI assistant into a SAP integra
 ## Repository Structure
 
 ```
-sap-abap-cli/
+sap-engineering-skill/
 ├── README.md                         ← This file (English)
 ├── README.zh-CN.md                   ← Chinese version
 ├── LICENSE
@@ -113,8 +113,8 @@ Download [`setup-opencode-abap-cli.bat`](setup-opencode-abap-cli.bat) and double
 
 ```bash
 # Clone the repository
-git clone https://github.com/shrek-abaper/sap-abap-cli
-cd sap-abap-cli
+git clone https://github.com/shrek-abaper/sap-engineering-skill
+cd sap-engineering-skill
 
 # Link skills into your agent's skill directory
 ln -s "$(pwd)/skills/sap-adt-cli"         ~/.agents/skills/sap-adt-cli

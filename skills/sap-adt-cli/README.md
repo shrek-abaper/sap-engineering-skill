@@ -36,7 +36,7 @@ Dependencies (`click`, `requests`, `urllib3`) are installed automatically on fir
 | 1 | Checks Node.js ≥ v18, Python 3, and Git are installed (prints guided download links if any are missing) |
 | 2 | Adds Node.js bin and npm global package paths to the user-level `PATH` |
 | 3 | Installs `opencode-ai` globally via `npm install -g opencode-ai` |
-| 4 | Clones this repository to `%USERPROFILE%\.agents\sap-abap-cli` and creates a directory junction at `%USERPROFILE%\.agents\skills\sap-adt-cli` pointing to the `skills\sap-adt-cli` subfolder |
+| 4 | Clones this repository to `%USERPROFILE%\.agents\sap-engineering-skill` and creates a directory junction at `%USERPROFILE%\.agents\skills\sap-adt-cli` pointing to the `skills\sap-adt-cli` subfolder |
 | 5 | Installs Python dependencies: `click`, `requests`, `urllib3` |
 
 ### Prerequisites
@@ -121,8 +121,8 @@ and integrates with any agent framework that supports custom tools or skills:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/shrek-abaper/sap-abap-cli
-cd sap-abap-cli
+git clone https://github.com/shrek-abaper/sap-engineering-skill
+cd sap-engineering-skill
 
 # 2. Configure credentials (interactive wizard — password is not echoed)
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
