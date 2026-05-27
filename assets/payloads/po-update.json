@@ -1,0 +1,40 @@
+{
+  "_comment": "OData V2 PATCH — update PO item quantity. Two separate PATCH requests are required: one for the item, one for the schedule line. Both must be sent; SAP will not auto-sync them.",
+
+  "request_1_item": {
+    "_comment": "PATCH /sap/opu/odata/sap/API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrderItem(PurchaseOrder='4500000001',PurchaseOrderItem='00010')",
+    "_headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-CSRF-Token": "<token-from-fetch>",
+      "x-sap-client": "100"
+    },
+    "payload": {
+      "OrderQuantity": "8",
+      "OrderQuantityUnit": "EA"
+    }
+  },
+
+  "request_2_schedule_line": {
+    "_comment": "PATCH /sap/opu/odata/sap/API_PURCHASEORDER_PROCESS_SRV/A_PurchaseOrderScheduleLine(PurchaseOrder='4500000001',PurchaseOrderItem='00010',ScheduleLine='0001')",
+    "_headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "X-CSRF-Token": "<same-token-reuse-within-session>",
+      "x-sap-client": "100"
+    },
+    "payload": {
+      "ScheduleLineOrderQuantity": "8",
+      "ScheduleLineOrderQuantityUnit": "EA"
+    }
+  },
+
+  "_notes": [
+    "The CSRF token must be fetched first with GET /sap/opu/odata/sap/API_PURCHASEORDER_PROCESS_SRV/ and header X-CSRF-Token: Fetch.",
+    "The token is returned in the response header X-CSRF-Token and is valid for the session.",
+    "A_PurchaseOrderItem.OrderQuantity and A_PurchaseOrderScheduleLine.ScheduleLineOrderQuantity must match; mismatched values result in a partial delivery flag inconsistency.",
+    "If a PO item has multiple schedule lines, patch each schedule line individually, distributing the total quantity across them.",
+    "Updating NetPriceAmount or DocumentCurrency on a confirmed PO requires the item to be in a non-blocked state (DeletionIndicator = '' and GoodsReceiptIsExpected = true).",
+    "After a successful PATCH, perform a GET to confirm SAP accepted the values — SAP sometimes adjusts quantities to match rounding profiles or unit of measure conversions."
+  ]
+}

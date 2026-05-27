@@ -1,0 +1,181 @@
+# JCo Destination Properties Template
+# File extension: .jcoDestination
+# Location: place in the directory passed to JCoDestinationManager or in the working directory.
+# JCo loads this file automatically when you call JCoDestinationManager.getDestination("<NAME>")
+# where <NAME> matches the filename without the .jcoDestination extension.
+#
+# Replace all <placeholder> values before use.
+# Do NOT commit files containing real passwords — use environment-variable substitution at runtime.
+#
+# SAP JCo 3.x documentation: https://support.sap.com/en/product/connectors/jco.html
+# Download JCo (requires S-User): https://support.sap.com/en/product/connectors/jco.html
+# ─────────────────────────────────────────────────────────────────────────────────────────
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SECTION 1: Connection — Direct Application Server (Type 3 / Type A)
+# Use this section when connecting to a single, known application server.
+# Comment out or delete Section 2 (Load Balancing) when using direct mode.
+# ═══════════════════════════════════════════════════════════════════
+
+# DNS name or IP address of the SAP application server.
+# For HTTPS/SNC connections, this must match the CN of the server certificate.
+jco.client.ashost=sap-erp.example.com
+
+# SAP system number (2-digit string, e.g., 00, 01, 10).
+# Determines the TCP port: 33<SYSNR> for RFC, 48<SYSNR> for RFC over SSL.
+# Example: sysnr=00 → port 3300; sysnr=10 → port 3310.
+jco.client.sysnr=00
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SECTION 2: Connection — Message Server / Load Balancing (Type B)
+# Use this section when connecting through a message server for load balancing.
+# Comment out or delete Section 1 (Direct) when using load-balancing mode.
+# ═══════════════════════════════════════════════════════════════════
+
+# DNS name or IP address of the SAP message server.
+# The message server distributes the connection to an available application server.
+# jco.client.mshost=sap-ms.example.com
+
+# SAP system ID (3-character SID, e.g., PRD, DEV, QAS).
+# Used by the message server to identify the target system.
+# jco.client.r3name=PRD
+
+# Logon group defined in transaction SMLG (SM59 load balancing group).
+# Default group is "PUBLIC". Use the group name configured for external RFC access.
+# jco.client.group=PUBLIC
+
+# Message server port. Default port for the message server is 3600 + <instance number>.
+# For HTTPS message server communication, configure jco.client.msserv accordingly.
+# jco.client.msserv=3600
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SECTION 3: Logon Credentials
+# ═══════════════════════════════════════════════════════════════════
+
+# SAP client (Mandant) number — 3-digit string.
+# Maps to the logical tenant/company within the SAP system.
+# Common values: 100 (development), 200 (quality), 800 (production).
+jco.client.client=100
+
+# SAP logon user name.
+# Should be a system/dialog user with RFC authorization (authorization object S_RFC).
+# Recommended: create a dedicated RFC service user in SU01, type "S" (System).
+jco.client.user=RFC_USER
+
+# SAP logon password.
+# WARNING: Do not hard-code real passwords here. Use runtime substitution, e.g.:
+#   Properties props = new Properties();
+#   props.setProperty("jco.client.passwd", System.getenv("SAP_RFC_PASSWORD"));
+jco.client.passwd=<your-password>
+
+# SAP logon language (2-character ISO code: EN, DE, ZH, JA, etc.).
+# Affects SAP message texts returned in RETURN tables.
+jco.client.lang=EN
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SECTION 4: Connection Pool
+# JCo maintains a pool of reusable RFC connections for performance.
+# Without pooling, each BAPI call opens and closes a new TCP connection.
+# ═══════════════════════════════════════════════════════════════════
+
+# Maximum number of live connections kept open in the pool.
+# Rule of thumb: set to the number of concurrent threads that call SAP simultaneously.
+# Setting too high wastes SAP dialog work processes; setting too low causes timeouts.
+# Default: 1. Recommended for production: 5–20 depending on load.
+jco.destination.pool_capacity=5
+
+# Maximum number of connections that can be created at peak load (pool + overflow).
+# When all pool connections are in use, JCo creates additional connections up to this limit.
+# These overflow connections are closed after use (not returned to the pool).
+# Must be >= pool_capacity. Default: 0 (unlimited). Recommended: 10–30.
+jco.destination.peak_limit=10
+
+# Time in milliseconds to wait for a free connection before throwing JCoException(JCO_ERROR_RESOURCE).
+# Default: 30000 (30 seconds). Reduce for latency-sensitive applications.
+# Set to 0 for immediate failure if no connection is available.
+jco.destination.expiration_check_period=30000
+
+# Maximum idle time in milliseconds before an unused pool connection is closed.
+# Default: 60000 (1 minute). Tune based on SAP system idle timeout settings.
+jco.destination.expiration_time=600000
+
+# Maximum time in milliseconds that a connection may stay in the pool without being used.
+# After this period the connection is proactively refreshed.
+# Default: 60000. Set higher to reduce logon overhead for infrequently used destinations.
+jco.destination.max_get_client_time=60000
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SECTION 5: SNC (Secure Network Communications) / SSL
+# Uncomment and populate this section for encrypted RFC connections.
+# SNC requires the SAP Cryptographic Library (libsapcrypto) on the JCo host.
+# ═══════════════════════════════════════════════════════════════════
+
+# Enable SNC: 0 = off (default), 1 = on.
+# When on, all RFC traffic is encrypted; jco.client.user/passwd are still required for logon.
+# jco.client.snc_mode=1
+
+# SNC name of the JCo client (the external application's principal name).
+# Format: p:<Distinguished Name> (e.g., p:CN=JCOCLIENT, O=ACME, C=US)
+# Must match the SNC name registered for this client in SAP transaction SNC0.
+# jco.client.snc_myname=p:CN=JCLIENT,OU=Integration,O=ACME,C=US
+
+# SNC name of the SAP application server.
+# Retrieve from SAP transaction SM59 → RFC destination → Logon/Security tab → SNC name.
+# jco.client.snc_partnername=p:CN=SAPERP,OU=BASIS,O=ACME,C=US
+
+# SNC quality of protection level:
+#   1 = Authentication only
+#   2 = Integrity protection
+#   3 = Privacy (full encryption) — recommended
+#   8 = Default from SAP profile parameter snc/data_protection/use
+#   9 = Maximum available
+# jco.client.snc_qop=3
+
+# Path to the SAP Cryptographic Library (libsapcrypto.so on Linux, sapcrypto.dll on Windows).
+# Required only if the library is not on the system PATH.
+# jco.client.snc_lib=/opt/sap/crypto/libsapcrypto.so
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SECTION 6: Trace and Diagnostics
+# Enable only for debugging — trace files are large and contain sensitive data.
+# ═══════════════════════════════════════════════════════════════════
+
+# RFC trace level: 0 = off (default), 1 = brief, 2 = verbose, 3 = full with hex dumps.
+# Trace files are written to the current working directory as jco_trace_<pid>.trc.
+# WARNING: Level 2+ writes all RFC parameters including passwords to disk.
+jco.client.trace=0
+
+# Use router string to connect through a SAP router (firewall proxy).
+# Format: /H/<router-host>/S/<router-service>/H/<sap-host>
+# Example for two-hop: /H/saprouter.example.com/S/3299/H/sap-erp.internal
+# jco.client.saprouter=/H/saprouter.example.com/S/3299/H/sap-erp.internal
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SECTION 7: Repository Cache (Advanced)
+# JCo caches function module metadata (parameter names, types) to avoid repeated lookups.
+# ═══════════════════════════════════════════════════════════════════
+
+# Destination name used for the repository (function metadata) cache.
+# When set to the same destination name, the metadata is fetched from this SAP system.
+# When set to a different destination name, repository is shared across destinations (useful
+# when connecting to multiple clients of the same SAP system — saves memory).
+# jco.destination.repository_destination=<DESTINATION_NAME>
+
+# Repository user — separate credentials for fetching function module metadata.
+# Use a read-only RFC user with authorization to execute RFC_METADATA_GET.
+# jco.destination.repository_user=RFC_META_USER
+# jco.destination.repository_passwd=<meta-user-password>
+
+# Enable SNC for repository destination (set 1 if repository_destination uses SNC).
+# jco.destination.repository_snc=0
+
+# Repository cache snapshot file path.
+# JCo can persist the repository to disk so it survives JVM restarts.
+# jco.destination.repository.serialized_file=/var/cache/sap-jco/repo_cache.ser
