@@ -1,0 +1,65 @@
+{
+  "CompanyCode": "1000",
+  "PurchaseOrderType": "NB",
+  "PurchasingOrganization": "1000",
+  "PurchasingGroup": "001",
+  "Supplier": "0000100005",
+  "DocumentCurrency": "USD",
+  "PaymentTerms": "0001",
+  "PurchaseOrderDate": "/Date(1748736000000)/",
+  "ExchangeRate": "1.00000",
+  "to_PurchaseOrderItem": {
+    "results": [
+      {
+        "PurchaseOrderItem": "00010",
+        "PurchaseOrderItemText": "Office Chair Model X200",
+        "Material": "MAT-CHAIR-001",
+        "Plant": "1000",
+        "StorageLocation": "0001",
+        "MaterialGroup": "A001",
+        "PurchasingInfoRecord": "",
+        "SupplierMaterialNumber": "SUPP-CH-X200",
+        "OrderQuantity": "5",
+        "OrderQuantityUnit": "EA",
+        "NetPriceAmount": "250.00",
+        "NetPriceCurrency": "USD",
+        "PriceUnit": "1",
+        "OverdelivTolrtdLmtRatioInPct": "0.0",
+        "UnlimitedOverdeliveryIsAllowed": false,
+        "UnderdelivTolrtdLmtRatioInPct": "0.0",
+        "IsCompletelyDelivered": false,
+        "IsFinallyInvoiced": false,
+        "PurchaseOrderItemCategory": "0",
+        "AccountAssignmentCategory": "K",
+        "RequirementTracking": "",
+        "TaxCode": "V1",
+        "to_ScheduleLine": {
+          "results": [
+            {
+              "PurchaseOrderItem": "00010",
+              "ScheduleLine": "0001",
+              "ScheduleLineDeliveryDate": "/Date(1751328000000)/",
+              "ScheduleLineOrderQuantity": "5",
+              "ScheduleLineOrderQuantityUnit": "EA"
+            }
+          ]
+        },
+        "to_AccountAssignment": {
+          "results": [
+            {
+              "PurchaseOrderItem": "00010",
+              "AccountAssignmentNumber": "01",
+              "CostCenter": "1000100",
+              "CostCenterName": "IT Department",
+              "GLAccount": "0000400000",
+              "Quantity": "5",
+              "QuantityUnit": "EA",
+              "DocumentCurrency": "USD",
+              "CostCenterCurrency": "USD"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

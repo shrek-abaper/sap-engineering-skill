@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  IDoc ORDERS05 Example — Purchase Order sent from SAP to an external supplier system
+  via SAP PI/PO or direct IDoc port.
+
+  Message Type : ORDERS
+  Basic IDoc Type: ORDERS05
+  Direction    : OUTBOUND (SAP → External)
+  Use case     : SAP sends a newly created or changed PO to the supplier's EDI system.
+
+  How to generate a skeleton for any message type:
+    python3 scripts/gen-idoc-template.py
+      [msgtype ORDERS] [idoctype ORDERS05]
+      [sender-partner SAP_PROD] [receiver-partner EXT_SUPPLIER_001] [output out.xml]
+-->
+<ORDERS05>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EDI_DC40 — IDoc Control Record (exactly 1 per IDoc)
+       Contains routing and message-type metadata.
+       ═══════════════════════════════════════════════════════════════ -->
+  <IDOC BEGIN="1">
+    <EDI_DC40 SEGMENT="1">
+
+      <!-- Unique IDoc number assigned by SAP (10 digits, left-padded with zeros) -->
+      <DOCNUM>0000000000123456</DOCNUM>
+
+      <!-- IDoc type — always ORDERS05 for this message -->
+      <DOCTYP>ORDERS05</DOCTYP>
+
+      <!-- IDoc type extension — leave empty if no customer enhancement -->
+      <CIMTYP></CIMTYP>
+
+      <!-- Message type — logical name of the business message -->
+      <MESTYP>ORDERS</MESTYP>
+
+      <!-- Message function: 
+           ORIGINAL (new), CHANGE (update), CANCEL (cancellation) -->
+      <MESCOD>ORIGINAL</MESCOD>
+
+      <!-- Message variant — leave blank for standard -->
+      <MESFCT></MESFCT>
+
+      <!-- IDoc status at point of export:
+           01 = IDoc generated, ready to be sent
+           03 = Data passed to port
+           12 = Dispatch OK -->
+      <STD>E</STD>
+
+      <!-- IDoc standard version — 1 for classic ANSI X12, 3 for EDIFACT, blank for SAP standard -->
+      <STDVRS></STDVRS>
+
+      <!-- Standard message type (EDIFACT: ORDERS, X12: 850) — blank if SAP-internal -->
+      <STDMES></STDMES>
+
+      <!-- Sender logical system / RFC destination name -->
+      <SNDLAD>SAP_PROD_LS</SNDLAD>
+
+      <!-- Sender partner type: LS = Logical System, LI = Logical client, KU = Customer -->
+      <SNDPRT>LS</SNDPRT>
+
+      <!-- Sender partner function — leave blank for standard outbound -->
+      <SNDPFC></SNDPFC>
+
+      <!-- Sender partner number — must match a Partner Profile in WE20 -->
+      <SNDPRN>SAP_PROD</SNDPRN>
+
+      <!-- Receiver logical system -->
+      <RCVLAD>EXT_SUPPLIER_001</RCVLAD>
+
+      <!-- Receiver partner type: LI = External system, KU = Customer, KR = Vendor -->
+      <RCVPRT>LI</RCVPRT>
+
+      <!-- Receiver partner function — blank unless EDIFACT functional ack required -->
+      <RCVPFC></RCVPFC>
+
+      <!-- Receiver partner number — must match a Partner Profile in WE20 on receiving side -->
+      <RCVPRN>EXT_SUPPLIER_001</RCVPRN>
+
+      <!-- IDoc creation date (YYYYMMDD) -->
+      <CREDAT>20260501</CREDAT>
+
+      <!-- IDoc creation time (HHMMSS) -->
+      <CRETIM>143022</CRETIM>
+
+      <!-- Outbound processing code — configured in WE20 partner profile outbound parameters -->
+      <OUTMOD>2</OUTMOD>
+
+      <!-- Test flag: space = production, X = test (IDoc will not be posted to business logic) -->
+      <TEST></TEST>
+
+      <!-- Serialization key — used for sequencing when multiple IDocs must arrive in order -->
+      <SERIAL></SERIAL>
+
+    </EDI_DC40>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         E1EDK01 — Order Header General Data (exactly 1 per IDoc)
+         Contains PO number, document type, currency, dates.
+         ═══════════════════════════════════════════════════════════════ -->
+    <E1EDK01 SEGMENT="1">
+
+      <!-- Action code:
+           000 = original document
+           001 = document is a change
+           002 = document is a cancellation -->
+      <ACTION>000</ACTION>
+
+      <!-- External purchase order number (SAP PO number) -->
+      <BELNR>4500000001</BELNR>
+
+      <!-- Purchase order document type: NB = standard PO, ZNB = custom -->
+      <BSART>NB</BSART>
+
+      <!-- Purchasing organization -->
+      <EKORG>1000</EKORG>
+
+      <!-- Purchasing group (buyer group responsible for this PO) -->
+      <EKGRP>001</EKGRP>
+
+      <!-- Supplier/vendor account number in SAP -->
+      <LIFNR>0000100005</LIFNR>
+
+      <!-- Document currency (ISO 4217) -->
+      <WKURS>USD</WKURS>
+
+      <!-- Exchange rate to company code currency (e.g., 1.00000 if same currency) -->
+      <KURSF>1.00000</KURSF>
+
+      <!-- PO creation date (YYYYMMDD) -->
+      <BEDAT>20260501</BEDAT>
+
+      <!-- Validity start date (framework orders only — leave blank for standard NB) -->
+      <KDATB></KDATB>
+
+      <!-- Validity end date (framework orders only) -->
+      <KDATE></KDATE>
+
+      <!-- Incoterms code (e.g., CIF = Cost Insurance Freight, FCA = Free Carrier) -->
+      <INCO1>CIF</INCO1>
+
+      <!-- Incoterms location (city or port name) -->
+      <INCO2>CHICAGO PORT</INCO2>
+
+      <!-- Payment terms key (e.g., 0001 = Pay immediately, NT30 = Net 30) -->
+      <ZTERM>0001</ZTERM>
+
+    </E1EDK01>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         E1EDKA1 — Order Header Partner (1 or more per IDoc)
+         Contains partner roles: supplier (LF), ship-to (WE), bill-to (RE).
+         ═══════════════════════════════════════════════════════════════ -->
+    <E1EDKA1 SEGMENT="1">
+
+      <!-- Partner function:
+           LF = Supplier (Lieferant), AG = Sold-to party, WE = Ship-to, RE = Invoice party -->
+      <PARVW>LF</PARVW>
+
+      <!-- Partner number in SAP — vendor/customer master number -->
+      <PARTN>0000100005</PARTN>
+
+      <!-- Partner name (for reference; SAP uses PARTN for lookups) -->
+      <NAME1>Acme Office Supplies Inc.</NAME1>
+
+      <!-- Street and house number -->
+      <STRAS>123 Industrial Blvd</STRAS>
+
+      <!-- City -->
+      <ORT01>Chicago</ORT01>
+
+      <!-- Postal code -->
+      <PSTLZ>60601</PSTLZ>
+
+      <!-- Country key (ISO 3166-1 alpha-2) -->
+      <LAND1>US</LAND1>
+
+      <!-- Region/state code -->
+      <REGIO>IL</REGIO>
+
+    </E1EDKA1>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         E1EDP01 — Order Line Item General Data (1 per PO line item)
+         Contains material, quantity, price.
+         ═══════════════════════════════════════════════════════════════ -->
+    <E1EDP01 SEGMENT="1">
+
+      <!-- Line item position number (5 digits, increments of 10) -->
+      <POSEX>00010</POSEX>
+
+      <!-- Action code for this line item: 000 = original, 001 = change, 002 = cancel -->
+      <ACTION>000</ACTION>
+
+      <!-- PO line item quantity -->
+      <MENGE>5.000</MENGE>
+
+      <!-- Unit of measure (ISO or SAP internal: EA, KG, L, M, PC) -->
+      <MENEE>EA</MENEE>
+
+      <!-- Net price per price unit -->
+      <VPREI>250.00</VPREI>
+
+      <!-- Price unit (1 = price is per 1 unit, 100 = price per 100 units) -->
+      <PEINH>1</PEINH>
+
+      <!-- Price currency (must match header currency) -->
+      <CURCY>USD</CURCY>
+
+      <!-- Net item value = MENGE * VPREI / PEINH -->
+      <NETWR>1250.00</NETWR>
+
+      <!-- Delivery date requested (YYYYMMDD) -->
+      <NTGEW>20260530</NTGEW>
+
+      <!-- Item category: 0 = standard, 2 = blanket/consignment -->
+      <PSTYP>0</PSTYP>
+
+      <!-- Account assignment category: K = Cost center, P = Project, F = Order -->
+      <KNTTP>K</KNTTP>
+
+    </E1EDP01>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         E1EDP19 — Order Line Item Object Identification (1+ per line)
+         Contains material/article identification: SAP material number,
+         supplier article number, EAN/GTIN, etc.
+         ═══════════════════════════════════════════════════════════════ -->
+    <E1EDP19 SEGMENT="1">
+
+      <!-- Qualifier for the object number:
+           001 = SAP internal material number (MATNR)
+           002 = Customer material number (KDMAT)
+           003 = EAN/UPC barcode (EAN11)
+           007 = Supplier article number (IDNLF) -->
+      <QUALF>001</QUALF>
+
+      <!-- Material/article number corresponding to the qualifier above -->
+      <IDTNR>MAT-CHAIR-001</IDTNR>
+
+      <!-- Batch number (if material is batch-managed) -->
+      <CHARG></CHARG>
+
+      <!-- Material description -->
+      <MAKTX>Office Chair Model X200</MAKTX>
+
+    </E1EDP19>
+
+    <!-- Supplier's own article number for the same line item -->
+    <E1EDP19 SEGMENT="1">
+      <QUALF>007</QUALF>
+      <IDTNR>SUPP-CH-X200</IDTNR>
+      <CHARG></CHARG>
+      <MAKTX>Office Chair X200 (Supplier SKU)</MAKTX>
+    </E1EDP19>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         E1EDP20 — Schedule Lines for a PO Item
+         Contains delivery date(s) and quantities per delivery.
+         If a PO item has multiple scheduled deliveries, repeat this segment.
+         ═══════════════════════════════════════════════════════════════ -->
+    <E1EDP20 SEGMENT="1">
+
+      <!-- Schedule line number (4 digits) -->
+      <ZEILE>0001</ZEILE>
+
+      <!-- Requested delivery date (YYYYMMDD) -->
+      <EDATU>20260530</EDATU>
+
+      <!-- Quantity for this schedule line -->
+      <WMENG>5.000</WMENG>
+
+      <!-- Unit of measure -->
+      <VRKME>EA</VRKME>
+
+    </E1EDP20>
+
+  </IDOC>
+</ORDERS05>

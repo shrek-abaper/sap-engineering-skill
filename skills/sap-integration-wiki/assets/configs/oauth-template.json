@@ -1,0 +1,81 @@
+{
+  "_comment_top": [
+    "OAuth2 Client Credentials configuration template for S/4HANA On-Premise.",
+    "The S/4HANA On-Premise OAuth2 server is configured via transaction SOAUTH2.",
+    "This file documents all required fields; replace all <placeholder> values before use.",
+    "Do NOT commit real client_secret values — use environment variables or a secrets vault."
+  ],
+
+  "token_endpoint": {
+    "_comment": "Token URL for S/4HANA On-Premise OAuth2. Format: https://<sap-host>:<port>/sap/bc/sec/oauth2/token. The path /sap/bc/sec/oauth2/token is fixed — do not change it. Port is typically 443 (HTTPS) or 8443 for non-default HTTPS. ICF node /sap/bc/sec/oauth2 must be active (transaction SICF).",
+    "value": "https://s4hana.example.com:443/sap/bc/sec/oauth2/token"
+  },
+
+  "client_id": {
+    "_comment": "The OAuth2 client ID registered in SOAUTH2 → OAuth 2.0 Clients → Client ID. In S/4HANA On-Premise, the client ID is the SAP system user name created specifically for OAuth2 (e.g., OAUTH_EXT_CLIENT). The system user must have role SAP_BC_WEBSERVICE_CONSUMER assigned.",
+    "value": "OAUTH_EXT_CLIENT"
+  },
+
+  "client_secret": {
+    "_comment": "The client secret set in SOAUTH2 → OAuth 2.0 Clients → Client Secret. Store this in an environment variable (e.g., SAP_OAUTH_CLIENT_SECRET) — never hard-code in source. The secret is shown only once at creation time in SOAUTH2.",
+    "value": "<your-client-secret-from-SOAUTH2>"
+  },
+
+  "grant_type": {
+    "_comment": "For server-to-server integrations use 'client_credentials'. For user-delegated access use 'urn:ietf:params:oauth:grant-type:saml2-bearer' (SAML Bearer Assertion). Client credentials is the most common pattern for batch integrations and backend system calls.",
+    "value": "client_credentials"
+  },
+
+  "scope": {
+    "_comment": "OAuth2 scope(s) granted to this client, space-separated. In S/4HANA On-Premise, scopes are defined in SOAUTH2 → OAuth 2.0 Scopes and linked to ICF nodes or OData services. Example scope for OData API access: 'ZAPI_PO_READ ZAPI_PO_WRITE'. If the client has only one scope, set it here; if unscoped access is configured, leave empty string.",
+    "value": "ZAPI_PURCHASEORDER_READ ZAPI_PURCHASEORDER_WRITE"
+  },
+
+  "sap_client": {
+    "_comment": "SAP client number (Mandant), passed as x-sap-client HTTP header on every API call. Separate from OAuth2 token request — the token endpoint does not use sap-client, but all OData/RFC calls do. Example: '100' for development, '800' for production.",
+    "value": "100"
+  },
+
+  "token_request_headers": {
+    "_comment": "Standard HTTP headers for the token POST request. Content-Type must be application/x-www-form-urlencoded. The Authorization header encodes client_id:client_secret as Base64 for HTTP Basic authentication (required by S/4HANA SOAUTH2 token endpoint).",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Authorization": "Basic <Base64(client_id:client_secret)>",
+    "Accept": "application/json"
+  },
+
+  "token_request_body_example": {
+    "_comment": "URL-encoded form body sent to the token endpoint. grant_type and scope are the required parameters. client_id/client_secret may alternatively be placed here (body method) instead of the Authorization header — SAP SOAUTH2 supports both, but Authorization header is preferred.",
+    "grant_type": "client_credentials",
+    "scope": "ZAPI_PURCHASEORDER_READ ZAPI_PURCHASEORDER_WRITE"
+  },
+
+  "token_response_example": {
+    "_comment": "SAP SOAUTH2 returns a standard OAuth2 token response. access_token is a Bearer token. expires_in is in seconds (default 3600 = 1 hour on S/4HANA On-Premise). token_type is always 'Bearer'. Cache the token and refresh before expiry rather than requesting a new token on every API call.",
+    "access_token": "<jwt-or-opaque-token-string>",
+    "token_type": "Bearer",
+    "expires_in": 3600,
+    "scope": "ZAPI_PURCHASEORDER_READ ZAPI_PURCHASEORDER_WRITE"
+  },
+
+  "api_call_headers": {
+    "_comment": "Headers to include on every OData API call after obtaining the token. The Authorization header carries the Bearer token. x-sap-client specifies the SAP client (Mandant). For POST/PATCH/DELETE, also include X-CSRF-Token obtained via a prior GET with X-CSRF-Token: Fetch.",
+    "Authorization": "Bearer <access_token>",
+    "x-sap-client": "100",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+
+  "ssl_notes": {
+    "_comment": "S/4HANA On-Premise uses a self-signed or private-CA certificate by default. Import the SAP server certificate into your Java truststore (keytool) or Python certifi bundle, or set verify=False temporarily during development (never in production). The SAP certificate can be exported from transaction STRUST → SSL client SSL Client (Standard).",
+    "java_truststore_import": "keytool -importcert -alias sap-server -file sap-server.cer -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit",
+    "python_env_var": "REQUESTS_CA_BUNDLE=/path/to/sap-server.pem"
+  },
+
+  "prerequisite_sap_transactions": {
+    "_comment": "SAP-side setup required before OAuth2 works. All must be completed by the SAP Basis team before external clients can authenticate.",
+    "SOAUTH2": "Create OAuth2 Client, define Scopes, link Scopes to ICF nodes or OData services",
+    "SU01": "Create system user (type 'S' - Service) for the OAuth2 client; assign required roles",
+    "SICF": "Activate ICF node /sap/bc/sec/oauth2 and the target OData service nodes (e.g., /sap/opu/odata)",
+    "STRUST": "Import external CA certificate if the calling system's HTTPS cert is not from a trusted CA"
+  }
+}
