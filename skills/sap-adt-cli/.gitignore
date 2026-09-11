@@ -1,5 +1,6 @@
 # Credentials - NEVER commit
 .env
+.env.disabled
 *.env.local
 
 # Runtime output and Python cache

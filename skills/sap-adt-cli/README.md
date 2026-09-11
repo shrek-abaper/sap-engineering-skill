@@ -98,7 +98,9 @@ Skip SSL check?   — yes for self-signed / internal certs
 ```
 
 Credentials can be loaded from process environment variables, a SKILL-local `.env`,
-or `~\.sap-adt-cli\config.json` and reused in subsequent sessions.
+or a profile in `~\.sap-adt-cli\config.json` and reused in subsequent sessions.
+Multiple SAP systems (DEV/QAS/PRD) are supported as named profiles — see
+[Multiple SAP environments](#multiple-sap-environments-profiles).
 
 ### Compatible AI agents
 
@@ -125,7 +127,8 @@ and integrates with any agent framework that supports custom tools or skills:
 git clone https://github.com/shrek-abaper/sap-engineering-skill
 cd sap-engineering-skill
 
-# 2. Configure credentials (interactive wizard — password is not echoed)
+# 2. Configure credentials (interactive wizard — password is not echoed;
+#    add more systems later with: configure --profile qas / prd)
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 
 # 3. Verify the connection
@@ -145,7 +148,42 @@ Credential lookup order is:
 
 1. Process environment variables
 2. `skills/sap-adt-cli/.env`
-3. `~/.sap-adt-cli/config.json`
+3. The selected profile in `~/.sap-adt-cli/config.json`
+
+### Multiple SAP environments (profiles)
+
+Each SAP system is stored as a named profile in `~/.sap-adt-cli/config.json`
+(the first `configure` run creates a profile called `default`; an old
+single-connection config is migrated automatically):
+
+```bash
+CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
+
+# Add environments (each saved profile becomes the active one)
+$CLI configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
+SAP_PASSWORD="..." $CLI configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
+
+# List environments; * marks the active profile
+$CLI profile list
+
+# Persistent switch
+$CLI profile use dev
+
+# One-off override: global --profile (before the command) or SAP_PROFILE env var
+$CLI --profile prd get-program SAPMV45A
+SAP_PROFILE=qas $CLI status
+
+# Remove an environment (the active profile cannot be removed)
+$CLI profile remove qas
+```
+
+Profile selection order: `--profile` > `SAP_PROFILE` > the active profile set by
+`profile use`. Note the write/transport capability switches are **global** — they
+apply to every profile, including production.
+
+> A complete set of `SAP_URL/USERNAME/PASSWORD/CLIENT` environment variables (or a
+> SKILL-local `.env`) overrides all profiles. Run `status` to see which source is
+> actually used.
 
 ### SKILL-local `.env` (recommended for per-skill isolation)
 
@@ -163,7 +201,9 @@ Never commit the real `.env` file.
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 ```
 
-Credentials are saved to `~/.sap-adt-cli/config.json` with `0600` permissions.
+Credentials are saved as a profile (the wizard asks for a profile name) in
+`~/.sap-adt-cli/config.json` with `0600` permissions. Re-running the wizard for
+an existing profile and leaving the password blank keeps the stored password.
 
 > **Security note:** The config file stores credentials in plain text.
 > Do not commit it to version control and restrict access to the file accordingly.
@@ -178,6 +218,7 @@ export SAP_URL=https://my-sap.example.com:8000
 export SAP_USERNAME=MYUSER
 export SAP_PASSWORD=secret          # prefer this over the --password flag
 export SAP_CLIENT=100
+export SAP_PROFILE=dev              # optional: select a profile (ignored when SAP_URL..SAP_CLIENT are all set)
 export SAP_LANGUAGE=EN              # optional, default: EN
 export SAP_VERIFY_SSL=0             # optional: set 0 for self-signed certificates
 export SAP_ALLOW_WRITE=0            # optional: set 1 to enable write-source/activate
@@ -187,15 +228,16 @@ export SAP_ALLOW_TRANSPORT=0        # optional: set 1 to enable create/release t
 ### Capability flags (default: disabled)
 
 Two optional flags unlock write and transport capabilities.
-**Enable only on development systems.**
+**Enable only when needed — they are GLOBAL and apply to every profile, including
+production.** Check `status` (which shows the active profile and both switches)
+before write operations.
 
 ```bash
-# Enable interactively
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
-# → answer 'y' to the write/transport prompts
+# Enable interactively (answer 'y' to the write/transport prompts)
+python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev
 
 # Enable non-interactively
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure \
+SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
   --url "https://sap-dev.example.com:44300" \
   --username "DEVELOPER" \
   --client "400" \
@@ -203,7 +245,7 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
   --no-allow-transport
 ```
 
-| Flag | Config field | Default | Commands unlocked |
+| Flag | Config field (global, all profiles) | Default | Commands unlocked |
 |------|-------------|---------|-------------------|
 | `--allow-write` | `allow_write` | false | `write-source`, `activate` |
 | `--allow-transport` | `allow_transport` | false | `create-transport`, `release-transport` |
@@ -217,7 +259,7 @@ after use and must be repeated for each subsequent operation.
 
 ```bash
 # Pass password via environment variable to avoid shell history exposure
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure \
+SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
   --url      "https://my-sap.example.com:8000" \
   --username "MYUSER" \
   --client   "100"
@@ -229,8 +271,12 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 
 | Command | Description |
 |---------|-------------|
-| `configure` | Save connection credentials |
-| `status` | Show current connection configuration |
+| `configure [--profile NAME]` | Save credentials for one environment profile (wizard or flags) |
+| `profile list` | List all configured environments (`*` = active) |
+| `profile use <NAME>` | Persistently switch the active environment |
+| `profile remove <NAME>` | Delete an environment (active profile is protected) |
+| `status` | Show active profile and current connection configuration |
+| `--profile NAME <command>` | Global option: one-off profile override for a single command |
 | `get-program <NAME>` | ABAP program / report source code |
 | `get-class <NAME>` | ABAP class source code |
 | `get-function-group <NAME>` | Function group top-include source code |
@@ -341,6 +387,8 @@ All output is written to **stdout**. Errors are written to **stderr** with a non
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `Not configured` | No credentials saved | Run `configure` |
+| `Profile 'x' not found` | Unknown profile on `--profile` / `SAP_PROFILE` | Run `profile list` or `configure --profile x` |
+| `is currently active` on remove | Active profile cannot be removed | `profile use <other>` first |
 | `HTTP 401` | Wrong username or password | Re-run `configure` |
 | `HTTP 403` | Missing `SAP_ADT_BASE` role | Ask Basis to assign authorization |
 | `HTTP 404` | Object name not found | Try `search-object` to find the correct name |
@@ -362,6 +410,15 @@ All output is written to **stdout**. Errors are written to **stderr** with a non
 ---
 
 ## Changelog
+
+### v1.2.0 — Multi-environment profiles
+
+- **Multiple SAP environments in one config**: `~/.sap-adt-cli/config.json` now stores named profiles (`dev`, `qas`, `prd`, ...); old single-connection configs are migrated automatically to a `default` profile
+- **New commands**: `configure --profile NAME`, `profile list`, `profile use NAME` (persistent switch), `profile remove NAME`
+- **One-off profile override**: global `--profile NAME` option (before the command name) or `SAP_PROFILE` env var; selection order is `--profile` > `SAP_PROFILE` > active profile
+- **Capability flags are global**: `allow_write` / `allow_transport` now apply to every profile — check `status` before write operations
+- **Wizard UX**: prompts for a profile name; re-editing a profile with a blank password keeps the stored password
+- `.env` / `SAP_*` environment variables remain a single-environment override layer that wins over all profiles
 
 ### v1.1.1 — `run-sql` robustness improvements
 

@@ -29,10 +29,20 @@ _ensure_deps()
 sys.path.insert(0, _SKILL_SCRIPTS_DIR)
 
 import click
-from lib.config import run_configure_wizard, save_config_from_flags, load_config, load_config_with_source, SapConfig
+from lib import config as config_module
+from lib.config import (
+    run_configure_wizard,
+    save_config_from_flags,
+    load_config,
+    load_config_with_source,
+    list_profiles,
+    set_active_profile,
+    remove_profile,
+    SapConfig,
+)
 from lib import handlers
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 
 def _output(result) -> None:
@@ -109,15 +119,27 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
 
 @click.group(name="sap-adt-cli")
 @click.version_option(version=__version__, prog_name="sap-adt-cli")
-def cli():
+@click.option(
+    "--profile",
+    default=None,
+    help="SAP environment profile to use for this single command "
+         "(overrides active profile and SAP_PROFILE; see 'profile list')",
+)
+def cli(profile):
     """Read and write ABAP source code and metadata from SAP systems via the ADT REST API.
 
-    Credentials are loaded from environment variables (SAP_URL, SAP_USERNAME,
-    SAP_PASSWORD, SAP_CLIENT), the SKILL-local .env file, or
-    ~/.sap-adt-cli/config.json.
+    Multiple SAP environments are stored as profiles in
+    ~/.sap-adt-cli/config.json. Switch persistently with 'profile use NAME'
+    or per command with '--profile NAME' (SAP_PROFILE env var also supported).
+
+    Credentials for the selected profile can additionally be overridden by
+    environment variables (SAP_URL, SAP_USERNAME, SAP_PASSWORD, SAP_CLIENT)
+    or the SKILL-local .env file.
 
     Run 'configure' on first use to save your connection settings.
     """
+    if profile:
+        config_module.set_profile_override(profile)
 
 
 @cli.command()
@@ -127,10 +149,14 @@ def cli():
 @click.option("--client",                 default=None, help="SAP client number (e.g. 100)")
 @click.option("--language",               default=None, help="Language code (default: EN)")
 @click.option("--no-verify-ssl",          is_flag=True, default=False, help="Disable SSL certificate verification")
-@click.option("--allow-write/--no-allow-write",         default=False, help="Enable source code write (write-source, activate)")
-@click.option("--allow-transport/--no-allow-transport", default=False, help="Enable transport write operations (create-transport, release-transport)")
-def configure(url, username, password, client, language, no_verify_ssl, allow_write, allow_transport):
-    """Save SAP connection credentials.
+@click.option("--allow-write/--no-allow-write",         default=False, help="Enable source code write (write-source, activate); GLOBAL, applies to every profile")
+@click.option("--allow-transport/--no-allow-transport", default=False, help="Enable transport write operations (create-transport, release-transport); GLOBAL, applies to every profile")
+@click.option("--profile", default=None, help="Profile name to create or update (default: active profile, or 'default' on first run)")
+def configure(url, username, password, client, language, no_verify_ssl, allow_write, allow_transport, profile):
+    """Save SAP connection credentials for one environment profile.
+
+    The saved profile becomes the active profile. Add more environments
+    with `configure --profile NAME` and switch with `profile use NAME`.
 
     When called with flags the credentials are saved non-interactively —
     useful for agent workflows. When called with no flags an interactive
@@ -158,26 +184,83 @@ def configure(url, username, password, client, language, no_verify_ssl, allow_wr
             verify_ssl=not no_verify_ssl,
             allow_write=allow_write,
             allow_transport=allow_transport,
+            profile=profile,
         )
     else:
-        run_configure_wizard()
+        run_configure_wizard(profile=profile)
 
 
 @cli.command()
 def status():
-    """Show the current SAP connection configuration."""
+    """Show the active SAP environment profile and connection configuration."""
     config, source = load_config_with_source()
     if config is None:
         click.echo("Not configured. Run: sap-adt-cli configure", err=True)
+        click.echo("Manage environments with: sap-adt-cli profile list", err=True)
         sys.exit(1)
+    click.echo(f"Profile:         {config.profile_name or '(environment override)'}")
     click.echo(f"URL:             {config.url}")
     click.echo(f"Username:        {config.username}")
     click.echo(f"Client:          {config.client}")
     click.echo(f"Language:        {config.language}")
     click.echo(f"SSL:             {'verify' if config.verify_ssl else 'skip (self-signed allowed)'}")
-    click.echo(f"Write mode:      {'ENABLED' if config.allow_write else 'DISABLED'}")
-    click.echo(f"Transport write: {'ENABLED' if config.allow_transport else 'DISABLED'}")
+    click.echo(f"Write mode:      {'ENABLED' if config.allow_write else 'DISABLED'} (global)")
+    click.echo(f"Transport write: {'ENABLED' if config.allow_transport else 'DISABLED'} (global)")
     click.echo(f"Config source:   {source}")
+
+
+@cli.group("profile")
+def profile_group():
+    """Manage SAP environment profiles (dev, qas, prd, ...)."""
+
+
+@profile_group.command("list")
+def profile_list():
+    """List all configured SAP environments and show which one is active."""
+    profiles = list_profiles()
+    if profiles is None:
+        click.echo(f"Error: could not parse {config_module.CONFIG_FILE}. Fix or remove the file.", err=True)
+        sys.exit(1)
+    if not profiles:
+        click.echo("No profiles configured. Run: sap-adt-cli configure")
+        return
+    allow_write, allow_transport = config_module.get_global_capabilities()
+    click.echo(f"{'':1} {'NAME':<16} {'CLIENT':<7} {'USERNAME':<16} URL")
+    for p in profiles:
+        marker = "*" if p["active"] else " "
+        click.echo(
+            f"{marker} {p['name']:<16} {p['client']:<7} {p['username']:<16} {p['url']}"
+        )
+    active = next((p["name"] for p in profiles if p["active"]), None)
+    click.echo(f"\nActive profile: {active or '(none)'}")
+    click.echo(
+        f"Global switches — write: {'ENABLED' if allow_write else 'DISABLED'}, "
+        f"transport write: {'ENABLED' if allow_transport else 'DISABLED'}"
+    )
+
+
+@profile_group.command("use")
+@click.argument("name")
+def profile_use(name):
+    """Switch the active SAP environment profile persistently."""
+    try:
+        set_active_profile(name)
+    except ValueError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    click.echo(f"Active profile is now '{name}'.")
+
+
+@profile_group.command("remove")
+@click.argument("name")
+def profile_remove(name):
+    """Delete a SAP environment profile (the active profile cannot be removed)."""
+    try:
+        remove_profile(name)
+    except ValueError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    click.echo(f"Profile '{name}' removed.")
 
 
 @cli.command("get-program")

@@ -91,7 +91,7 @@ SAP 集团        — 3 位集团编号，例如 100
 跳过 SSL 验证？  — 内网或自签名证书环境选 yes
 ```
 
-凭据可从进程环境变量、SKILL 目录下的 `.env` 或 `~\.sap-adt-cli\config.json` 加载，后续会话自动复用。
+凭据可从进程环境变量、SKILL 目录下的 `.env` 或 `~\.sap-adt-cli\config.json` 中的环境配置（profile）加载，后续会话自动复用。支持将多套 SAP 系统（DEV/QAS/PRD）配置为命名 profile，详见[多 SAP 环境（Profile）](#多-sap-环境profile)。
 
 ### 支持的 AI 智能体
 
@@ -117,7 +117,8 @@ opencode 仅作为示例。`sap-adt-cli` 实现了标准 Agent Skill 接口（`S
 git clone https://github.com/shrek-abaper/sap-engineering-skill
 cd sap-engineering-skill
 
-# 2. 配置凭据（交互式向导 — 密码不回显）
+# 2. 配置凭据（交互式向导 — 密码不回显；
+#    之后可用 configure --profile qas / prd 添加更多环境）
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 
 # 3. 验证连接
@@ -137,7 +138,39 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-function BAPI_SALESORDER_C
 
 1. 进程环境变量
 2. `skills/sap-adt-cli/.env`
-3. `~/.sap-adt-cli/config.json`
+3. `~/.sap-adt-cli/config.json` 中选中的 profile
+
+### 多 SAP 环境（Profile）
+
+每套 SAP 系统以命名 profile 的形式保存在 `~/.sap-adt-cli/config.json` 中
+（首次运行 `configure` 会创建名为 `default` 的 profile；旧的单连接配置会自动迁移）：
+
+```bash
+CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
+
+# 添加环境（每次保存的 profile 会成为当前生效环境）
+$CLI configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
+SAP_PASSWORD="..." $CLI configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
+
+# 列出所有环境，* 为当前生效
+$CLI profile list
+
+# 粘性切换（持久化）
+$CLI profile use dev
+
+# 单次覆盖：全局参数 --profile（放在命令名之前）或 SAP_PROFILE 环境变量
+$CLI --profile prd get-program SAPMV45A
+SAP_PROFILE=qas $CLI status
+
+# 删除环境（当前生效的 profile 不能删）
+$CLI profile remove qas
+```
+
+profile 选择优先级：`--profile` > `SAP_PROFILE` > `profile use` 设置的 active profile。
+请注意写入/传输能力开关是**全局**的，对所有环境（含 PRD）都生效。
+
+> 当环境变量或 SKILL 本地 `.env` 中同时存在完整的 `SAP_URL/USERNAME/PASSWORD/CLIENT`
+> 四个变量时，它们会整体覆盖所有 profile；可运行 `status` 查看实际生效的配置来源。
 
 ### SKILL 本地 `.env`（推荐用于技能隔离）
 
@@ -155,7 +188,7 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py status
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 ```
 
-凭据保存至 `~/.sap-adt-cli/config.json`，文件权限为 `0600`。
+凭据以 profile 形式（向导会询问 profile 名称）保存至 `~/.sap-adt-cli/config.json`，文件权限为 `0600`。对已存在的 profile 再次运行向导时，密码留空表示保留原密码。
 
 > **安全提示：** 配置文件以明文存储凭据。  
 > 请勿将其提交到版本控制系统，并限制文件访问权限。
@@ -169,6 +202,7 @@ export SAP_URL=https://my-sap.example.com:8000
 export SAP_USERNAME=MYUSER
 export SAP_PASSWORD=secret          # 推荐使用此方式，避免 --password 参数暴露在命令历史中
 export SAP_CLIENT=100
+export SAP_PROFILE=dev              # 可选：选择使用的 profile（SAP_URL..SAP_CLIENT 四者齐全时此项被忽略）
 export SAP_LANGUAGE=EN              # 可选，默认：EN
 export SAP_VERIFY_SSL=0             # 可选：设为 0 以跳过自签名证书验证
 export SAP_ALLOW_WRITE=0            # 可选：设为 1 以开启 write-source/activate
@@ -177,15 +211,14 @@ export SAP_ALLOW_TRANSPORT=0        # 可选：设为 1 以开启 create/release
 
 ### 能力标志（默认：关闭）
 
-两个可选标志用于解锁写入和传输能力。**仅在开发系统上开启。**
+两个可选标志用于解锁写入和传输能力。**仅在确有需要时开启——它们是全局开关，对所有 profile（含生产环境）都生效。** 执行写操作前建议先运行 `status` 确认当前 profile 和开关状态。
 
 ```bash
-# 交互式开启
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
-# → 在写入/传输提示处输入 'y'
+# 交互式开启（在写入/传输提示处输入 'y'）
+python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev
 
 # 非交互式开启
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure \
+SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
   --url "https://sap-dev.example.com:44300" \
   --username "DEVELOPER" \
   --client "400" \
@@ -193,7 +226,7 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
   --no-allow-transport
 ```
 
-| 标志 | 配置字段 | 默认值 | 解锁的命令 |
+| 标志 | 配置字段（全局，对所有 profile 生效） | 默认值 | 解锁的命令 |
 |------|---------|--------|----------|
 | `--allow-write` | `allow_write` | false | `write-source`、`activate` |
 | `--allow-transport` | `allow_transport` | false | `create-transport`、`release-transport` |
@@ -204,7 +237,7 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 
 ```bash
 # 通过环境变量传递密码，避免暴露在 Shell 历史记录中
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure \
+SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
   --url      "https://my-sap.example.com:8000" \
   --username "MYUSER" \
   --client   "100"
@@ -216,8 +249,12 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 
 | 命令 | 说明 |
 |------|------|
-| `configure` | 保存连接凭据 |
-| `status` | 显示当前连接配置 |
+| `configure [--profile NAME]` | 保存某套环境 profile 的连接凭据（向导或参数） |
+| `profile list` | 列出所有环境（`*` 为当前生效） |
+| `profile use <NAME>` | 粘性切换当前生效环境 |
+| `profile remove <NAME>` | 删除环境（当前生效的 profile 受保护） |
+| `status` | 显示当前生效 profile 及连接配置 |
+| `--profile NAME <命令>` | 全局参数：对单条命令临时指定 profile |
 | `get-program <NAME>` | ABAP 程序 / 报表源代码 |
 | `get-class <NAME>` | ABAP 类源代码 |
 | `get-function-group <NAME>` | 函数组顶层 Include 源代码 |
@@ -328,6 +365,8 @@ python3 $CLI release-transport DEVK900001                           # 需 allow_
 | 错误 | 原因 | 解决方法 |
 |------|------|----------|
 | `Not configured` | 未保存凭据 | 运行 `configure` |
+| `Profile 'x' not found` | `--profile`/`SAP_PROFILE` 指定了不存在的环境 | 运行 `profile list` 查看，或用 `configure --profile x` 创建 |
+| 删除时提示 `is currently active` | 当前生效的 profile 不允许删除 | 先 `profile use <其他环境>` 再删除 |
 | `HTTP 401` | 用户名或密码错误 | 重新运行 `configure` |
 | `HTTP 403` | 缺少 `SAP_ADT_BASE` 角色 | 联系 Basis 分配权限 |
 | `HTTP 404` | 对象名称不存在 | 使用 `search-object` 查找正确名称 |
@@ -349,6 +388,15 @@ python3 $CLI release-transport DEVK900001                           # 需 allow_
 ---
 
 ## 版本历史
+
+### v1.2.0 — 多环境 Profile 支持
+
+- **一份配置管理多套 SAP 环境**：`~/.sap-adt-cli/config.json` 现支持命名 profile（`dev`、`qas`、`prd` 等）；旧的单连接配置会自动迁移为 `default` profile
+- **新增命令**：`configure --profile NAME`、`profile list`、`profile use NAME`（粘性切换）、`profile remove NAME`
+- **单次环境覆盖**：全局参数 `--profile NAME`（放在命令名之前）或 `SAP_PROFILE` 环境变量；选择优先级为 `--profile` > `SAP_PROFILE` > 当前 active profile
+- **能力开关改为全局**：`allow_write` / `allow_transport` 对所有 profile 生效——执行写操作前请先用 `status` 确认当前环境
+- **向导体验**：会询问 profile 名称；编辑已有 profile 时密码留空即保留原密码
+- `.env` / `SAP_*` 环境变量仍作为单环境覆盖层，优先级高于所有 profile
 
 ### v1.1.1 — `run-sql` 兼容性与解析修复
 
