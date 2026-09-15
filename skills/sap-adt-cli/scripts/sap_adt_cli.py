@@ -40,7 +40,7 @@ from lib.config import (
     remove_profile,
     SapConfig,
 )
-from lib import credentials, credentials_reports, handlers, log_redaction
+from lib import credentials, credentials_reports, handlers, log_redaction, output
 from lib.keystore.base import KeyStoreError
 
 __version__ = "1.3.0"
@@ -50,9 +50,11 @@ _KEYSTORE_CHOICES = ("env", "keyring", "dpapi", "pass", "file")
 
 def _output(result) -> None:
     if result.is_error:
+        # Batch 1: error stream/exit behavior is untouched; error envelopes
+        # and exit-code tiers land in the error-code batch.
         click.echo(result.text, err=True)
         sys.exit(1)
-    click.echo(result.text)
+    click.echo(output.render(result, output.get_format()))
 
 
 def _require_write(config: SapConfig) -> None:
@@ -135,9 +137,18 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
     help="Force the credential backend for this command (fail-closed if it "
          "is unavailable); see 'credentials doctor'",
 )
+@click.option(
+    "-f", "--format", "fmt",
+    default=None,
+    type=click.Choice(output.VALID_FORMATS),
+    envvar=output.FORMAT_ENVVAR,
+    help="Output format. Currently every command is rendered as today "
+         "(raw passthrough); structured json/text/xml selection rolls out "
+         "command by command. Env: SAP_ADT_FORMAT (flag wins over env).",
+)
 @click.option("-v", "--verbose", is_flag=True, default=False,
               help="Verbose logging (secrets stay redacted)")
-def cli(profile, keystore, verbose):
+def cli(profile, keystore, fmt, verbose):
     """Read and write ABAP source code and metadata from SAP systems via the ADT REST API.
 
     Multiple SAP environments are stored as profiles in
@@ -151,6 +162,7 @@ def cli(profile, keystore, verbose):
     Run 'configure' on first use to save your connection settings.
     """
     log_redaction.configure_logging(verbose)
+    output.set_format(fmt)
     if profile:
         config_module.set_profile_override(profile)
     if keystore:
