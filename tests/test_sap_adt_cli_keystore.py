@@ -43,15 +43,15 @@ class MemoryStore:
 
 class RegistrySelectionTests(unittest.TestCase):
     def setUp(self):
-        self._registered = []
+        # Isolate from the real backends registered at package import.
+        self._saved_registry = keystore_pkg.REGISTRY[:]
+        keystore_pkg.REGISTRY[:] = []
 
     def tearDown(self):
-        for store in self._registered:
-            keystore_pkg.REGISTRY.remove(store)
+        keystore_pkg.REGISTRY[:] = self._saved_registry
 
     def register(self, store):
         keystore_pkg.REGISTRY.append(store)
-        self._registered.append(store)
         return store
 
     def test_select_returns_first_available_in_registry_order(self):
