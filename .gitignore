@@ -21,6 +21,10 @@ env/
 !.env.example
 !**/.env.example
 ~/.sap-abap-cli/
+~/.sap-adt-cli/
+.sap-adt-cli/
+secrets.json
+secrets.enc
 
 # Editor & OS
 .DS_Store

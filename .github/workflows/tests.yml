@@ -33,3 +33,19 @@ jobs:
 
       - name: Credentials doctor smoke (non-secret output only)
         run: python skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+
+  secret-scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/install.sh \
+            | sh -s -- -b "$HOME/.local/bin" v8.21.2
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Scan repository history
+        run: gitleaks detect --config .gitleaks.toml --exit-code 1 --verbose
+

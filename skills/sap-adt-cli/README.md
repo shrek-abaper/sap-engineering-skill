@@ -97,9 +97,11 @@ SAP Client        — 3-digit client number (e.g. 100)
 Skip SSL check?   — yes for self-signed / internal certs
 ```
 
-Credentials can be loaded from process environment variables, a SKILL-local `.env`,
-or a profile in `~\.sap-adt-cli\config.json` and reused in subsequent sessions.
-Multiple SAP systems (DEV/QAS/PRD) are supported as named profiles — see
+Connection details are stored per environment profile in
+`~/.sap-adt-cli/config.json` (non-secret fields only), while **passwords are
+stored in the operating system keystore** — never as plain text. Multiple SAP
+systems (DEV/QAS/PRD) are supported as named profiles — see
+[Credential storage](#credential-storage-keystore) and
 [Multiple SAP environments](#multiple-sap-environments-profiles).
 
 ### Compatible AI agents
@@ -201,28 +203,73 @@ Never commit the real `.env` file.
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 ```
 
-Credentials are saved as a profile (the wizard asks for a profile name) in
-`~/.sap-adt-cli/config.json` with `0600` permissions. Re-running the wizard for
-an existing profile and leaving the password blank keeps the stored password.
+Connection fields are saved as a profile (the wizard asks for a profile name) in
+`~/.sap-adt-cli/config.json` (`0600`); the password goes to the selected
+keystore. Re-running the wizard for an existing profile and leaving the
+password blank keeps the stored password.
 
-> **Security note:** The config file stores credentials in plain text.
-> Do not commit it to version control and restrict access to the file accordingly.
+### Credential storage (keystore)
+
+Passwords are stored **only** through pluggable keystore backends, selected by
+real capability probing rather than by operating system. Priority order:
+
+| # | Backend | Environment | Setup needed | One-time configuration |
+|---|---------|-------------|--------------|------------------------|
+| 1 | `env` | containers / CI / any | none | `export SAP_ADT_<PROFILE>_PASSWORD=...` (read-only) |
+| 2 | `keyring` | native Windows, macOS, Linux desktop | `pip install keyring` (Credential Manager / Keychain / Secret Service) | none |
+| 3 | `dpapi` | **WSL2** | none — uses Windows DPAPI via `powershell.exe` interop | none |
+| 4 | `pass` | headless Linux with GPG | [`pass`](https://www.passwordstore.org/) initialized (`pass init`) | none |
+| 5 | `file` | last-resort fallback, all platforms | `pip install cryptography` | a master passphrase (prompted, or `SAP_ADT_MASTER_PASSPHRASE`) |
+
+There is deliberately no `credentials export` command. Diagnose the active
+backend with:
+
+```bash
+python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+# force a specific backend (fail-closed: an unavailable choice errors out)
+python3 skills/sap-adt-cli/scripts/sap_adt_cli.py --keystore file credentials status
+```
+
+Manage stored passwords:
+
+```bash
+CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
+$CLI credentials set dev          # prompts with hidden input + confirmation
+$CLI credentials status           # configured / not configured per profile — never prints secrets
+$CLI credentials forget dev       # purge from all writable backends
+```
+
+> **Keystore-bound secrets are not portable.** DPAPI blobs are tied to the
+> Windows account and Keychain entries to the macOS login; copying
+> `secrets.json`/the config to another machine or user cannot decrypt them.
+> Re-running `credentials set` on the new machine is expected behavior, not a bug.
+>
+> **Migration from older versions:** a config that still contains plaintext
+> passwords is migrated automatically on first run — the passwords move into
+> the selected keystore, the fields are stripped from `config.json` (no backup
+> copy is created), and you are advised to change those passwords on the SAP
+> side because they previously sat on disk unencrypted.
 
 ### Environment variables
 
-Useful for CI/CD pipelines or one-off sessions. Environment variables take
-precedence over both the SKILL-local `.env` and the saved config file.
+Useful for CI/CD pipelines or one-off sessions. The complete-connection
+variables take precedence over both the SKILL-local `.env` and saved profiles.
 
 ```bash
 export SAP_URL=https://my-sap.example.com:8000
 export SAP_USERNAME=MYUSER
-export SAP_PASSWORD=secret          # prefer this over the --password flag
+export SAP_PASSWORD=secret          # complete-connection override; prefer over the --password flag
 export SAP_CLIENT=100
 export SAP_PROFILE=dev              # optional: select a profile (ignored when SAP_URL..SAP_CLIENT are all set)
 export SAP_LANGUAGE=EN              # optional, default: EN
 export SAP_VERIFY_SSL=0             # optional: set 0 for self-signed certificates
 export SAP_ALLOW_WRITE=0            # optional: set 1 to enable write-source/activate
 export SAP_ALLOW_TRANSPORT=0        # optional: set 1 to enable create/release transport
+
+# Per-profile password for the 'env' keystore (profile 'dev' -> variable SAP_ADT_DEV_PASSWORD)
+export SAP_ADT_DEV_PASSWORD=secret
+# Master passphrase for the 'file' keystore in non-interactive runs
+export SAP_ADT_MASTER_PASSPHRASE=...
 ```
 
 ### Capability flags (default: disabled)
@@ -274,9 +321,15 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 | `configure [--profile NAME]` | Save credentials for one environment profile (wizard or flags) |
 | `profile list` | List all configured environments (`*` = active) |
 | `profile use <NAME>` | Persistently switch the active environment |
-| `profile remove <NAME>` | Delete an environment (active profile is protected) |
+| `profile remove <NAME>` | Delete an environment (active profile is protected) and purge its password |
+| `credentials set <NAME>` | Store a profile password in the keystore (hidden prompt) |
+| `credentials forget <NAME>` | Purge a profile password from writable keystores |
+| `credentials status` | Show configured/not-configured per profile (never prints passwords) |
+| `credentials doctor` | Diagnose backends, selected backend, files and entries |
 | `status` | Show active profile and current connection configuration |
 | `--profile NAME <command>` | Global option: one-off profile override for a single command |
+| `--keystore <env\|keyring\|dpapi\|pass\|file> <command>` | Global option: force the credential backend (fail-closed if unavailable) |
+| `-v, --verbose` | Verbose logging (secrets are always redacted) |
 | `get-program <NAME>` | ABAP program / report source code |
 | `get-class <NAME>` | ABAP class source code |
 | `get-function-group <NAME>` | Function group top-include source code |
@@ -389,7 +442,8 @@ All output is written to **stdout**. Errors are written to **stderr** with a non
 | `Not configured` | No credentials saved | Run `configure` |
 | `Profile 'x' not found` | Unknown profile on `--profile` / `SAP_PROFILE` | Run `profile list` or `configure --profile x` |
 | `is currently active` on remove | Active profile cannot be removed | `profile use <other>` first |
-| `HTTP 401` | Wrong username or password | Re-run `configure` |
+| `HTTP 401` | Wrong username or password | Re-run `configure` or `credentials set <profile>` |
+| `no password ... in the keystore` | Profile has no stored password | `credentials set <profile>` (or `credentials doctor`) |
 | `HTTP 403` | Missing `SAP_ADT_BASE` role | Ask Basis to assign authorization |
 | `HTTP 404` | Object name not found | Try `search-object` to find the correct name |
 | `HTTP 503` | `/sap/bc/adt` not active | Ask Basis to activate in `SICF` |
@@ -399,17 +453,43 @@ All output is written to **stdout**. Errors are written to **stderr** with a non
 
 ## Security Considerations
 
-- Credentials stored in `skills/sap-adt-cli/.env` or `~/.sap-adt-cli/config.json` are **plain text**.
-  Do not commit `.env`; restrict access to the JSON config file (`0600`).
+- **Passwords are never stored in plain text.** `~/.sap-adt-cli/config.json` keeps only
+  non-secret connection fields (URL, username, client, language, TLS flags); the password
+  lives in the OS keystore (DPAPI in WSL, Credential Manager, Keychain, Secret Service,
+  GPG `pass`, or the passphrase-encrypted fallback file). Run `credentials doctor` to see
+  which backend is active. Old plaintext configs are migrated automatically and stripped.
+- DPAPI/Keychain-bound secrets **cannot be copied to another machine or user** — set them
+  again after moving machines. Do not commit `secrets.json`, `secrets.enc` or any `.env`
+  file; the config directory itself should stay on the native filesystem (WSL `/mnt/c`
+  makes chmod ineffective — `credentials doctor` warns about this).
 - Avoid passing passwords via `--password` — they appear in shell history and `ps` output.
-  Prefer the interactive `configure` wizard or the `SAP_PASSWORD` environment variable.
+  Prefer the interactive `configure`/`credentials set` prompts, `SAP_ADT_<PROFILE>_PASSWORD`
+  or the `SAP_PASSWORD` environment variable.
+- Log output (including `-v/--verbose`) and HTTP error tracebacks redact `Authorization`
+  headers and password literals; there is no `credentials export` command by design.
 - Write and transport commands require explicit capability flags (`allow_write`, `allow_transport`)
   plus per-operation `[y/N]` confirmation. Never enable on production systems.
 - For shared or CI environments, use short-lived credentials and rotate them regularly.
+- Optional dependencies stay optional: `pip install keyring` for desktop vaults,
+  `pip install cryptography` for the encrypted-file fallback (the `[file]` extra).
+  The core CLI remains dependency-light.
 
 ---
 
 ## Changelog
+
+### v1.3.0 — Keystore credential storage
+
+- **No more plaintext passwords**: profile passwords move to pluggable OS keystore backends
+  (`env` → `keyring` → `dpapi` → `pass` → `file`); `config.json` keeps non-secret fields only
+- **WSL2**: Windows DPAPI via `powershell.exe` interop, secret passed over stdin (never argv)
+- **Automatic one-way migration** of existing plaintext configs on first run, with a
+  password-rotation warning; idempotent and creates no backup copies
+- **New commands**: `credentials set|forget|status|doctor`; new global options `--keystore`, `-v/--verbose`
+- **Leak hardening**: masked credential/config reprs, redacting log filter, sanitized
+  HTTP errors (no Authorization header in tracebacks), per-process decryption cache
+- Plaintext `keyrings.alt` (incl. PlaintextKeyring) and chainer backends are rejected
+  as insecure
 
 ### v1.2.0 — Multi-environment profiles
 

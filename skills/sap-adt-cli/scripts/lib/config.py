@@ -33,7 +33,8 @@ SAP credentials not configured.
 Credential lookup order (highest priority first):
   1. Process environment variables
   2. .env file in the SKILL directory ({skill_dotenv})
-  3. ~/.sap-adt-cli/config.json (selected profile)
+  3. Selected profile in ~/.sap-adt-cli/config.json, with its password
+     in the OS keystore (run `credentials doctor` to see the backend)
 
 To set up your SAP connection, run:
   python3 sap_adt_cli.py configure
@@ -55,6 +56,9 @@ Optional:
   SAP_VERIFY_SSL - Set to 0 to disable SSL verification (default: 1)
   SAP_ALLOW_WRITE - Set to 1 to enable source write commands (default: 0)
   SAP_ALLOW_TRANSPORT - Set to 1 to enable transport write commands (default: 0)
+
+Per-profile keystore password (env backend): SAP_ADT_<PROFILE>_PASSWORD
+Encrypted-file backend master passphrase (non-interactive): SAP_ADT_MASTER_PASSPHRASE
 """.format(skill_dotenv=_SKILL_DOTENV, default_profile=DEFAULT_PROFILE_NAME)
 
 

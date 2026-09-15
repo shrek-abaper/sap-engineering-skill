@@ -1,3 +1,7 @@
 click>=8.1.0
 requests>=2.31.0
 urllib3>=2.0.0
+
+# Optional keystore backends (core CLI stays dependency-light):
+#   keyring       - OS native vaults: Credential Manager / Keychain / Secret Service
+#   cryptography  - scrypt+Fernet encrypted-file fallback (the [file] extra)

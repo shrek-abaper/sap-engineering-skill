@@ -43,7 +43,7 @@ from lib.config import (
 from lib import credentials, credentials_reports, handlers, log_redaction
 from lib.keystore.base import KeyStoreError
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 _KEYSTORE_CHOICES = ("env", "keyring", "dpapi", "pass", "file")
 

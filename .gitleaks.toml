@@ -1,0 +1,26 @@
+title = "sap-engineering-skill gitleaks configuration"
+
+# Keep the built-in provider rules (AWS, private keys, ...) and add one
+# project rule for hardcoded SAP password/secret literals.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "sap-adt-hardcoded-secret"
+description = "Hardcoded password/secret/token string literal"
+regex = '''(?i)(?:password|passwd|secret|token)\s*[:=]\s*["'][A-Za-z0-9!@#$%^&*()_+\-=]{8,}["']'''
+
+# Global exceptions: documentation and test fixtures use placeholders
+# deliberately, and .env.example is a template.
+[allowlist]
+paths = [
+  '''(?i)\.md$''',
+  '''(^|/)\.env\.example$''',
+  '''(^|/)tests?/''',
+  '''(^|/)references/''',
+  '''(^|/)__pycache__/''',
+  '''(?i)\.pyc$''',
+]
+regexes = [
+  '''YOUR_(?:PASSWORD|SECRET|TOKEN|KEY)''',
+]

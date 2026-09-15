@@ -108,7 +108,8 @@ If the user works with multiple SAP systems, also ask for a short environment
 name (e.g. `dev`, `qas`, `prd`) and pass it as `--profile NAME`. On the first
 ever setup, omitting `--profile` creates and activates a profile named `default`.
 
-**After receiving all answers from the single question call, save with one configure command:**
+**After receiving all answers from the single question call, save the non-secret
+fields with one configure command, then store the password in the keystore:**
 
 ```bash
 python3 "$SAP_CLI" configure --profile dev \
@@ -117,9 +118,11 @@ python3 "$SAP_CLI" configure --profile dev \
   --client   "100" \
   --language "EN"
   # add --no-verify-ssl if user said yes to skipping SSL
+python3 "$SAP_CLI" credentials set dev   # hidden prompt; or use the env var below
 ```
 
-Pass the password via environment variable to avoid shell history exposure:
+Pass the password via environment variable to avoid shell history exposure
+(it is moved into the keystore by `configure` and does not remain in config.json):
 
 ```bash
 SAP_PASSWORD="mysecret" python3 "$SAP_CLI" configure --profile dev \
@@ -134,9 +137,12 @@ Then verify:
 python3 "$SAP_CLI" status
 ```
 
-Credentials are saved as a profile in `~/.sap-adt-cli/config.json` (permissions
-0600) and reused in all future sessions. An old single-connection config is
-migrated automatically to a profile named `default`.
+Connection fields are saved as a profile in `~/.sap-adt-cli/config.json`
+(permissions 0600); the **password is stored only in the operating system
+keystore** (`credentials doctor` shows which backend is active), never as plain
+text in the config. An old single-connection or plaintext-password config is
+migrated automatically to a profile named `default`, with the password moved
+into the keystore.
 
 **To enable write or transport capabilities** (these flags are **GLOBAL** — they
 apply to every profile, so a write-enabled setup can also write to PRD; confirm
@@ -171,9 +177,15 @@ SAP_PASSWORD="mysecret" python3 "$SAP_CLI" configure --profile dev \
 > (e.g. a trusted CI pipeline). Never pass `--yes` on behalf of the user
 > based on a previous confirmation in the same conversation.
 
-> **Security note:** inform the user that credentials stored in SKILL-local `.env`
-> or `~/.sap-adt-cli/config.json` are plain text. The JSON config file is
-> protected with `0600` permissions but is not encrypted.
+> **Security note:** profile passwords are stored in the OS keystore, not in the
+> config file. Backend priority is `env` (`SAP_ADT_<PROFILE>_PASSWORD`) →
+> `keyring` (Credential Manager / Keychain / Secret Service) → `dpapi` (WSL2) →
+> `pass` (GPG) → `file` (scrypt+Fernet fallback with a master passphrase).
+> Inform users: stored passwords are **not portable across machines** (DPAPI /
+> Keychain binding) — re-run `credentials set <profile>` after moving machines.
+> There is no export command, and `-v/--verbose` output and error tracebacks
+> stay redacted. Commands: `credentials set|forget|status|doctor`; global
+> `--keystore <name>` forces a backend fail-closed.
 
 **Alternative A — SKILL-local `.env`** (recommended for per-skill isolation):
 
@@ -200,8 +212,9 @@ unless the user explicitly authorizes write or transport operations.
 
 ## Multiple SAP Environments (Profiles)
 
-Profiles store one connection (URL/username/password/client/language/SSL) per
-SAP system. Write/transport capability switches are **global**, not per profile.
+Profiles store one connection (URL/username/client/language/SSL) per SAP
+system in `config.json`; the per-profile password lives in the keystore.
+Write/transport capability switches are **global**, not per profile.
 
 ```bash
 # Configure environments (each becomes the active profile when saved)
@@ -343,8 +356,9 @@ python3 "$SAP_CLI" release-transport DEVK900001 --yes     # skip confirm (truste
 - **`get-type-info` fallback**: tries domain first; if not found, falls back to data element
 - **SSL**: for internal SAP systems with self-signed certs, configure with SSL disabled (`SAP_VERIFY_SSL=0` or answer "n" in wizard)
 - **Session reuse**: the HTTP session is reused within a single script invocation; each `python3 "$SAP_CLI" ...` call starts fresh
-- **Credentials precedence**: process env vars > SKILL-local `.env` > selected profile in `~/.sap-adt-cli/config.json`; profile picks `--profile` > `SAP_PROFILE` > `active_profile`
+- **Credentials precedence**: complete-connection env vars (`SAP_URL/USERNAME/PASSWORD/CLIENT`, process env > SKILL-local `.env`) override profiles entirely; otherwise non-secret fields come from the selected profile in `~/.sap-adt-cli/config.json` and the password from the keystore, where `SAP_ADT_<PROFILE>_PASSWORD` (`env` backend) wins over other backends; profile picks `--profile` > `SAP_PROFILE` > `active_profile`
 - **Profiles vs. env override**: a complete set of `SAP_URL/USERNAME/PASSWORD/CLIENT` in env or `.env` bypasses all profiles; `status` shows the source it used — switching profiles has no effect while that override exists
+- **Keystore management**: `credentials status` (configured/not-configured per profile, never the secret), `credentials doctor` (active backend, file modes, entries), `credentials set/forget`; run `doctor` when a user reports credential problems before debugging ADT calls
 - **Global capability flags**: `allow_write` / `allow_transport` are global, not per profile; check `Profile:` and the switches in `status` before any write to a production-like system
 - **Capability flags — config layer**: `write-source` and `activate` require `allow_write: true`;
   `create-transport` and `release-transport` require `allow_transport: true`.
@@ -394,7 +408,8 @@ python3 "$SAP_CLI" release-transport DEVK900001 --yes     # skip confirm (truste
 | `Not configured` | No saved credentials | Guide user through `configure` |
 | `Profile 'x' not found` | `--profile`/`SAP_PROFILE` names an unknown profile | Run `profile list`, or `configure --profile x` to create it |
 | `is currently active` on remove | Tried to remove the active profile | `profile use <other>` first, then remove |
-| `HTTP 401` | Wrong username/password | Ask user to re-run `configure` |
+| `HTTP 401` | Wrong username/password | Ask user to re-run `configure` or `credentials set <profile>` |
+| `no password ... in the keystore` | Profile has no stored password | Run `credentials set <profile>` or `credentials doctor` |
 | `HTTP 403` | Missing ADT authorization | User needs `SAP_ADT_BASE` role or equivalent |
 | `HTTP 404` | Object name not found | Try `search-object` to find the correct name |
 | `HTTP 503` | ADT service not active | SAP Basis must activate `/sap/bc/adt` in transaction SICF |

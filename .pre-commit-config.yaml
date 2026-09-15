@@ -1,0 +1,7 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: gitleaks (staged secret scan)
+        args: ["protect", "--staged", "--verbose", "--config", ".gitleaks.toml"]
