@@ -1,0 +1,502 @@
+[
+  {
+    "BUKRS": "1000",
+    "BUTXT": "Sample Company 001",
+    "WAERS": "EUR"
+  },
+  {
+    "BUKRS": "1001",
+    "BUTXT": "Sample Company 002",
+    "WAERS": "USD"
+  },
+  {
+    "BUKRS": "1002",
+    "BUTXT": "Sample Company 003",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1003",
+    "BUTXT": "Sample Company 004",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1004",
+    "BUTXT": "Sample Company 005",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1005",
+    "BUTXT": "Sample Company 006",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1006",
+    "BUTXT": "Sample Company 007",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1007",
+    "BUTXT": "Sample Company 008",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1008",
+    "BUTXT": "Sample Company 009",
+    "WAERS": "SGD"
+  },
+  {
+    "BUKRS": "1009",
+    "BUTXT": "Sample Company 010",
+    "WAERS": "EUR"
+  },
+  {
+    "BUKRS": "1010",
+    "BUTXT": "Sample Company 011",
+    "WAERS": "USD"
+  },
+  {
+    "BUKRS": "1011",
+    "BUTXT": "Sample Company 012",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1012",
+    "BUTXT": "Sample Company 013",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1013",
+    "BUTXT": "Sample Company 014",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1014",
+    "BUTXT": "Sample Company 015",
+    "WAERS": "EUR"
+  },
+  {
+    "BUKRS": "1015",
+    "BUTXT": "Sample Company 016",
+    "WAERS": "NOK"
+  },
+  {
+    "BUKRS": "1016",
+    "BUTXT": "Sample Company 017",
+    "WAERS": "EUR"
+  },
+  {
+    "BUKRS": "1017",
+    "BUTXT": "Sample Company 018",
+    "WAERS": "EUR"
+  },
+  {
+    "BUKRS": "1018",
+    "BUTXT": "Sample Company 019",
+    "WAERS": "SEK"
+  },
+  {
+    "BUKRS": "1019",
+    "BUTXT": "Sample Company 020",
+    "WAERS": "DKK"
+  },
+  {
+    "BUKRS": "1020",
+    "BUTXT": "Sample Company 021",
+    "WAERS": "EUR"
+  },
+  {
+    "BUKRS": "1021",
+    "BUTXT": "Sample Company 022",
+    "WAERS": "GBP"
+  },
+  {
+    "BUKRS": "1022",
+    "BUTXT": "Sample Company 023",
+    "WAERS": "EUR"
+  },
+  {
+    "BUKRS": "1023",
+    "BUTXT": "Sample Company 024",
+    "WAERS": "CHF"
+  },
+  {
+    "BUKRS": "1024",
+    "BUTXT": "Sample Company 025",
+    "WAERS": "HUF"
+  },
+  {
+    "BUKRS": "1025",
+    "BUTXT": "Sample Company 026",
+    "WAERS": "HUF"
+  },
+  {
+    "BUKRS": "1026",
+    "BUTXT": "Sample Company 027",
+    "WAERS": "USD"
+  },
+  {
+    "BUKRS": "1027",
+    "BUTXT": "Sample Company 028",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1028",
+    "BUTXT": "Sample Company 029",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1029",
+    "BUTXT": "Sample Company 030",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1030",
+    "BUTXT": "Sample Company 031",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1031",
+    "BUTXT": "Sample Company 032",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1032",
+    "BUTXT": "Sample Company 033",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1033",
+    "BUTXT": "Sample Company 034",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1034",
+    "BUTXT": "Sample Company 035",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1035",
+    "BUTXT": "Sample Company 036",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1036",
+    "BUTXT": "Sample Company 037",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1037",
+    "BUTXT": "Sample Company 038",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1038",
+    "BUTXT": "Sample Company 039",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1039",
+    "BUTXT": "Sample Company 040",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1040",
+    "BUTXT": "Sample Company 041",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1041",
+    "BUTXT": "Sample Company 042",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1042",
+    "BUTXT": "Sample Company 043",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1043",
+    "BUTXT": "Sample Company 044",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1044",
+    "BUTXT": "Sample Company 045",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1045",
+    "BUTXT": "Sample Company 046",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1046",
+    "BUTXT": "Sample Company 047",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1047",
+    "BUTXT": "Sample Company 048",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1048",
+    "BUTXT": "Sample Company 049",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1049",
+    "BUTXT": "Sample Company 050",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1050",
+    "BUTXT": "Sample Company 051",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1051",
+    "BUTXT": "Sample Company 052",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1052",
+    "BUTXT": "Sample Company 053",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1053",
+    "BUTXT": "Sample Company 054",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1054",
+    "BUTXT": "Sample Company 055",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1055",
+    "BUTXT": "Sample Company 056",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1056",
+    "BUTXT": "Sample Company 057",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1057",
+    "BUTXT": "Sample Company 058",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1058",
+    "BUTXT": "Sample Company 059",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1059",
+    "BUTXT": "Sample Company 060",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1060",
+    "BUTXT": "Sample Company 061",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1061",
+    "BUTXT": "Sample Company 062",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1062",
+    "BUTXT": "Sample Company 063",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1063",
+    "BUTXT": "Sample Company 064",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1064",
+    "BUTXT": "Sample Company 065",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1065",
+    "BUTXT": "Sample Company 066",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1066",
+    "BUTXT": "Sample Company 067",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1067",
+    "BUTXT": "Sample Company 068",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1068",
+    "BUTXT": "Sample Company 069",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1069",
+    "BUTXT": "Sample Company 070",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1070",
+    "BUTXT": "Sample Company 071",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1071",
+    "BUTXT": "Sample Company 072",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1072",
+    "BUTXT": "Sample Company 073",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1073",
+    "BUTXT": "Sample Company 074",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1074",
+    "BUTXT": "Sample Company 075",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1075",
+    "BUTXT": "Sample Company 076",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1076",
+    "BUTXT": "Sample Company 077",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1077",
+    "BUTXT": "Sample Company 078",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1078",
+    "BUTXT": "Sample Company 079",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1079",
+    "BUTXT": "Sample Company 080",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1080",
+    "BUTXT": "Sample Company 081",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1081",
+    "BUTXT": "Sample Company 082",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1082",
+    "BUTXT": "Sample Company 083",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1083",
+    "BUTXT": "Sample Company 084",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1084",
+    "BUTXT": "Sample Company 085",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1085",
+    "BUTXT": "Sample Company 086",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1086",
+    "BUTXT": "Sample Company 087",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1087",
+    "BUTXT": "Sample Company 088",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1088",
+    "BUTXT": "Sample Company 089",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1089",
+    "BUTXT": "Sample Company 090",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1090",
+    "BUTXT": "Sample Company 091",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1091",
+    "BUTXT": "Sample Company 092",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1092",
+    "BUTXT": "Sample Company 093",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1093",
+    "BUTXT": "Sample Company 094",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1094",
+    "BUTXT": "Sample Company 095",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1095",
+    "BUTXT": "Sample Company 096",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1096",
+    "BUTXT": "Sample Company 097",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1097",
+    "BUTXT": "Sample Company 098",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1098",
+    "BUTXT": "Sample Company 099",
+    "WAERS": "CNY"
+  },
+  {
+    "BUKRS": "1099",
+    "BUTXT": "Sample Company 100",
+    "WAERS": "CNY"
+  }
+]

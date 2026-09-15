@@ -1,0 +1,1 @@
+CSRF token validation failed

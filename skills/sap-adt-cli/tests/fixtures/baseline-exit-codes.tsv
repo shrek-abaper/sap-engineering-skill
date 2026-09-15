@@ -1,0 +1,16 @@
+get-table.VBAK.xml	0
+get-table.T001.xml	0
+get-structure.VBAKKOM.xml	0
+get-type-info.dataelement.xml	0
+get-type-info.domain.xml	0
+get-transaction.VA01.xml	0
+search-object.wildcard.xml	0
+search-object.empty.xml	0
+where-used.hits.xml	1
+get-package.json	0
+list-transports.xml	1
+syntax-check.clean.xml	1
+run-sql.t001.xml	0
+get-class.source.abap	0
+error.404.txt	1
+error.dml-rejected.txt	1

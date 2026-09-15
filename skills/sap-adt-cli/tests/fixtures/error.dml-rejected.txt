@@ -1,0 +1,2 @@
+ERROR: SQL write operations (INSERT/UPDATE/DELETE/MERGE/MODIFY/TRUNCATE) are not permitted.
+Direct DML execution via run-sql is disabled in this version.

@@ -1,0 +1,71 @@
+@EndUserText.label : 'Buchungskreise'
+@AbapCatalog.enhancement.category : #EXTENSIBLE_CHARACTER_NUMERIC
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #ALLOWED
+define table t001 {
+  @AbapCatalog.foreignKey.keyType : #KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  key mandt     : mandt not null
+    with foreign key [0..*,1] t000
+      where mandt = t001.mandt;
+  key bukrs     : bukrs not null;
+  butxt         : butxt;
+  ort01         : ort01;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  land1         : land1
+    with foreign key [0..*,1] t005
+      where mandt = t001.mandt
+        and land1 = t001.land1;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  waers         : waers
+    with foreign key [0..*,1] tcurc
+      where mandt = t001.mandt
+        and waers = t001.waers;
+  @AbapCatalog.textLanguage
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  spras         : spras
+    with foreign key [0..*,1] t002
+      where spras = t001.spras;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  ktopl         : ktopl
+    with foreign key [0..*,1] t004
+      where mandt = t001.mandt
+        and ktopl = t001.ktopl;
+  waabw         : waabw_001;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  periv         : periv
+    with foreign key [0..*,1] t009
+      where mandt = t001.mandt
+        and periv = t001.periv;
+  kokfi         : kokfi;
+  @AbapCatalog.foreignKey.label : 'Zuordnung Buchungskreis zu Gesellschaft'
+  @AbapCatalog.foreignKey.keyType : #KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  rcomp         : rcomp_d
+    with foreign key [0..*,0..1] t880
+      where mandt = t001.mandt
+        and rcomp = t001.rcomp;
+  adrnr         : adrnr;
+  stceg         : stceg;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  fikrs         : fikrs
+    with foreign key [0..*,0..1] fm01
+      where mandt = t001.mandt
+        and fikrs = t001.fikrs;
+  xfmco         : xfmco;
+  xfmcb         : xfmcb;
+  xfmca         : xfmca;
+  txjcd         : txjcd_nstx;
+  fmhrdate      : fm_hrdate;
+  xtemplt       : fins_xtemplt;
+  transit_plant : fins_transit_plant;
+  include si_t001;
+
+}

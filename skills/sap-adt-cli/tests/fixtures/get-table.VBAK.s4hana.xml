@@ -1,0 +1,394 @@
+@EndUserText.label : 'Sales Document: Header Data'
+@AbapCatalog.enhancement.category : #EXTENSIBLE_CHARACTER_NUMERIC
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table vbak {
+  @AbapCatalog.foreignKey.keyType : #KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  key mandt               : mandt not null
+    with foreign key [0..*,1] t000
+      where mandt = vbak.mandt;
+  key vbeln               : vbeln_va not null
+    with value help f4_vbak
+      where vbeln = vbak.vbeln;
+  erdat                   : erdat;
+  erzet                   : erzet;
+  ernam                   : ernam;
+  angdt                   : angdt_v;
+  bnddt                   : bnddt;
+  audat                   : audat;
+  vbtyp                   : vbtypl;
+  trvog                   : trvog;
+  @AbapCatalog.foreignKey.label : 'Order type in order header'
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  auart                   : auart
+    with foreign key [0..*,1] tvak
+      where mandt = vbak.mandt
+        and auart = vbak.auart;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  augru                   : augru
+    with foreign key [0..*,0..1] tvau
+      where mandt = vbak.mandt
+        and augru = vbak.augru;
+  gwldt                   : gwldt;
+  submi                   : submi_sd;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  lifsk                   : lifsk
+    with foreign key [0..*,0..1] tvls
+      where mandt = vbak.mandt
+        and lifsp = vbak.lifsk;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  faksk                   : faksk
+    with foreign key [0..*,0..1] tvfs
+      where mandt = vbak.mandt
+        and faksp = vbak.faksk;
+  @Semantics.amount.currencyCode : 'vbak.waerk'
+  netwr                   : netwr_ak;
+  @AbapCatalog.foreignKey.label : 'Currency in order header'
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  waerk                   : waerk
+    with foreign key [0..*,0..1] tcurc
+      where mandt = vbak.mandt
+        and waers = vbak.waerk;
+  @AbapCatalog.foreignKey.label : 'Sales organization in order header'
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  vkorg                   : vkorg
+    with foreign key [0..*,1] tvko
+      where mandt = vbak.mandt
+        and vkorg = vbak.vkorg;
+  @AbapCatalog.foreignKey.label : 'Distribution channel in order header'
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  vtweg                   : vtweg
+    with foreign key [0..*,1] tvkov
+      where mandt = vbak.mandt
+        and vkorg = vbak.vkorg
+        and vtweg = vbak.vtweg;
+  @AbapCatalog.foreignKey.label : 'Division in order header'
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  spart                   : spart
+    with foreign key [0..*,1] tvta
+      where mandt = vbak.mandt
+        and vkorg = vbak.vkorg
+        and vtweg = vbak.vtweg
+        and spart = vbak.spart;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  vkgrp                   : vkgrp
+    with foreign key [0..*,0..1] tvbvk
+      where mandt = vbak.mandt
+        and vkbur = vbak.vkbur
+        and vkgrp = vbak.vkgrp;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  vkbur                   : vkbur
+    with foreign key [0..*,0..1] tvkbz
+      where mandt = vbak.mandt
+        and vkorg = vbak.vkorg
+        and vtweg = vbak.vtweg
+        and spart = vbak.spart
+        and vkbur = vbak.vkbur;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  gsber                   : gsber
+    with foreign key [0..*,0..1] tgsb
+      where mandt = vbak.mandt
+        and gsber = vbak.gsber;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  gskst                   : gskst
+    with foreign key [0..*,0..1] tgsb
+      where mandt = vbak.mandt
+        and gsber = vbak.gskst;
+  guebg                   : guebg;
+  gueen                   : gueen;
+  knumv                   : knumv;
+  vdatu                   : edatu_vbak;
+  delivery_date_type_rule : sd_delivery_date_type_rule;
+  vprgr                   : prgrs_vbak;
+  autlf                   : autlf;
+  vbkla                   : vbkla;
+  vbklt                   : vbklt;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kalsm                   : kalsmasd
+    with foreign key [0..*,0..1] t683
+      where mandt = vbak.mandt
+        and kvewe = t681v.kvewe
+        and kappl = t681a.kappl
+        and kalsm = vbak.kalsm;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  vsbed                   : vsbed
+    with foreign key [0..*,0..1] tvsb
+      where mandt = vbak.mandt
+        and vsbed = vbak.vsbed;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  fkara                   : fkara
+    with foreign key [0..*,0..1] tvfk
+      where mandt = vbak.mandt
+        and fkart = vbak.fkara;
+  awahr                   : awahr_ak;
+  ktext                   : ktext_v;
+  bstnk                   : bstnk;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  bsark                   : bsark
+    with foreign key [0..*,0..1] t176
+      where mandt = vbak.mandt
+        and bsark = vbak.bsark;
+  bstdk                   : bstdk;
+  bstzd                   : bstzd;
+  ihrez                   : ihrez;
+  bname                   : bname_v;
+  telf1                   : telf1_vp;
+  mahza                   : mahza;
+  mahdt                   : mahdt;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kunnr                   : kunag
+    with foreign key [0..*,0..1] kna1
+      where mandt = vbak.mandt
+        and kunnr = vbak.kunnr;
+  kostl                   : kostl;
+  stafo                   : stafo;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  stwae                   : stwae
+    with foreign key [0..*,0..1] tcurc
+      where mandt = vbak.mandt
+        and waers = vbak.stwae;
+  aedat                   : aedat;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kvgr1                   : kvgr1
+    with foreign key [0..*,0..1] tvv1
+      where mandt = vbak.mandt
+        and kvgr1 = vbak.kvgr1;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kvgr2                   : kvgr2
+    with foreign key [0..*,0..1] tvv2
+      where mandt = vbak.mandt
+        and kvgr2 = vbak.kvgr2;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kvgr3                   : kvgr3
+    with foreign key [0..*,0..1] tvv3
+      where mandt = vbak.mandt
+        and kvgr3 = vbak.kvgr3;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kvgr4                   : kvgr4
+    with foreign key [0..*,0..1] tvv4
+      where mandt = vbak.mandt
+        and kvgr4 = vbak.kvgr4;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kvgr5                   : kvgr5
+    with foreign key [0..*,0..1] tvv5
+      where mandt = vbak.mandt
+        and kvgr5 = vbak.kvgr5;
+  @AbapCatalog.foreignKey.keyType : #KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  knuma                   : knuma
+    with foreign key [0..*,1] kona
+      where mandt = vbak.mandt
+        and knuma = vbak.knuma;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kokrs                   : kokrs
+    with foreign key [0..*,0..1] tka01
+      where mandt = vbak.mandt
+        and kokrs = vbak.kokrs;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : false
+  ps_psp_pnr              : ps_psp_pnr
+    with foreign key [0..*,0..1] prps
+      where mandt = vbak.mandt
+        and pspnr = vbak.ps_psp_pnr;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kurst                   : kurst
+    with foreign key [0..*,0..1] tcurv
+      where mandt = vbak.mandt
+        and kurst = vbak.kurst;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : false
+  kkber                   : kkber
+    with foreign key [0..*,0..1] t014
+      where mandt = vbak.mandt
+        and kkber = vbak.kkber;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : false
+  knkli                   : knkli
+    with foreign key [0..*,0..1] kna1
+      where mandt = vbak.mandt
+        and kunnr = vbak.knkli;
+  grupp                   : grupp_cm;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : false
+  sbgrp                   : sbgrp_cm
+    with foreign key [0..*,0..1] t024b
+      where mandt = vbak.mandt
+        and sbgrp = vbak.sbgrp
+        and kkber = vbak.kkber;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : false
+  ctlpc                   : ctlpc_cm
+    with foreign key [0..*,0..1] t691a
+      where mandt = vbak.mandt
+        and ctlpc = vbak.ctlpc
+        and kkber = vbak.kkber;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : false
+  cmwae                   : waers_cm
+    with foreign key [0..*,0..1] tcurc
+      where mandt = vbak.mandt
+        and waers = vbak.cmwae;
+  cmfre                   : cmfre;
+  cmnup                   : cmnup;
+  cmngv                   : cmngv;
+  @Semantics.amount.currencyCode : 'vbak.cmwae'
+  amtbl                   : amtbl_cm;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  hityp_pr                : hityp_pr
+    with foreign key [0..*,0..1] thit
+      where mandt = vbak.mandt
+        and hityp = vbak.hityp_pr;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  abrvw                   : abrvw
+    with foreign key [0..*,0..1] tvlv
+      where mandt = vbak.mandt
+        and abrvw = vbak.abrvw;
+  abdis                   : abdis;
+  vgbel                   : vgbel;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  objnr                   : objko
+    with foreign key [0..*,0..1] onr00
+      where mandt = vbak.mandt
+        and objnr = vbak.objnr;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  bukrs_vf                : bukrs_vf
+    with foreign key [0..*,0..1] t001
+      where mandt = vbak.mandt
+        and bukrs = vbak.bukrs_vf;
+  taxk1                   : taxk1_ak;
+  taxk2                   : taxk2;
+  taxk3                   : taxk3;
+  taxk4                   : taxk4;
+  taxk5                   : taxk5;
+  taxk6                   : taxk6;
+  taxk7                   : taxk7;
+  taxk8                   : taxk8;
+  taxk9                   : taxk9;
+  xblnr                   : xblnr_v1;
+  zuonr                   : ordnr_v;
+  vgtyp                   : vbtypl_v;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  kalsm_ch                : kalsma_ch
+    with foreign key [0..*,0..1] t683
+      where mandt = vbak.mandt
+        and kvewe = t681v.kvewe
+        and kappl = t681a.kappl
+        and kalsm = vbak.kalsm_ch;
+  agrzr                   : agrzr;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  aufnr                   : aufnr
+    with foreign key [0..*,0..1] aufk
+      where mandt = vbak.mandt
+        and aufnr = vbak.aufnr;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  qmnum                   : qmnum
+    with foreign key [0..*,0..1] qmel
+      where mandt = vbak.mandt
+        and qmnum = vbak.qmnum;
+  vbeln_grp               : vbeln_grp;
+  @AbapCatalog.foreignKey.screenCheck : true
+  scheme_grp              : scheme_grp
+    with foreign key [0..*,1] tvgrps
+      where mandt = vbak.mandt
+        and scheme = vbak.scheme_grp;
+  abruf_part              : abruf_part;
+  abhod                   : abhod;
+  abhov                   : abhoz;
+  abhob                   : abhoz;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  rplnr                   : rplnr
+    with foreign key [1,0..1] fpla
+      where mandt = vbak.mandt
+        and fplnr = vbak.rplnr;
+  vzeit                   : ezeit_vbak;
+  @AbapCatalog.foreignKey.screenCheck : true
+  stceg_l                 : land1tx
+    with foreign key [0..*,0..1] t005
+      where mandt = vbak.mandt
+        and land1 = vbak.stceg_l;
+  @AbapCatalog.foreignKey.screenCheck : true
+  landtx                  : landtx
+    with foreign key [0..*,0..1] t005
+      where mandt = vbak.mandt
+        and land1 = vbak.landtx;
+  xegdr                   : xegdr;
+  enqueue_grp             : enqueue_grp;
+  dat_fzau                : dat_fzau;
+  fmbdat                  : mbdat;
+  vsnmr_v                 : vsnmr_v;
+  handle                  : tsegguid_vbak;
+  @AbapCatalog.foreignKey.screenCheck : true
+  proli                   : adge_proli
+    with foreign key tdgc5
+      where mandt = vbak.mandt
+        and proli = vbak.proli
+    with value help tdgc5_proli_01
+      where proli = vbak.proli;
+  cont_dg                 : adge_ncdg;
+  crm_guid                : char70;
+  upd_tmstmp              : timestampl;
+  msr_id                  : msr_process_id;
+  tm_ctrl_key             : tm_ctrl_key;
+  oipbl                   : oif_pblnr;
+  last_changed_by_user    : last_changed_by_user;
+  include handover_location;
+  ext_bus_syst_id         : sd_ext_bus_syst_id;
+  ext_ref_doc_id          : sd_ext_ref_doc_id;
+  ext_rev_tmstmp          : ext_rev_tmstmp;
+  apm_approval_status     : sd_apm_approval_status;
+  @AbapCatalog.foreignKey.screenCheck : true
+  apm_approval_reason     : sd_apm_approval_reason
+    with foreign key [0..*,1] sdapmaprr
+      where client = vbak.mandt
+        and apm_approval_reason = vbak.apm_approval_reason;
+  @AbapCatalog.foreignKey.screenCheck : true
+  apm_rejection_reason    : sd_apm_rejection_reason
+    with foreign key [0..*,1] sdapmrejr
+      where client = vbak.mandt
+        and apm_rejection_reason = vbak.apm_rejection_reason;
+  solution_order_id       : crms4_solo_object_id;
+  ext_comm_syst_type      : tdd_comm_syst_type;
+  retro_purchdoc_creation : edi_retro_purchdoc_creation;
+  crossitem_prc_date      : crossitem_prc_date;
+  _dataaging              : data_temperature;
+  vbak_status             : include vbak_status;
+  tech_fields             : include vbak_tech_fields;
+  ext                     : include sdsalesdoc_incl_eew_ps;
+  include vbak_ext_glo;
+
+}

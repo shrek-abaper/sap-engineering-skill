@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><chkrun:checkRunReports xmlns:chkrun="http://www.sap.com/adt/checkrun"><chkrun:checkReport chkrun:reporter="abapCheckRun" chkrun:triggeringUri="/sap/bc/adt/oo/classes/CL_GUI_FRONTEND_SERVICES" chkrun:status="processed" chkrun:statusText="Object CL_GUI_FRONTEND_SERVICES has been checked"/></chkrun:checkRunReports>

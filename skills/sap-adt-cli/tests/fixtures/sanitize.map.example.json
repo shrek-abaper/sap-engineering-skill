@@ -1,0 +1,13 @@
+{
+  "host_url": "https://your-internal-host.example",
+  "host_with_port": "your-internal-host.example",
+  "host": "your-internal-host.example",
+  "username": "YOUR_ADT_USER",
+  "profile": "your-dev-profile",
+  "extra_leaks": [],
+  "placeholder_url": "https://sap-dev.example.com:8000",
+  "placeholder_host": "sap-dev.example.com:8000",
+  "placeholder_host_ip": "sap-dev.example.com",
+  "placeholder_user": "DEVELOPER",
+  "placeholder_profile": "dev"
+}

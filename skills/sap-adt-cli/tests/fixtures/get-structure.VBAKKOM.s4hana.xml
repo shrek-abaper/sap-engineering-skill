@@ -1,0 +1,113 @@
+@EndUserText.label : 'Communication Fields for Maintaining the SD Doc.Header'
+@AbapCatalog.enhancement.category : #EXTENSIBLE_CHARACTER_NUMERIC
+define structure vbakkom {
+  vbeln        : vbeln_va;
+  auart        : auart;
+  submi        : submi;
+  vkorg        : vkorg;
+  vtweg        : vtweg;
+  spart        : spart;
+  vkgrp        : vkgrp;
+  vkbur        : vkbur;
+  vdatu        : edatu_vbak;
+  vprgr        : prgrs_vbak;
+  bstnk        : bstnk;
+  bstzd        : bstzd;
+  bname        : bname_v;
+  telf1        : telf1_vp;
+  lifsk        : lifsk;
+  faksk        : faksk;
+  augru        : augru;
+  angdt        : angdt_v;
+  bnddt        : bnddt;
+  guebg        : guebg;
+  gueen        : gueen;
+  ktext        : ktext_v;
+  kschl1       : kscha;
+  @Semantics.amount.currencyCode : 'rv45a.koein'
+  kbetr1       : kbetr;
+  kwaer1       : waers;
+  kpein1       : kpein;
+  kmein1       : kvmei;
+  kschl2       : kscha;
+  @Semantics.amount.currencyCode : 'rv45a.koein'
+  kbetr2       : kbetr;
+  kwaer2       : waers;
+  kpein2       : kpein;
+  kmein2       : kvmei;
+  kschl3       : kscha;
+  @Semantics.amount.currencyCode : 'rv45a.koein'
+  kbetr3       : kbetr;
+  kwaer3       : waers;
+  kpein3       : kpein;
+  kmein3       : kvmei;
+  kschl4       : kscha;
+  @Semantics.amount.currencyCode : 'rv45a.koein'
+  kbetr4       : kbetr;
+  kwaer4       : waers;
+  kpein4       : kpein;
+  kmein4       : kvmei;
+  waerk        : waerk;
+  knuma        : knuma;
+  vgbel        : vgbel;
+  vgtyp        : vbtypl;
+  xblnr        : xblnr_v1;
+  zuonr        : ordnr_v;
+  include vedakom;
+  include vbakkoz;
+  kvgr1        : kvgr1;
+  kvgr2        : kvgr2;
+  kvgr3        : kvgr3;
+  kvgr4        : kvgr4;
+  kvgr5        : kvgr5;
+  autlf        : autlf;
+  abrvw        : abrvw;
+  abdis        : abdis;
+  @AbapCatalog.foreignKey.keyType : #NON_KEY
+  @AbapCatalog.foreignKey.screenCheck : true
+  vsbed        : vsbed
+    with foreign key [0..*,0..1] tvsb
+      where mandt = syst.mandt
+        and vsbed = vbakkom.vsbed;
+  taxk1        : taxk1_ak;
+  taxk2        : taxk2;
+  taxk3        : taxk3;
+  taxk4        : taxk4;
+  taxk5        : taxk5;
+  taxk6        : taxk6;
+  taxk7        : taxk7;
+  taxk8        : taxk8;
+  taxk9        : taxk9;
+  bukrs_vf     : bukrs_vf;
+  audat        : audat;
+  gwldt        : gwldt;
+  mahza        : mahza;
+  mahdt        : mahdt;
+  landtx       : landtx;
+  stceg_l      : land1tx;
+  xegdr        : xegdr;
+  vbeln_grp    : vbeln_grp;
+  scheme_grp   : scheme_grp;
+  abruf_part   : abruf_part;
+  dat_fzau     : dat_fzau;
+  vsnmr_v      : vsnmr_v;
+  include vbkdkom;
+  qmnum        : qmnum;
+  ps_psp_pnr   : ps_psp_pnr;
+  ernam        : ernam;
+  vbkla        : vbkla;
+  h_curr       : waers;
+  logsysb      : logsys;
+  vzeit        : ezeit_vbak;
+  crm_guid     : char70;
+  tas          : psm_tas;
+  betc         : psm_betc;
+  mod_allow    : psm_mod_allow;
+  cancel_allow : psm_canc_allow;
+  pay_method   : dzwels;
+  bpn          : psm_bpn;
+  rep_freq     : psm_rep_freq;
+  mndid        : sepa_mndid;
+  ext          : include sdsalesdoc_incl_eew_ps;
+
+}
