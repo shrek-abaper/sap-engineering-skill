@@ -135,6 +135,11 @@ class FileStore:
                 "decryption failed: wrong master passphrase or a corrupt credential file"
             ) from e
 
+    def list_keys(self):
+        """Profile names in the encrypted file (keys are plaintext; values are not)."""
+        raw = self._read_raw()
+        return sorted((raw.get("entries") or {}).keys()) if raw else []
+
     def set(self, key: str, secret: str) -> None:
         raw = self._read_raw()
         if raw is None:

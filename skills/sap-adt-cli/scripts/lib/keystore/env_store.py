@@ -36,6 +36,11 @@ class EnvStore:
     def get(self, key: str) -> Optional[str]:
         return os.environ.get(_env_var(key))
 
+    def list_keys(self):
+        # Env var names are upper-cased, so the original profile spelling
+        # cannot always be recovered; doctor lists the vars explicitly.
+        return []
+
     def set(self, key: str, secret: str) -> None:
         raise BackendNotWritableError(
             "the 'env' keystore is read-only; export "

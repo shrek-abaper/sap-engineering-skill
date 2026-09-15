@@ -137,6 +137,10 @@ class DpapiStore:
             return None
         return self._run_powershell(_DECRYPT_SCRIPT, {"cipher": blob})
 
+    def list_keys(self):
+        """Profile names with DPAPI blobs on disk (no decryption)."""
+        return sorted(self._read_entries().keys())
+
     def set(self, key: str, secret: str) -> None:
         blob = self._run_powershell(_ENCRYPT_SCRIPT, {"secret": secret})
         entries = self._read_entries()

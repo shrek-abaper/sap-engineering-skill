@@ -58,7 +58,10 @@ class MemoryKeystore:
 
 def load_cli_module():
     sys.path.insert(0, str(SCRIPTS_PATH))
-    for name in ["sap_adt_cli", "lib.config", "lib"]:
+    # Drop the whole lib package tree so each test gets fresh modules
+    # (reports bind to config, stores bind to module-level paths).
+    sys.modules.pop("sap_adt_cli", None)
+    for name in [n for n in sys.modules if n == "lib" or n.startswith("lib.")]:
         sys.modules.pop(name, None)
     spec = importlib.util.spec_from_file_location("sap_adt_cli_under_test", SCRIPTS_PATH / "sap_adt_cli.py")
     module = importlib.util.module_from_spec(spec)

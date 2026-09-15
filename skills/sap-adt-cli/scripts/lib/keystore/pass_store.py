@@ -53,6 +53,23 @@ class PassStore:
             return None
         raise KeyStoreError(f"`pass show` failed: {(proc.stderr or '').strip()[:300]}")
 
+    def list_keys(self):
+        try:
+            proc = self._run(["pass", "ls", PREFIX])
+        except (OSError, subprocess.SubprocessError):
+            return []
+        if proc.returncode != 0:
+            return []
+        # `pass ls` prints a tree; leaf lines contain our one-segment keys.
+        keys = set()
+        for line in (proc.stdout or "").splitlines():
+            leaf = line.replace("├──", " ").replace("└──", " ").replace("│", " ").strip()
+            if "/" in leaf:
+                leaf = leaf.rsplit("/", 1)[-1].strip()
+            if leaf and all(c.isalnum() or c in "_-" for c in leaf):
+                keys.add(leaf)
+        return sorted(keys)
+
     def set(self, key: str, secret: str) -> None:
         proc = self._run(
             ["pass", "insert", "-m", "-f", self._path(key)],

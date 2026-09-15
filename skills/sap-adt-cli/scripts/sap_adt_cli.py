@@ -40,9 +40,12 @@ from lib.config import (
     remove_profile,
     SapConfig,
 )
-from lib import handlers
+from lib import credentials, credentials_reports, handlers
+from lib.keystore.base import KeyStoreError
 
 __version__ = "1.2.0"
+
+_KEYSTORE_CHOICES = ("env", "keyring", "dpapi", "pass", "file")
 
 
 def _output(result) -> None:
@@ -125,7 +128,14 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
     help="SAP environment profile to use for this single command "
          "(overrides active profile and SAP_PROFILE; see 'profile list')",
 )
-def cli(profile):
+@click.option(
+    "--keystore",
+    default=None,
+    type=click.Choice(_KEYSTORE_CHOICES),
+    help="Force the credential backend for this command (fail-closed if it "
+         "is unavailable); see 'credentials doctor'",
+)
+def cli(profile, keystore):
     """Read and write ABAP source code and metadata from SAP systems via the ADT REST API.
 
     Multiple SAP environments are stored as profiles in
@@ -140,6 +150,8 @@ def cli(profile):
     """
     if profile:
         config_module.set_profile_override(profile)
+    if keystore:
+        credentials.set_preferred(keystore)
 
 
 @cli.command()
@@ -261,6 +273,108 @@ def profile_remove(name):
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
     click.echo(f"Profile '{name}' removed.")
+
+
+@cli.group("credentials")
+def credentials_group():
+    """Manage profile passwords stored in the system keystore.
+
+    Backends (in priority order): env, keyring, dpapi, pass, file.
+    Run 'credentials doctor' to see which one is active on this machine.
+    There is deliberately no 'export' command.
+    """
+
+
+def _find_profile_or_exit(profile_name):
+    profiles = {p["name"]: p for p in (config_module.list_profiles() or [])}
+    if profile_name not in profiles:
+        click.echo(
+            f"Error: profile '{profile_name}' not found in {config_module.CONFIG_FILE}.\n"
+            f"Create it first with `configure --profile {profile_name}`.",
+            err=True,
+        )
+        raise SystemExit(1)
+    return profiles[profile_name]
+
+
+def _read_secret(profile_name, password_opt):
+    if password_opt:
+        click.echo(
+            "Warning: --password may expose the secret in shell history and "
+            "process listings. Prefer the interactive prompt or the "
+            f"SAP_ADT_{profile_name.upper()}_PASSWORD environment variable.",
+            err=True,
+        )
+        return password_opt
+    env_name = f"SAP_ADT_{profile_name.upper()}_PASSWORD"
+    env_value = os.getenv(env_name)
+    if env_value:
+        return env_value
+    if sys.stdin.isatty():
+        import getpass
+
+        first = getpass.getpass("Password (input hidden): ")
+        second = getpass.getpass("Confirm password: ")
+        if first != second:
+            click.echo("Error: passwords do not match.", err=True)
+            raise SystemExit(1)
+        return first
+    click.echo(
+        f"Error: no password supplied and stdin is not a terminal. "
+        f"Set {env_name} or pass --password.",
+        err=True,
+    )
+    raise SystemExit(1)
+
+
+@credentials_group.command("set")
+@click.argument("profile_name", metavar="PROFILE")
+@click.option("--user", default=None, help="SAP user (default: username stored in the profile)")
+@click.option("--password", default=None, help="Password (prefer prompt or env var; see warning)")
+def credentials_set(profile_name, user, password):
+    """Store PROFILE's password in the selected keystore (prompted, hidden)."""
+    profile = _find_profile_or_exit(profile_name)
+    username = user or profile.get("username")
+    if not username:
+        click.echo(f"Error: profile '{profile_name}' has no username; pass --user.", err=True)
+        raise SystemExit(1)
+    secret = _read_secret(profile_name, password)
+    try:
+        backend = credentials.save(profile_name, username, secret)
+    except KeyStoreError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+    click.echo(f"Password for profile '{profile_name}' stored in keystore '{backend}'.")
+
+
+@credentials_group.command("forget")
+@click.argument("profile_name", metavar="PROFILE")
+def credentials_forget(profile_name):
+    """Delete PROFILE's password from all writable keystores (or --keystore one)."""
+    _find_profile_or_exit(profile_name)
+    try:
+        removed = credentials.forget(profile_name)
+    except KeyStoreError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+    if removed:
+        # delete() is idempotent: this is a purge across writable backends,
+        # not a claim that every one of them held an entry.
+        click.echo(f"Purged password for '{profile_name}' from: {', '.join(removed)}")
+    else:
+        click.echo(f"No writable keystore available to purge '{profile_name}' from.")
+
+
+@credentials_group.command("status")
+def credentials_status():
+    """Show which profiles have a stored password — never prints the password."""
+    click.echo(credentials_reports.status_text())
+
+
+@credentials_group.command("doctor")
+def credentials_doctor():
+    """Diagnose backend availability, selected backend, files and entries."""
+    click.echo(credentials_reports.doctor_text())
 
 
 @cli.command("get-program")
