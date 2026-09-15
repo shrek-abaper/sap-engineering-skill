@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import requests
 
-from .client import make_adt_request
+from .client import AdtHttpError, make_adt_request
 from .config import get_config
 
 
@@ -29,11 +29,7 @@ def _ok(resp: requests.Response) -> AdtResult:
 
 
 def _err(exc: Exception) -> AdtResult:
-    if isinstance(exc, requests.HTTPError) and exc.response is not None:
-        return AdtResult(
-            text=f"HTTP {exc.response.status_code}: {exc.response.text or str(exc)}",
-            is_error=True,
-        )
+    # AdtHttpError messages are pre-sanitized (no Authorization headers).
     return AdtResult(text=str(exc), is_error=True)
 
 
@@ -473,8 +469,8 @@ def run_sql(sql: str, max_rows: int = 100) -> AdtResult:
                 params={"rowNumber": max_rows, "sqlCommand": sql},
                 extra_headers={"Accept": "application/vnd.sap.adt.datapreview.table.v1+xml"},
             )
-        except requests.HTTPError as e:
-            if e.response is None or e.response.status_code != 405:
+        except AdtHttpError as e:
+            if e.status != 405:
                 raise
             resp = make_adt_request(
                 url,

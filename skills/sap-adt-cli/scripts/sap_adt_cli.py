@@ -40,7 +40,7 @@ from lib.config import (
     remove_profile,
     SapConfig,
 )
-from lib import credentials, credentials_reports, handlers
+from lib import credentials, credentials_reports, handlers, log_redaction
 from lib.keystore.base import KeyStoreError
 
 __version__ = "1.2.0"
@@ -135,7 +135,9 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
     help="Force the credential backend for this command (fail-closed if it "
          "is unavailable); see 'credentials doctor'",
 )
-def cli(profile, keystore):
+@click.option("-v", "--verbose", is_flag=True, default=False,
+              help="Verbose logging (secrets stay redacted)")
+def cli(profile, keystore, verbose):
     """Read and write ABAP source code and metadata from SAP systems via the ADT REST API.
 
     Multiple SAP environments are stored as profiles in
@@ -148,6 +150,7 @@ def cli(profile, keystore):
 
     Run 'configure' on first use to save your connection settings.
     """
+    log_redaction.configure_logging(verbose)
     if profile:
         config_module.set_profile_override(profile)
     if keystore:
