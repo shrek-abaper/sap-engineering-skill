@@ -1,0 +1,13 @@
+{
+  "name": "MATNR",
+  "adt_type": "DTEL/DE",
+  "description": "Materialnummer",
+  "package": "BMG",
+  "responsible": "SAP",
+  "resolved_as": "dataelement",
+  "data_type": "CHAR",
+  "length": 40,
+  "decimals": 0,
+  "referenced_type": "MATNR",
+  "type_kind": "domain"
+}

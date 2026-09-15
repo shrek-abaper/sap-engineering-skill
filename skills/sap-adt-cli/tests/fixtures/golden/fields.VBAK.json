@@ -1,0 +1,1165 @@
+{
+  "fields": [
+    {
+      "name": "mandt",
+      "type": "mandt",
+      "length": null,
+      "decimals": null,
+      "is_key": true,
+      "not_null": true,
+      "description": null
+    },
+    {
+      "name": "vbeln",
+      "type": "vbeln_va",
+      "length": null,
+      "decimals": null,
+      "is_key": true,
+      "not_null": true,
+      "description": null
+    },
+    {
+      "name": "erdat",
+      "type": "erdat",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "erzet",
+      "type": "erzet",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ernam",
+      "type": "ernam",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "angdt",
+      "type": "angdt_v",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "bnddt",
+      "type": "bnddt",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "audat",
+      "type": "audat",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vbtyp",
+      "type": "vbtypl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "trvog",
+      "type": "trvog",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "auart",
+      "type": "auart",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "augru",
+      "type": "augru",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "gwldt",
+      "type": "gwldt",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "submi",
+      "type": "submi_sd",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "lifsk",
+      "type": "lifsk",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "faksk",
+      "type": "faksk",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "netwr",
+      "type": "netwr_ak",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "waerk",
+      "type": "waerk",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vkorg",
+      "type": "vkorg",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vtweg",
+      "type": "vtweg",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "spart",
+      "type": "spart",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vkgrp",
+      "type": "vkgrp",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vkbur",
+      "type": "vkbur",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "gsber",
+      "type": "gsber",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "gskst",
+      "type": "gskst",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "guebg",
+      "type": "guebg",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "gueen",
+      "type": "gueen",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "knumv",
+      "type": "knumv",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vdatu",
+      "type": "edatu_vbak",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "delivery_date_type_rule",
+      "type": "sd_delivery_date_type_rule",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vprgr",
+      "type": "prgrs_vbak",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "autlf",
+      "type": "autlf",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vbkla",
+      "type": "vbkla",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vbklt",
+      "type": "vbklt",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kalsm",
+      "type": "kalsmasd",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vsbed",
+      "type": "vsbed",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "fkara",
+      "type": "fkara",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "awahr",
+      "type": "awahr_ak",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ktext",
+      "type": "ktext_v",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "bstnk",
+      "type": "bstnk",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "bsark",
+      "type": "bsark",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "bstdk",
+      "type": "bstdk",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "bstzd",
+      "type": "bstzd",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ihrez",
+      "type": "ihrez",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "bname",
+      "type": "bname_v",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "telf1",
+      "type": "telf1_vp",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "mahza",
+      "type": "mahza",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "mahdt",
+      "type": "mahdt",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kunnr",
+      "type": "kunag",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kostl",
+      "type": "kostl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "stafo",
+      "type": "stafo",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "stwae",
+      "type": "stwae",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "aedat",
+      "type": "aedat",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kvgr1",
+      "type": "kvgr1",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kvgr2",
+      "type": "kvgr2",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kvgr3",
+      "type": "kvgr3",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kvgr4",
+      "type": "kvgr4",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kvgr5",
+      "type": "kvgr5",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "knuma",
+      "type": "knuma",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kokrs",
+      "type": "kokrs",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ps_psp_pnr",
+      "type": "ps_psp_pnr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kurst",
+      "type": "kurst",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kkber",
+      "type": "kkber",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "knkli",
+      "type": "knkli",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "grupp",
+      "type": "grupp_cm",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "sbgrp",
+      "type": "sbgrp_cm",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ctlpc",
+      "type": "ctlpc_cm",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "cmwae",
+      "type": "waers_cm",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "cmfre",
+      "type": "cmfre",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "cmnup",
+      "type": "cmnup",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "cmngv",
+      "type": "cmngv",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "amtbl",
+      "type": "amtbl_cm",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "hityp_pr",
+      "type": "hityp_pr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "abrvw",
+      "type": "abrvw",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "abdis",
+      "type": "abdis",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vgbel",
+      "type": "vgbel",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "objnr",
+      "type": "objko",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "bukrs_vf",
+      "type": "bukrs_vf",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk1",
+      "type": "taxk1_ak",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk2",
+      "type": "taxk2",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk3",
+      "type": "taxk3",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk4",
+      "type": "taxk4",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk5",
+      "type": "taxk5",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk6",
+      "type": "taxk6",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk7",
+      "type": "taxk7",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk8",
+      "type": "taxk8",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "taxk9",
+      "type": "taxk9",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "xblnr",
+      "type": "xblnr_v1",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "zuonr",
+      "type": "ordnr_v",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vgtyp",
+      "type": "vbtypl_v",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kalsm_ch",
+      "type": "kalsma_ch",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "agrzr",
+      "type": "agrzr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "aufnr",
+      "type": "aufnr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "qmnum",
+      "type": "qmnum",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vbeln_grp",
+      "type": "vbeln_grp",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "scheme_grp",
+      "type": "scheme_grp",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "abruf_part",
+      "type": "abruf_part",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "abhod",
+      "type": "abhod",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "abhov",
+      "type": "abhoz",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "abhob",
+      "type": "abhoz",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "rplnr",
+      "type": "rplnr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vzeit",
+      "type": "ezeit_vbak",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "stceg_l",
+      "type": "land1tx",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "landtx",
+      "type": "landtx",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "xegdr",
+      "type": "xegdr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "enqueue_grp",
+      "type": "enqueue_grp",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "dat_fzau",
+      "type": "dat_fzau",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "fmbdat",
+      "type": "mbdat",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "vsnmr_v",
+      "type": "vsnmr_v",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "handle",
+      "type": "tsegguid_vbak",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "proli",
+      "type": "adge_proli",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "cont_dg",
+      "type": "adge_ncdg",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "crm_guid",
+      "type": "char70",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "upd_tmstmp",
+      "type": "timestampl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "msr_id",
+      "type": "msr_process_id",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "tm_ctrl_key",
+      "type": "tm_ctrl_key",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "oipbl",
+      "type": "oif_pblnr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "last_changed_by_user",
+      "type": "last_changed_by_user",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ext_bus_syst_id",
+      "type": "sd_ext_bus_syst_id",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ext_ref_doc_id",
+      "type": "sd_ext_ref_doc_id",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ext_rev_tmstmp",
+      "type": "ext_rev_tmstmp",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "apm_approval_status",
+      "type": "sd_apm_approval_status",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "apm_approval_reason",
+      "type": "sd_apm_approval_reason",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "apm_rejection_reason",
+      "type": "sd_apm_rejection_reason",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "solution_order_id",
+      "type": "crms4_solo_object_id",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ext_comm_syst_type",
+      "type": "tdd_comm_syst_type",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "retro_purchdoc_creation",
+      "type": "edi_retro_purchdoc_creation",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "crossitem_prc_date",
+      "type": "crossitem_prc_date",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "_dataaging",
+      "type": "data_temperature",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "CHAR10",
+  "adt_type": "DOMA/DD",
+  "description": "Characterfeld Länge 10",
+  "package": "SZS",
+  "responsible": "SAP",
+  "resolved_as": "domain",
+  "data_type": "CHAR",
+  "length": 10,
+  "decimals": 0,
+  "referenced_type": null
+}

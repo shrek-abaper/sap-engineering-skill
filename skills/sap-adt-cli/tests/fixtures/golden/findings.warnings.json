@@ -1,0 +1,298 @@
+{
+  "findings": [
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"SAVE-SUBRC\".",
+      "line": 142,
+      "uri": "/sap/bc/adt/programs/includes/copydata/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=142,8"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"DUMMY-NAME\".",
+      "line": 132,
+      "uri": "/sap/bc/adt/programs/includes/theaddat/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=132,8"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"GF_OLD_RV45A-MILL_SE_DYFCODE\".",
+      "line": 389,
+      "uri": "/sap/bc/adt/programs/includes/vbapdata/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=389,6"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the associated entity \"V_VAKPA\".",
+      "line": 451,
+      "uri": "/sap/bc/adt/programs/includes/vbapdata/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=451,26"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the associated entity \"V_VAPMA\".",
+      "line": 131,
+      "uri": "/sap/bc/adt/programs/includes/mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=131,8"
+    },
+    {
+      "severity": "warning",
+      "text": "The TOP include (or nested includes within it) should contain definitions only. This means that no categories of implementation (CLASS . .. IMPLEMENTATION, FROM ..., FUNCTION) should be used.",
+      "line": 20,
+      "uri": "/sap/bc/adt/programs/includes/mv45alcl/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=20,0"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"CHAR-\".",
+      "line": 52,
+      "uri": "/sap/bc/adt/programs/includes/rvdirekt/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=52,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"HELP-MANDT\".",
+      "line": 132,
+      "uri": "/sap/bc/adt/programs/includes/rvdirekt/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=132,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"E-3\".",
+      "line": 859,
+      "uri": "/sap/bc/adt/programs/includes/rvdirekt/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=859,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"E-4\".",
+      "line": 860,
+      "uri": "/sap/bc/adt/programs/includes/rvdirekt/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=860,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"-E-4\".",
+      "line": 861,
+      "uri": "/sap/bc/adt/programs/includes/rvdirekt/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=861,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"E-6\".",
+      "line": 862,
+      "uri": "/sap/bc/adt/programs/includes/rvdirekt/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=862,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"MODUL-POOL\".",
+      "line": 664,
+      "uri": "/sap/bc/adt/programs/includes/mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=664,6"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"T176T-VTEXT_K\".",
+      "line": 668,
+      "uri": "/sap/bc/adt/programs/includes/mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=668,6"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"T176T-VTEXT_E\".",
+      "line": 669,
+      "uri": "/sap/bc/adt/programs/includes/mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=669,6"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"BREAK-POINT_SCREEN\".",
+      "line": 11,
+      "uri": "/sap/bc/adt/programs/includes/mill_vs_mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=11,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"BREAK-POINT_ANLEGEN\".",
+      "line": 13,
+      "uri": "/sap/bc/adt/programs/includes/mill_vs_mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=13,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"BREAK-POINT_FCODE\".",
+      "line": 14,
+      "uri": "/sap/bc/adt/programs/includes/mill_vs_mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=14,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"BREAK-POINT_INIT\".",
+      "line": 15,
+      "uri": "/sap/bc/adt/programs/includes/mill_vs_mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=15,2"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"BREAK-POINT_SCREEN_NAME\".",
+      "line": 17,
+      "uri": "/sap/bc/adt/programs/includes/mill_vs_mv45atop/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=17,2"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"FD_HYPHEN\".",
+      "line": 19,
+      "uri": "/sap/bc/adt/programs/includes/mv45afzc/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=19,42"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"FD_HYPHEN\".",
+      "line": 28,
+      "uri": "/sap/bc/adt/programs/includes/mv45afzc/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=28,42"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"FD_HYPHEN\".",
+      "line": 37,
+      "uri": "/sap/bc/adt/programs/includes/mv45afzc/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=37,42"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"FD_HYPHEN\".",
+      "line": 46,
+      "uri": "/sap/bc/adt/programs/includes/mv45afzc/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=46,42"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"FD_HYPHEN\".",
+      "line": 55,
+      "uri": "/sap/bc/adt/programs/includes/mv45afzc/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=55,42"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"NOTEXT\".",
+      "line": 31,
+      "uri": "/sap/bc/adt/programs/includes/zsd_move_field_to_vbap/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=31,33"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"NOTEXT\".",
+      "line": 39,
+      "uri": "/sap/bc/adt/programs/includes/zsd_move_field_to_vbap/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=39,32"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"NOTEXT\".",
+      "line": 33,
+      "uri": "/sap/bc/adt/programs/includes/zsd_move_field_to_vbep/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=33,31"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"NOTEXT\".",
+      "line": 45,
+      "uri": "/sap/bc/adt/programs/includes/zsd_move_field_to_vbep/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=45,30"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the addition \"USING CLIENT\" instead of \"CLIENT SPECIFIED\".",
+      "line": 219,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0b_beleg_lesen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=219,12"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the addition \"USING CLIENT\" instead of \"CLIENT SPECIFIED\".",
+      "line": 1106,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0b_beleg_sichern/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=1106,16"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the addition \"USING CLIENT\" instead of \"CLIENT SPECIFIED\".",
+      "line": 2086,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0b_beleg_sichern/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=2086,16"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"P_KUWEV-ABLAD\".",
+      "line": 7,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0k_kuwev-ablad_pruefen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=7,34"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"P_VBAK-VBELN\".",
+      "line": 8,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0k_kuwev-ablad_pruefen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=8,34"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"P_VBAP-POSNR\".",
+      "line": 9,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0k_kuwev-ablad_pruefen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=9,34"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"P_TVAK-EMPFI\".",
+      "line": 6,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0t_tvak-empfi_pruefen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=6,33"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"P_VBKD-ABTNR\".",
+      "line": 7,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0t_tvak-empfi_pruefen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=7,33"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"P_VBKD-EMPST\".",
+      "line": 8,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0t_tvak-empfi_pruefen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=8,33"
+    },
+    {
+      "severity": "warning",
+      "text": "Unknown pragma \"TODO-CHECK-EXISTING-OBJECT\".",
+      "line": 40,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0t_trans_do_save/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=40,59"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the addition \"USING CLIENT\" instead of \"CLIENT SPECIFIED\".",
+      "line": 1020,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0c_cua_setzen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=1020,10"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the addition \"USING CLIENT\" instead of \"CLIENT SPECIFIED\".",
+      "line": 384,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0d_document_read_archive/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=384,12"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"ORDCHG_TAB-MENGE_NULL\".",
+      "line": 11,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0f_fcode_pote_u0_v/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=11,13"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"FLAG-LEAVE_SCREEN\".",
+      "line": 8,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0f_funktion_ausfuehren/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=8,8"
+    },
+    {
+      "severity": "warning",
+      "text": "In Unicode programs, the \"-\" character cannot appear in names, as it does here in the name \"DA_SY-SUBRC\".",
+      "line": 19,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0v_vtber_bestimmen/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=19,8"
+    },
+    {
+      "severity": "warning",
+      "text": "An implicit index was specified to modify, delete, or insert a row in table \"XVBAP\". It is not possible to know statically whether a loop is active across \"XVBAP\".",
+      "line": 23,
+      "uri": "/sap/bc/adt/programs/includes/mv45af0w_wertkontrakt_datenueb/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=23,11"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the associated entity \"V_VAKPA\".",
+      "line": 31,
+      "uri": "/sap/bc/adt/programs/includes/mv45afdb_vakpa_select/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=31,9"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the associated entity \"V_VAKPA\".",
+      "line": 28,
+      "uri": "/sap/bc/adt/programs/includes/mv45afdb_vakpa_gruko_select/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=28,9"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the associated entity \"V_VAKPA\".",
+      "line": 34,
+      "uri": "/sap/bc/adt/programs/includes/mv45afdb_vakpa_abruf_select/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=34,11"
+    },
+    {
+      "severity": "warning",
+      "text": "Use the associated entity \"V_VAKPA\".",
+      "line": 121,
+      "uri": "/sap/bc/adt/programs/includes/mv45afdb_vakpa_abruf_select/source/main?context=%2fsap%2fbc%2fadt%2fprograms%2fprograms%2fsapmv45a#start=121,15"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "objects": [
+    {
+      "name": "SABP_UNIT_AUTHORITY",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_authority",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_CORE",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_core",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_DISPLAY_EXTENSIONS",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_display_extensions",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_DISPLAY_SAP_GUI",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_display_sap_gui",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_EXCEPTIONS",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_exceptions",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_INTERNAL",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_internal",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_METRICS",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_metrics",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_REST",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_rest",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_SCRATCH",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_scratch",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_SELFTEST",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_selftest",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_TYPES",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_types",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_WORKBENCH",
+      "type": "DEVC/K",
+      "uri": "/sap/bc/adt/packages/sabp_unit_workbench",
+      "package": null,
+      "description": null
+    },
+    {
+      "name": "SABP_UNIT_2_IDE",
+      "type": "PINF/KI",
+      "uri": "/sap/bc/adt/vit/wb/object_type/pinfki/object_name/SABP_UNIT_2_IDE",
+      "package": null,
+      "description": "INTERNAL: NO REUSET - Testing AUTHORITY-CHECK"
+    },
+    {
+      "name": "SABP_UNIT_2_PRV",
+      "type": "PINF/KI",
+      "uri": "/sap/bc/adt/vit/wb/object_type/pinfki/object_name/SABP_UNIT_2_PRV",
+      "package": null,
+      "description": "INTERNAL: NO REUSE -  Core functionality"
+    }
+  ]
+}

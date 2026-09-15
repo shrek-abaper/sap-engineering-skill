@@ -65,6 +65,8 @@ FILE_MAP = {
     "where-used.usageReferences.GET.raw.xml": "error.405-usageReferences.raw.xml",
     # rows — JSON with real business data, rebuilt synthetically
     "run-sql.t001.xml": "run-sql.t001.json",
+    # rows — raw dataPreview XML from SAP-standard table T100 (no customer data)
+    "datapreview.t100.xml": "run-sql.t100.raw.xml",
     # error branches
     "error.404.txt.stderr": "error.404.txt",
     "error.404.raw.xml": "error.404.xml",

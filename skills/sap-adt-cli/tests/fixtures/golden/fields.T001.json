@@ -1,0 +1,202 @@
+{
+  "fields": [
+    {
+      "name": "mandt",
+      "type": "mandt",
+      "length": null,
+      "decimals": null,
+      "is_key": true,
+      "not_null": true,
+      "description": null
+    },
+    {
+      "name": "bukrs",
+      "type": "bukrs",
+      "length": null,
+      "decimals": null,
+      "is_key": true,
+      "not_null": true,
+      "description": null
+    },
+    {
+      "name": "butxt",
+      "type": "butxt",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ort01",
+      "type": "ort01",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "land1",
+      "type": "land1",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "waers",
+      "type": "waers",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "spras",
+      "type": "spras",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "ktopl",
+      "type": "ktopl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "waabw",
+      "type": "waabw_001",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "periv",
+      "type": "periv",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "kokfi",
+      "type": "kokfi",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "rcomp",
+      "type": "rcomp_d",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "adrnr",
+      "type": "adrnr",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "stceg",
+      "type": "stceg",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "fikrs",
+      "type": "fikrs",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "xfmco",
+      "type": "xfmco",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "xfmcb",
+      "type": "xfmcb",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "xfmca",
+      "type": "xfmca",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "txjcd",
+      "type": "txjcd_nstx",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "fmhrdate",
+      "type": "fm_hrdate",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "xtemplt",
+      "type": "fins_xtemplt",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    },
+    {
+      "name": "transit_plant",
+      "type": "fins_transit_plant",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false,
+      "description": null
+    }
+  ]
+}

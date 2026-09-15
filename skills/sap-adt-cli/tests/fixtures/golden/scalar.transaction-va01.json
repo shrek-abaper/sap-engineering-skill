@@ -1,0 +1,87 @@
+{
+  "name": "VA01",
+  "description": "Create Sales Orders",
+  "package": "VA",
+  "type": "TRAN/T",
+  "facets": [
+    {
+      "facet": "APPL",
+      "name": "SD",
+      "text": "Sales and Distribution"
+    },
+    {
+      "facet": "APPL",
+      "name": "SD-SLS",
+      "text": "Sales"
+    },
+    {
+      "facet": "PACKAGE",
+      "name": "APPL",
+      "text": "Structure Package: Logistics/Accounting"
+    },
+    {
+      "facet": "PACKAGE",
+      "name": "VA",
+      "text": "Application development R/3 Sales"
+    },
+    {
+      "facet": "GROUP",
+      "name": "TRANSACTIONS",
+      "text": null
+    },
+    {
+      "facet": "TYPE",
+      "name": "TRAN",
+      "text": null
+    },
+    {
+      "facet": "OWNER",
+      "name": "SAP",
+      "text": null
+    },
+    {
+      "facet": "API",
+      "name": "NOT_RELEASED",
+      "text": null
+    },
+    {
+      "facet": "LANGUAGE",
+      "name": "EN",
+      "text": null
+    },
+    {
+      "facet": "SYSTEM",
+      "name": "SAP",
+      "text": null
+    },
+    {
+      "facet": "VERSION",
+      "name": "ACTIVE",
+      "text": "Active"
+    },
+    {
+      "facet": "DOCU",
+      "name": "NONE",
+      "text": null
+    },
+    {
+      "facet": "CREATED",
+      "name": "2014",
+      "text": null
+    },
+    {
+      "facet": "MONTH",
+      "name": "08",
+      "text": "August"
+    },
+    {
+      "facet": "DATE",
+      "name": "20140831",
+      "text": "Sunday"
+    }
+  ],
+  "application": [
+    "SD",
+    "SD-SLS"
+  ]
+}

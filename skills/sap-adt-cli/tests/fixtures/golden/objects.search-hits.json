@@ -1,0 +1,144 @@
+{
+  "objects": [
+    {
+      "name": "CL_GUI_2_RFW",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_2_rfw",
+      "package": "RFW",
+      "description": "GUI Component of RFW (Ver. 2)"
+    },
+    {
+      "name": "CL_GUI_ABAPEDIT",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_abapedit",
+      "package": "SEDI",
+      "description": "ABAP Edit Control"
+    },
+    {
+      "name": "CL_GUI_ACLOG",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_aclog",
+      "package": "DIACL_GUI",
+      "description": "Aircraft log"
+    },
+    {
+      "name": "CL_GUI_ALV_EXT_CHECK",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_ext_check",
+      "package": "NAVIGATION_PROFILE",
+      "description": "Class for BAdI: BADI_GUI_ALV_GRID_EXT"
+    },
+    {
+      "name": "CL_GUI_ALV_GRID",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_grid",
+      "package": "SLIS",
+      "description": "ALV List Viewer"
+    },
+    {
+      "name": "CL_GUI_ALV_GRID_BASE",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_grid_base",
+      "package": "SLIS",
+      "description": "Basis Class for ALV Grid"
+    },
+    {
+      "name": "CL_GUI_ALV_GRID_EXT",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_grid_ext",
+      "package": "NAVIGATION_PROFILE",
+      "description": "ALV List Viewer + Enhancements"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree",
+      "package": "SLIS",
+      "description": "ALV Tree Control"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE_AUTO_HIERARCHY",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree_auto_hierarchy",
+      "package": "WCF_BSP_WD_CHECK_TOOLS",
+      "description": "ALV Tree with automatic hierarchy"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE_BOSPS",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree_bosps",
+      "package": "AD_BOS_03",
+      "description": "ALV Tree Control for BOSPS integration"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE_CVRX",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree_cvrx",
+      "package": "P99S",
+      "description": "ALV Tree Control for Payroll Results"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE_DSN",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree_dsn",
+      "package": "PC06",
+      "description": "ALV-Tree-Control for DSN"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE_IN",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree_in",
+      "package": "ISU_GS_IN_SW_EHP6",
+      "description": "ALV Tree Control"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE_SIMPLE",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree_simple",
+      "package": "SLIS",
+      "description": "Simple ALV Tree"
+    },
+    {
+      "name": "CL_GUI_ALV_TREE_WRAPPER",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_tree_wrapper",
+      "package": "AD_TCF",
+      "description": "CFW for variable column sort - ALV Tree"
+    },
+    {
+      "name": "CL_GUI_ALV_WRAPPER_TCF",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_alv_wrapper_tcf",
+      "package": "AD_TCF",
+      "description": "CFW for variable column sort - ALV Tree"
+    },
+    {
+      "name": "CL_GUI_AQQGRAPHIC_ADAPT",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_aqqgraphic_adapt",
+      "package": "SQUECNTRL",
+      "description": "Network Adapter"
+    },
+    {
+      "name": "CL_GUI_AQQGRAPHIC_CONTROL",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_aqqgraphic_control",
+      "package": "SQUECNTRL",
+      "description": "BW Basis Class Network Control"
+    },
+    {
+      "name": "CL_GUI_AQQGRAPHIC_NETPLAN",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_aqqgraphic_netplan",
+      "package": "SQUECNTRL",
+      "description": "Network Control"
+    },
+    {
+      "name": "CL_GUI_ASSIGNMENTS_RFW",
+      "type": "CLAS",
+      "uri": "/sap/bc/adt/oo/classes/cl_gui_assignments_rfw",
+      "package": "RFW",
+      "description": "GUI for Assignments"
+    }
+  ]
+}

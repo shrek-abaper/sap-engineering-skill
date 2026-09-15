@@ -15,7 +15,8 @@ tests/fixtures/
 │   └── <raw captures...>
 ├── sanitize.py               # raw/ → sanitized fixtures (stdlib only)
 ├── sanitize.map.example.json # template for raw/sanitize.map.json
-├── golden/                   # normalized golden JSON (added with parser tests)
+├── golden/                   # normalized parser output, compared in
+│                             # tests/test_sap_adt_cli_parsers.py
 └── *.xml / *.json / *.abap   # sanitized fixtures listed below
 ```
 
@@ -101,6 +102,8 @@ grep -rnE "<internal-ip>|<real-user>|Nextev|DEVK9[0-9]{6}" \
 | `syntax-check.CL_GUI.clean.xml` | findings | New checkrun API, zero messages |
 | `syntax-check.SAPMV45A.warnings.xml` | findings | real W-messages with line URIs |
 | `run-sql.t001.json` | rows | synthetic company rows; real columns/row count |
+| `run-sql.t100.raw.xml` | rows | raw dataPreview column-oriented XML (SAP-standard T100 messages, no customer data) — input for the `rows` parser |
+| `golden/*.json` | all | expected parser output; keep in sync when parsers change |
 | `error.404.txt` / `error.404.xml` | error | CLI-wrapped text and raw `ExceptionResourceNotFound` body |
 | `error.403-csrf.txt` | error | expired-token 403 body |
 | `error.405-whereused-legacy.txt` / `error.405-usageReferences.raw.xml` | error | legacy GET retired / new endpoint requires POST |
