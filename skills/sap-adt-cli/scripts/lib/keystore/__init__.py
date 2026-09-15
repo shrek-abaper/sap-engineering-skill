@@ -66,7 +66,7 @@ def select(preferred: Optional[str] = None) -> KeyStore:
 
 
 # Import for registration side effects. Order = lookup priority.
-from . import env_store, keyring_store  # noqa: E402,F401
+from . import env_store, keyring_store, dpapi_store  # noqa: E402,F401
 
 __all__ = [
     "REGISTRY",
