@@ -34,8 +34,7 @@ Thumbs.db
 # opencode auto-generated — do not commit
 AGENTS.md
 
-# Test & coverage artifacts
-tests/
+# Test & coverage artifacts (the tests/ source tree is tracked; only caches are ignored)
 .pytest_cache/
 .coverage
 htmlcov/
