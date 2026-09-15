@@ -32,9 +32,28 @@ class KeyringStore:
             return False, "keyring package not installed (pip install keyring)"
 
         backend = kr.get_keyring()
+        backend_module = type(backend).__module__
+        class_name = type(backend).__name__
+
         # The fail backend means no usable OS vault was resolved.
-        if type(backend).__module__ == "keyring.backends.fail":
+        if backend_module == "keyring.backends.fail":
             return False, "no usable keyring backend (fail.Keyring)"
+        # keyrings.alt ships a PlaintextKeyring (an unencrypted file) and
+        # other non-OS backends; accepting it would defeat the whole
+        # migration away from plain text.
+        if backend_module.startswith("keyrings.alt."):
+            return (
+                False,
+                f"insecure keyring backend {class_name} (keyrings.alt); configure a "
+                "native vault (Credential Manager / Keychain / Secret Service)",
+            )
+        # The chainer may itself fall through to PlaintextKeyring.
+        if class_name == "ChainerBackend":
+            return (
+                False,
+                "chainer keyring may fall back to the insecure PlaintextKeyring; "
+                "configure a native OS keyring",
+            )
 
         class_name = type(backend).__name__
         try:
@@ -42,6 +61,10 @@ class KeyringStore:
         except Exception as e:  # locked keyring / missing D-Bus service / ...
             return False, f"{class_name} probe failed: {e}"
         return True, f"{class_name} ({SERVICE})"
+
+    def list_keys(self):
+        # keyring has no portable API to enumerate entries of a service.
+        return None
 
     def get(self, key: str) -> Optional[str]:
         kr = self._load_keyring()

@@ -101,6 +101,35 @@ class KeyringStoreTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("locked", reason.lower() + reason)
 
+    def test_plaintext_keyring_alt_backend_is_rejected_as_insecure(self):
+        class PlaintextKeyring:
+            pass
+
+        PlaintextKeyring.__module__ = "keyrings.alt.file"
+        self.store._load_keyring = lambda: fake_keyring_lib(PlaintextKeyring())
+        ok, reason = self.store.available()
+        self.assertFalse(ok)
+        self.assertIn("insecure", reason.lower())
+
+    def test_any_keyrings_alt_backend_is_rejected(self):
+        class EncryptedKeyring:
+            pass
+
+        EncryptedKeyring.__module__ = "keyrings.alt.file"
+        self.store._load_keyring = lambda: fake_keyring_lib(EncryptedKeyring())
+        ok, _reason = self.store.available()
+        self.assertFalse(ok)
+
+    def test_chainer_backend_is_rejected_to_prevent_plaintext_fallback(self):
+        class ChainerBackend:
+            pass
+
+        ChainerBackend.__module__ = "keyring.backends.chainer"
+        self.store._load_keyring = lambda: fake_keyring_lib(ChainerBackend())
+        ok, reason = self.store.available()
+        self.assertFalse(ok)
+        self.assertIn("native", reason.lower() + reason)
+
     def test_available_reports_backend_class_name(self):
         self.store._load_keyring = lambda: fake_keyring_lib(MemoryBackend())
         ok, reason = self.store.available()
