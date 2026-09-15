@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple, List, Dict, Any
 
+from . import credentials
+from .keystore.base import KeyStoreError
+
 # SKILL root = 3 levels up from this file (scripts/lib/config.py -> scripts/lib -> scripts -> skill root)
 # Resolved at import time so it works regardless of the caller's CWD.
 _SKILL_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -73,6 +76,14 @@ class SapConfig:
         from urllib.parse import urlparse
         parsed = urlparse(self.url.rstrip("/"))
         return f"{parsed.scheme}://{parsed.netloc}"
+
+    def __repr__(self) -> str:
+        # The highest-frequency real leak path is an exception traceback
+        # printing this object; never include the password.
+        return (
+            f"SapConfig(url={self.url!r}, username={self.username!r}, "
+            f"password='***', client={self.client!r}, profile_name={self.profile_name!r})"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +212,52 @@ def _migrate_old_dir_if_needed() -> None:
         )
 
 
+def _migrate_plaintext_passwords(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Move legacy plaintext profile passwords into the selected keystore.
+
+    Idempotent: profiles without a password field are untouched, so
+    repeat runs have no side effects. No .bak file is created (backup
+    copies are a common leak source). When no writable backend exists the
+    plaintext field is retained as a read-only legacy path and warned
+    about, rather than locking the user out.
+    """
+    profiles = data.get("profiles") or {}
+    migrated = []  # (profile, backend)
+    failed = []
+    for name, section in profiles.items():
+        password = section.get("password") if isinstance(section, dict) else None
+        if not password:
+            continue
+        try:
+            backend = credentials.save(name, section.get("username") or "", password)
+        except KeyStoreError as e:
+            failed.append((name, str(e)))
+            continue
+        del section["password"]
+        migrated.append((name, backend))
+
+    if migrated:
+        _write_raw(data)
+        names = ", ".join(name for name, _b in migrated)
+        backends = ", ".join(sorted({backend for _n, backend in migrated}))
+        print(
+            f"WARNING: migrated {len(migrated)} password(s) stored in plain text "
+            f"({names}) from {CONFIG_FILE} into the keystore ({backends}).\n"
+            "These passwords previously sat on disk unencrypted — change them "
+            "on the SAP side (SU01 / password reset), then run `configure` to "
+            "store the new ones. No backup copy was created.",
+            file=sys.stderr,
+        )
+    for name, reason in failed:
+        print(
+            f"WARNING: profile '{name}' keeps its password in plain text in "
+            f"{CONFIG_FILE} because no writable keystore is available ({reason}).\n"
+            "Run `credentials doctor`, then re-run any command to migrate.",
+            file=sys.stderr,
+        )
+    return data
+
+
 def _read_raw() -> Optional[Dict[str, Any]]:
     """Load normalized v2 config dict. Returns {} when absent, None when corrupt."""
     _migrate_old_dir_if_needed()
@@ -221,6 +278,7 @@ def _read_raw() -> Optional[Dict[str, Any]]:
     data.setdefault("allow_write", False)
     data.setdefault("allow_transport", False)
     data.setdefault("profiles", {})
+    _migrate_plaintext_passwords(data)
     return data
 
 
@@ -246,14 +304,30 @@ def _select_profile_name(raw: Dict[str, Any], explicit: Optional[str] = None) ->
     return None
 
 
+def _stored_password(name: str, username: str) -> Optional[str]:
+    """Return the keystore password for a profile, or None when not stored."""
+    try:
+        return credentials.load(name, username, interactive=False).password
+    except KeyStoreError:
+        return None
+
+
 def _config_from_section(
     name: str, section: Dict[str, Any], raw: Dict[str, Any]
 ) -> SapConfig:
+    # Plaintext 'password' only exists for profiles that could not be migrated
+    # because no writable backend was available (read-only legacy path).
+    password = section.get("password") or _stored_password(name, section.get("username") or "")
+    if not password:
+        _fail(
+            f"Profile '{name}' has no password in the keystore. Run "
+            f"`credentials set {name}` or re-run `configure --profile {name}`."
+        )
     try:
         return SapConfig(
             url=section["url"],
             username=section["username"],
-            password=section["password"],
+            password=password,
             client=section["client"],
             language=section.get("language", "EN"),
             verify_ssl=section.get("verify_ssl", True),
@@ -363,20 +437,19 @@ def save_profile(
     allow_write: bool = False,
     allow_transport: bool = False,
 ) -> SapConfig:
-    """Create/update one profile and make it the active profile."""
+    """Create/update one profile and make it the active profile.
+
+    Non-secret fields go into config.json (human-reviewable); the password
+    goes to the selected keystore. A blank password leaves an existing
+    keystore entry untouched (interactive re-edit of other fields).
+    """
     validate_profile_name(name)
     raw = _read_raw() or {}
     profiles = raw.setdefault("profiles", {})
 
-    # Preserve the existing password when the new one is blank (interactive edit).
-    previous = profiles.get(name, {})
-    if not password and previous.get("password"):
-        password = previous["password"]
-
     section = {
         "url": url.rstrip("/"),
         "username": username,
-        "password": password,
         "client": client,
         "language": language or "EN",
         "verify_ssl": verify_ssl,
@@ -385,12 +458,20 @@ def save_profile(
     raw["active_profile"] = name
     raw["allow_write"] = allow_write
     raw["allow_transport"] = allow_transport
+
+    effective_password = ""
+    if password:
+        credentials.save(name, username, password)
+        effective_password = password
+    else:
+        effective_password = _stored_password(name, username) or ""
+
     _write_raw(raw)
 
     return SapConfig(
         url=section["url"],
         username=username,
-        password=password,
+        password=effective_password,
         client=client,
         language=section["language"],
         verify_ssl=verify_ssl,
@@ -422,6 +503,11 @@ def remove_profile(name: str) -> None:
         )
     del profiles[name]
     _write_raw(raw)
+    # Purge the password from every writable backend; failure must not
+    # leave an orphaned secret silently.
+    removed = credentials.forget(name)
+    if removed:
+        print(f"Removed password from keystore(s): {', '.join(removed)}", file=sys.stderr)
 
 
 def save_config_from_flags(
@@ -444,7 +530,12 @@ def save_config_from_flags(
     resolved_username = username or existing.get("username")
     # SAP_PASSWORD is accepted as a documented alternative to --password
     # (avoids exposing the password in shell history / process listings).
-    resolved_password = password or os.getenv("SAP_PASSWORD") or existing.get("password")
+    # An existing keystore entry satisfies the required-field check.
+    resolved_password = (
+        password
+        or os.getenv("SAP_PASSWORD")
+        or _stored_password(name, resolved_username or "")
+    )
     resolved_client = client or existing.get("client")
     resolved_language = language or existing.get("language") or "EN"
 
@@ -471,7 +562,7 @@ def save_config_from_flags(
         allow_transport=allow_transport,
     )
     print(f"Profile '{name}' saved to {CONFIG_FILE} (active profile: {name})")
-    print("Warning: credentials are stored in plain text. Ensure this file remains private (permissions: 600).")
+    print("Password stored in the keystore; run `credentials doctor` to see which backend is in use.")
     return config
 
 
@@ -504,7 +595,8 @@ def run_configure_wizard(profile: Optional[str] = None) -> SapConfig:
 
     url = _prompt("SAP System URL (e.g. https://my-sap.example.com:8000)", existing.get("url"))
     username = _prompt("SAP Username", existing.get("username"))
-    password_hint = "(blank = keep existing)" if existing.get("password") else None
+    has_stored = bool(_stored_password(name, existing.get("username") or username))
+    password_hint = "(blank = keep existing)" if has_stored else None
     password = _prompt(f"SAP Password{(' ' + password_hint) if password_hint else ''}", secret=True)
     client = _prompt("SAP Client (e.g. 100)", existing.get("client"))
     language = _prompt("Language code", existing.get("language") or "EN")
@@ -530,7 +622,7 @@ def run_configure_wizard(profile: Optional[str] = None) -> SapConfig:
     )
     allow_transport = allow_transport_raw.lower() in ("y", "yes")
 
-    if not url or not username or not (password or existing.get("password")) or not client:
+    if not url or not username or not (password or has_stored) or not client:
         print("Error: URL, username, password and client are all required.", file=sys.stderr)
         sys.exit(1)
 

@@ -24,6 +24,8 @@ class NoCredentialError(KeyStoreError):
 
 # Global --keystore override set by the CLI group callback.
 _preferred: Optional[str] = None
+# Test seam: when set, use these backends instead of REGISTRY.
+_registry_override: Optional[List[KeyStore]] = None
 # In-process cache: (backend name, profile) -> password. DPAPI/pass shells
 # out per call (~300ms) and file-store scrypt is deliberately expensive;
 # each secret is decrypted at most once per process.
@@ -35,7 +37,19 @@ def set_preferred(name: Optional[str]) -> None:
     _preferred = name or None
 
 
+def set_registry_override(candidates: Optional[List[KeyStore]]) -> None:
+    global _registry_override
+    _registry_override = candidates
+
+
 def reset_cache() -> None:
+    _cache.clear()
+
+
+def reset_test_overrides() -> None:
+    global _preferred, _registry_override
+    _preferred = None
+    _registry_override = None
     _cache.clear()
 
 
@@ -79,7 +93,9 @@ def load(
     that backend is consulted. Missing credentials always raise rather
     than prompting or hanging when ``interactive=False``.
     """
-    candidates = registry if registry is not None else REGISTRY
+    candidates = registry if registry is not None else (
+        _registry_override if _registry_override is not None else REGISTRY
+    )
     preferred = _resolved_preference(keystore)
 
     if preferred is not None:
@@ -126,7 +142,9 @@ def save(
     registry: Optional[List[KeyStore]] = None,
 ) -> str:
     """Store the password in the selected (writable) backend; return its name."""
-    candidates = registry if registry is not None else REGISTRY
+    candidates = registry if registry is not None else (
+        _registry_override if _registry_override is not None else REGISTRY
+    )
     preferred = _resolved_preference(keystore)
 
     if preferred is not None:
@@ -166,7 +184,9 @@ def forget(
     Returns the names of the backends the entry was removed from. A
     read-only env entry, if present, is left for the user to unset.
     """
-    candidates = registry if registry is not None else REGISTRY
+    candidates = registry if registry is not None else (
+        _registry_override if _registry_override is not None else REGISTRY
+    )
     preferred = _resolved_preference(keystore)
 
     if preferred is not None:

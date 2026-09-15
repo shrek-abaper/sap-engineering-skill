@@ -15,11 +15,45 @@ SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / 
 
 
 def load_config_module():
-    spec = importlib.util.spec_from_file_location("sap_adt_cli_config_under_test", CONFIG_PATH)
+    # Load config.py under a unique synthetic package so its relative imports
+    # (.credentials / .keystore) work and every test gets fresh modules.
+    import types
+    import uuid
+
+    lib_path = SCRIPTS_PATH / "lib"
+    pkg_base = f"cfgpkg_{uuid.uuid4().hex}"
+    top = types.ModuleType(pkg_base)
+    top.__path__ = []
+    lib = types.ModuleType(f"{pkg_base}.lib")
+    lib.__path__ = [str(lib_path)]
+    sys.modules[pkg_base] = top
+    sys.modules[f"{pkg_base}.lib"] = lib
+    spec = importlib.util.spec_from_file_location(f"{pkg_base}.lib.config", CONFIG_PATH)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+class MemoryKeystore:
+    """In-memory KeyStore used to isolate config tests from OS backends."""
+
+    def __init__(self, name="memory"):
+        self.name = name
+        self.writable = True
+        self.data = {}
+
+    def available(self):
+        return True, "memory test backend"
+
+    def get(self, key):
+        return self.data.get(key)
+
+    def set(self, key, secret):
+        self.data[key] = secret
+
+    def delete(self, key):
+        self.data.pop(key, None)
 
 
 def load_cli_module():
@@ -38,6 +72,8 @@ class SapAdtCliConfigTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.tmp_path = Path(self.tmp.name)
         self.module = load_config_module()
+        self.keystore = MemoryKeystore()
+        self.module.credentials.set_registry_override([self.keystore])
         self.env_path = self.tmp_path / "skill" / ".env"
         self.config_file = self.tmp_path / "home" / ".sap-adt-cli" / "config.json"
         self.old_config_file = self.tmp_path / "home" / ".sap-abap-cli" / "config.json"
