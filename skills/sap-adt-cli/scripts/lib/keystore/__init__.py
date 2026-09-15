@@ -24,7 +24,7 @@ def register(store: KeyStore) -> KeyStore:
     return store
 
 
-def select(preferred: Optional[str] = None) -> KeyStore:
+def select(preferred: Optional[str] = None, candidates: Optional[List[KeyStore]] = None) -> KeyStore:
     """Return a usable keystore.
 
     When ``preferred`` is given, that backend must exist AND be usable;
@@ -34,10 +34,11 @@ def select(preferred: Optional[str] = None) -> KeyStore:
 
     Without a preference, the first available backend in REGISTRY order
     wins. If none are available, :class:`BackendUnavailableError` is
-    raised (fail-closed).
+    raised (fail-closed). ``candidates`` overrides REGISTRY (test seam).
     """
+    registry = candidates if candidates is not None else REGISTRY
     if preferred is not None:
-        for store in REGISTRY:
+        for store in registry:
             if store.name == preferred:
                 ok, reason = store.available()
                 if not ok:
@@ -45,19 +46,19 @@ def select(preferred: Optional[str] = None) -> KeyStore:
                         f"keystore backend '{preferred}' is not available: {reason}"
                     )
                 return store
-        known = ", ".join(store.name for store in REGISTRY) or "(none registered)"
+        known = ", ".join(store.name for store in registry) or "(none registered)"
         raise UnknownBackendError(
             f"unknown keystore backend '{preferred}'. Known backends: {known}"
         )
 
-    for store in REGISTRY:
+    for store in registry:
         ok, _reason = store.available()
         if ok:
             return store
 
     available_lines = "\n".join(
         f"  {store.name:<8} {'✗' if not store.available()[0] else '✓'}  {store.available()[1]}"
-        for store in REGISTRY
+        for store in registry
     )
     raise BackendUnavailableError(
         "no usable keystore backend found:\n"
