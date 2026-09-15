@@ -29,7 +29,7 @@ sap-engineering-skill/
 │   ├── sap-adt-cli/              ← Source in this repo (main skill)
 │   │   ├── scripts/
 │   │   │   ├── sap_adt_cli.py    ← Main CLI entry point
-│   │   │   └── lib/              ← config.py, handlers.py, client.py
+│   │   │   └── lib/              ← config.py, credentials.py, keystore/, log_redaction.py, handlers.py, client.py
 │   │   └── SKILL.md              ← Skill spec for agent frameworks
 │   ├── abap-code-review/         ← ABAP code review skill
 │   │   ├── references/           ← REF_ABAP_SECURITY.md, REF_CLEAN_ABAP.md
@@ -126,16 +126,20 @@ scripts/
 ├── <entrypoint>.py          ← Main Click CLI
 └── lib/
     ├── __init__.py
-    ├── config.py            ← Config file loading, credential management
+    ├── config.py            ← Config/profile loading, env/.env overrides, capability flags
+    ├── credentials.py       ← (sap-adt-cli only) password set/forget/status/doctor
+    ├── keystore/            ← (sap-adt-cli only) env/keyring/dpapi/pass/file backends
+    ├── log_redaction.py     ← (sap-adt-cli only) secret redaction in logs and tracebacks
     ├── handlers.py          ← ADT/HTTP request handlers, command logic
     └── client.py            ← HTTP client (requests), session management
 ```
 
 **config.py** - Handles:
-- Configuration file at `~/.<skill>/config.json` (Python path: `os.path.expanduser`)
-- Environment variable overrides (`SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT`, etc.)
+- Configuration file at `~/.<skill>/config.json` (Python path: `os.path.expanduser`); sap-adt-cli stores multiple environment profiles with non-secret fields only
+- Environment variable and skill-local `.env` overrides (`SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT`, `SAP_PROFILE`, etc.)
 - Capability flags (`allow_write`, `allow_transport`)
 - Interactive and non-interactive setup wizards
+- sap-adt-cli only: password storage is delegated to `credentials.py` + the `keystore/` backends; sap-transport-gate's `tr_collector.py` still reads passwords via its `.env` → config → env chain
 
 **handlers.py** - Contains:
 - Command implementation (get-program, get-class, etc.)
@@ -199,8 +203,8 @@ Skills have explicit reference loading requirements documented in their `SKILL.m
 
 - **Read-only by default** - Write operations require `allow_write: true` in config
 - **One-time confirmation** - Every write/activate/transport operation shows a preview and requires user `[y/N]` confirmation per operation (never cached)
-- **Credentials stored at `~/.sap-adt-cli/config.json`** with 0600 permissions (plain text, not encrypted)
-- **Env vars override config** - Set `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT` per invocation
+- **Passwords stored in the OS keystore** - Non-secret connection settings live in `~/.sap-adt-cli/config.json` (0600, multi-environment profiles); profile passwords are stored only in the OS keystore — backend priority `env` (`SAP_ADT_<PROFILE>_PASSWORD`) → `keyring` → `dpapi` (WSL2) → `pass` → `file` (scrypt+Fernet fallback); manage with `credentials set|forget|status|doctor`; old plaintext-password configs are auto-migrated
+- **Env vars / `.env` override config** - Set `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT` per invocation or in a skill-local `.env`; `SAP_PROFILE` / `--profile` selects among profiles (a complete set of `SAP_*` connection vars bypasses profiles entirely)
 - **SQL DML blocked** - `INSERT`/`UPDATE`/`DELETE`/`MODIFY`/`TRUNCATE` statements are unconditionally rejected in `run-sql`
 
 ### sap-transport-gate

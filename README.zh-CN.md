@@ -1,8 +1,28 @@
-# sap-engineering-skill
+<div align="center">
 
-[English](README.md) | [中文](README.zh-CN.md)
+<h3>把 SAP ABAP 工程经验沉淀为 Agent Skill，而不是又一个通用聊天机器人</h3>
 
-> SAP ABAP 工程 AI Agent SKILL 集锦——由一位 SAP 顾问为日常实战工作打造。
+<h4><i>遵循 SKILL.md 规范 · 默认只读 · 证据优先审查 · 框架无关</i></h4>
+
+> 四个 Skill 覆盖 ABAP 开发全链路：通过 ADT REST API 读写源代码、9 维度上线前代码审查、10 维度传输请求上线门控、生产级 SAP 集成知识库。写入操作受能力标志与逐次确认双重管控；审查类 Skill 只引用真实证据，证据不足即显式声明缺口——绝不编造结论。由一线 SAP 顾问为日常实战工作打造。
+
+**ADT REST API · 9 维度代码审查 · 10 维度传输门控 · 集成知识库 · 证据优先 · 框架无关**
+
+**MIT · 自托管 · 无厂商锁定 · ECC 6.0 与 S/4HANA**
+
+<h4>面向 SAP ABAP 上线工作流的 AI Agent Skill 套件</h4>
+
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white)](skills/sap-adt-cli/scripts)
+[![SAP](https://img.shields.io/badge/SAP-ADT%20REST%20API-0FAAFF?style=flat-square&logo=sap&logoColor=white)](#skill-目录)
+[![Skills](https://img.shields.io/badge/skills-4-2EA043?style=flat-square)](#skill-目录)
+[![Agents](https://img.shields.io/badge/agents-opencode%20%C2%B7%20Claude%20Code%20%C2%B7%20Cursor-orange?style=flat-square)](#兼容的-ai-agent)
+
+**[English](README.md)** · **中文**
+
+</div>
+
+**[Skill 目录](#skill-目录)** · **[快速开始](#快速开始)** · **[仓库结构](#仓库结构)** · **[兼容的 AI Agent](#兼容的-ai-agent)** · **[许可证](#许可证)**
 
 ---
 
@@ -22,12 +42,14 @@
 
 通过 [ADT REST API](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools) 对 SAP 系统进行读写操作的命令行工具与 AI Agent Skill。
 
-**支持对象类型**：程序、类、函数模块、函数组、接口、包含程序、CDS 视图、DDIC 表/结构/类型、包、事务码、SQL 查询、where-used 分析、语法检查、传输请求管理。
+**支持对象类型**：程序、类、函数模块（需指定函数组）、函数组、接口、包含程序、CDS 视图、类型组（TYPE POOL）、DDIC 表/结构/域/数据元素、包、事务码、对象搜索（`*` 通配符）、只读 Open SQL 数据预览、where-used 分析、语法检查、传输请求管理（列表/创建/发布）。
 
 **核心特性**：
-- 默认只读；写入和传输操作需显式开启能力标志，且每次操作需 `[y/N]` 确认
+- 默认只读；写入和传输操作需显式开启能力标志，且每次操作都展示变更预览并要求 `[y/N]` 确认，确认绝不缓存或复用（`--yes` 仅限可信自动化场景）
+- 多环境 **Profile**（DEV/QAS/PRD…）保存于 `~/.sap-adt-cli/config.json`（0600 权限）——用 `profile use` 持久切换，或用 `--profile` 单次指定
+- 密码仅存于**操作系统密钥库**，绝不落入配置文件；后端优先级为 `env` → `keyring`（凭据管理器 / Keychain / Secret Service）→ `dpapi`（WSL2）→ `pass`（GPG）→ `file`（scrypt + Fernet 兜底）；通过 `credentials set|forget|status|doctor` 管理，旧的明文配置自动迁移，详细日志与 HTTP 异常堆栈全程脱敏
+- 支持环境变量或 Skill 本地 `.env` 覆盖 Profile（适用于 CI/CD）
 - Windows 一键安装脚本（`setup-opencode-abap-cli.bat`），自动完成 opencode + Skill 全流程配置
-- 凭据存储于 `~/.sap-adt-cli/config.json`，支持环境变量覆盖（适用于 CI/CD）
 
 ---
 
@@ -64,15 +86,17 @@ SAP ABAP 上线前代码审查 AI Agent Skill。对 **9 个维度**进行安全�
 
 **核心原则**：证据优先。AI 不凭借不足的证据编造结论。
 
+- **在线模式主动采集**——给出 TR ID 后，Skill 会自行执行 `tr_collector.py collect`，仅在凭据缺失或连接失败时回退到离线本地模式；审查开始前会先确认审查范围（仅代码质量 / 功能 + 代码质量）。
+
 ---
 
 ### [`sap-integration-wiki`](skills/sap-integration-wiki/) &nbsp;·&nbsp; [GitHub](https://github.com/shrek-abaper/sap-engineering-skill/tree/main/skills/sap-integration-wiki)
 
 将任意 AI 助手变成 SAP 集成专家的可组合知识库 Skill。覆盖 9 个业务领域和 8 种集成技术，告别泛泛而错的通用回答。
 
-**业务领域**：MM（采购、库存）、SD（销售）、FI（总账、AR/AP、资产会计、FSSC）、主数据、PP（生产）
+**业务领域**：MM（采购、库存）、SD（销售）、FI（总账、AR/AP、资产会计、FSSC——含金蝶/用友对接与 SAP Central Finance/CFIN 凭证复制场景）、主数据、PP（生产）
 
-**集成技术**：OData V2/V4、RFC/JCo、SOAP over HTTP RFC、IDoc/PI-PO、BAPI & RAP、认证、BTP Integration Suite、最佳实践
+**集成技术**：OData V2/V4、RFC/JCo、SOAP over HTTP RFC（免 JCo 调用 RFC）、IDoc/PI-PO、BAPI & RAP、认证、BTP Integration Suite（iFlow、Cloud Connector、Event Mesh）、最佳实践
 
 **SAP 版本**：ECC 6.0 · S/4HANA On-Prem 1909–2023+ · S/4HANA Cloud（公有版 & 私有版）
 
@@ -84,12 +108,16 @@ SAP ABAP 上线前代码审查 AI Agent Skill。对 **9 个维度**进行安全�
 sap-engineering-skill/
 ├── README.md                         ← 英文版（默认）
 ├── README.zh-CN.md                   ← 本文件（中文）
+├── CONTRIBUTING.md                   ← 测试、CI 矩阵、密钥扫描说明
 ├── LICENSE
 ├── setup-opencode-abap-cli.bat       ← Windows 一键安装脚本
+├── .github/workflows/tests.yml       ← CI：三平台 unittest 矩阵 + gitleaks
+├── .gitleaks.toml                    ← 密钥扫描规则（同时作为 pre-commit hook）
+├── tests/                            ← 仓库级 unittest 测试套（密钥库、凭据、安全防护等）
 └── skills/
     ├── sap-adt-cli/             ← ADT CLI 工具与 Skill（源码位于本仓库）
     ├── abap-code-review/        ← ABAP 代码审查 Skill
-    ├── sap-transport-gate/      ← 传输请求上线门控 Skill
+    ├── sap-transport-gate/      ← 传输请求上线门控 Skill（含 evals/ 黄金集）
     └── sap-integration-wiki/    ← SAP 集成知识库 Skill
 ```
 
@@ -122,8 +150,10 @@ ln -s "$(pwd)/skills/abap-code-review"     ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"   ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
-# 配置 sap-adt-cli 的 SAP 凭据
+# 配置 SAP 连接 Profile（交互式向导；密码进入操作系统密钥库）
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+# 可用 --profile dev/qas/prd 添加多个环境；检查当前生效的密钥库后端：
+python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
 ```
 
 ### 兼容的 AI Agent
@@ -142,10 +172,24 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 
 | Skill                  | 适用场景                                              |
 | ---------------------- | ----------------------------------------------------- |
-| `sap-adt-cli`          | 通过 ADT API 读写 ABAP 源代码、执行 SQL、管理传输请求 |
+| `sap-adt-cli`          | 通过 ADT API 读写 ABAP 源代码、Open SQL 预览、where-used/语法检查、多环境 Profile、管理传输请求 |
 | `abap-code-review`     | 单个 ABAP 程序上线前安全与质量审查（9 维度）          |
 | `sap-transport-gate`   | 传输请求上线门控评估——基于证据的 GO/NO-GO 决策        |
 | `sap-integration-wiki` | SAP 集成模式、API 参考、按场景故障排除                |
+
+---
+
+## 开发与测试
+
+- **测试**——使用标准库 `unittest`，测试代码位于仓库根目录 `tests/`（覆盖密钥库各后端、明文配置迁移、日志脱敏、写入/DML 拦截——共 148 个测试）：
+
+  ```bash
+  python3 -m unittest discover -s tests -v
+  ```
+
+  仅依赖 `click` / `requests` / `urllib3`；`keyring` 与 `cryptography` 是原生密钥库后端的可选依赖。
+- **CI**——[`.github/workflows/tests.yml`](.github/workflows/tests.yml) 在 Ubuntu / Windows / macOS 三平台与 Python 3.12 上运行同一测试套，并执行 gitleaks 全历史密钥扫描。
+- **密钥扫描**——gitleaks 同时作为 pre-commit hook 运行（`.pre-commit-config.yaml`）。占位符规则与 WSL/DPAPI 手动验证清单见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ---
 
