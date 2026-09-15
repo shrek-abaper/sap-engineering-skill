@@ -8,12 +8,27 @@ import requests
 
 from .client import AdtHttpError, make_adt_request
 from .config import get_config
+from .parsers import fields as parse_fields
+from .parsers import findings as parse_findings
+from .parsers import objects as parse_objects
+from .parsers import records as parse_records
+from .parsers import rows as parse_rows
+from .parsers import scalar as parse_scalar
+from .parsers import source as parse_source
+from .parsers.common import ParseError
 
 
 @dataclass
 class AdtResult:
-    text: str
+    text: str = ""
     is_error: bool = False
+    # Structured-output fields (kind != "raw" when the command is normalized).
+    kind: str = "raw"
+    data: Optional[dict] = None
+    object: Optional[dict] = None
+    meta: Optional[dict] = None
+    # Original ADT payload kept for --format xml passthrough.
+    raw: Optional[str] = None
 
 
 def _base() -> str:
@@ -24,13 +39,23 @@ def _enc(name: str) -> str:
     return quote(name, safe="")
 
 
-def _ok(resp: requests.Response) -> AdtResult:
-    return AdtResult(text=resp.text)
-
-
 def _err(exc: Exception) -> AdtResult:
     # AdtHttpError messages are pre-sanitized (no Authorization headers).
     return AdtResult(text=str(exc), is_error=True)
+
+
+def _obj(obj_type: str, name: str) -> dict:
+    return {"type": obj_type, "name": (name or "").upper()}
+
+
+def _structured(kind: str, data: dict, obj: dict, raw: Optional[str] = None,
+                meta: Optional[dict] = None) -> AdtResult:
+    return AdtResult(kind=kind, data=data, object=obj, raw=raw, meta=meta)
+
+
+def _source_result(resp: requests.Response, obj_type: str, name: str) -> AdtResult:
+    data = parse_source.parse(resp.content)
+    return _structured("source", data, _obj(obj_type, name), raw=None)
 
 
 def _xattr(s: str) -> str:
@@ -40,21 +65,24 @@ def _xattr(s: str) -> str:
 
 def get_program(program_name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/programs/programs/{_enc(program_name)}/source/main"))
+        resp = make_adt_request(f"{_base()}/sap/bc/adt/programs/programs/{_enc(program_name)}/source/main")
+        return _source_result(resp, "program", program_name)
     except Exception as e:
         return _err(e)
 
 
 def get_class(class_name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/oo/classes/{_enc(class_name)}/source/main"))
+        resp = make_adt_request(f"{_base()}/sap/bc/adt/oo/classes/{_enc(class_name)}/source/main")
+        return _source_result(resp, "class", class_name)
     except Exception as e:
         return _err(e)
 
 
 def get_function_group(function_group: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/functions/groups/{_enc(function_group)}/source/main"))
+        resp = make_adt_request(f"{_base()}/sap/bc/adt/functions/groups/{_enc(function_group)}/source/main")
+        return _source_result(resp, "function-group", function_group)
     except Exception as e:
         return _err(e)
 
@@ -65,21 +93,29 @@ def get_function(function_name: str, function_group: str) -> AdtResult:
             f"{_base()}/sap/bc/adt/functions/groups/{_enc(function_group)}"
             f"/fmodules/{_enc(function_name)}/source/main"
         )
-        return _ok(make_adt_request(url))
+        return _source_result(make_adt_request(url), "function", function_name)
     except Exception as e:
         return _err(e)
 
 
 def get_structure(structure_name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/ddic/structures/{_enc(structure_name)}/source/main"))
+        resp = make_adt_request(
+            f"{_base()}/sap/bc/adt/ddic/structures/{_enc(structure_name)}/source/main"
+        )
+        data = parse_fields.parse(resp.content)
+        return _structured("fields", data, _obj("structure", structure_name), raw=resp.text)
     except Exception as e:
         return _err(e)
 
 
 def get_table(table_name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/ddic/tables/{_enc(table_name)}/source/main"))
+        resp = make_adt_request(
+            f"{_base()}/sap/bc/adt/ddic/tables/{_enc(table_name)}/source/main"
+        )
+        data = parse_fields.parse(resp.content)
+        return _structured("fields", data, _obj("table", table_name), raw=resp.text)
     except Exception as e:
         return _err(e)
 
@@ -95,48 +131,45 @@ def get_package(package_name: str) -> AdtResult:
                 "withShortDescriptions": "true",
             },
         )
-        root = ET.fromstring(resp.text)
-        ns_obj = "{http://www.sap.com/abapxml}"
-        items = []
-        for node in root.findall(f".//{ns_obj}SEU_ADT_REPOSITORY_OBJ_NODE"):
-            name_el = node.find(f"{ns_obj}OBJECT_NAME")
-            uri_el = node.find(f"{ns_obj}OBJECT_URI")
-            if name_el is None or uri_el is None:
-                continue
-            type_el = node.find(f"{ns_obj}OBJECT_TYPE")
-            desc_el = node.find(f"{ns_obj}DESCRIPTION")
-            items.append({
-                "OBJECT_TYPE": type_el.text if type_el is not None else "",
-                "OBJECT_NAME": name_el.text,
-                "OBJECT_DESCRIPTION": desc_el.text if desc_el is not None else "",
-                "OBJECT_URI": uri_el.text,
-            })
-        return AdtResult(text=json.dumps(items, indent=2))
+        data = parse_objects.parse(resp.content)
+        return _structured("objects", data, _obj("package", package_name), raw=resp.text)
     except Exception as e:
         return _err(e)
 
 
 def get_type_info(type_name: str) -> AdtResult:
+    # Domain metadata resource is /ddic/domains/{name} (v2); the old
+    # .../source/main path 404s on modern releases. Fall back to the data
+    # element only for a genuine 404; the parser reports resolved_as.
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/ddic/domains/{_enc(type_name)}/source/main"))
-    except Exception:
-        pass
+        resp = make_adt_request(f"{_base()}/sap/bc/adt/ddic/domains/{_enc(type_name)}")
+        data = parse_scalar.parse(resp.content)
+        return _structured("scalar", data, _obj("type", type_name), raw=resp.text)
+    except AdtHttpError as e:
+        if e.status != 404:
+            return _err(e)
+    except Exception as e:
+        return _err(e)
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/ddic/dataelements/{_enc(type_name)}"))
+        resp = make_adt_request(f"{_base()}/sap/bc/adt/ddic/dataelements/{_enc(type_name)}")
+        data = parse_scalar.parse(resp.content)
+        return _structured("scalar", data, _obj("type", type_name), raw=resp.text)
     except Exception as e:
         return _err(e)
 
 
 def get_include(include_name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/programs/includes/{_enc(include_name)}/source/main"))
+        resp = make_adt_request(f"{_base()}/sap/bc/adt/programs/includes/{_enc(include_name)}/source/main")
+        return _source_result(resp, "include", include_name)
     except Exception as e:
         return _err(e)
 
 
 def get_interface(interface_name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(f"{_base()}/sap/bc/adt/oo/interfaces/{_enc(interface_name)}/source/main"))
+        resp = make_adt_request(f"{_base()}/sap/bc/adt/oo/interfaces/{_enc(interface_name)}/source/main")
+        return _source_result(resp, "interface", interface_name)
     except Exception as e:
         return _err(e)
 
@@ -148,7 +181,9 @@ def get_transaction(transaction_name: str) -> AdtResult:
             f"?uri=%2Fsap%2Fbc%2Fadt%2Fvit%2Fwb%2Fobject_type%2Ftrant%2Fobject_name%2F{_enc(transaction_name)}"
             f"&facet=package&facet=appl"
         )
-        return _ok(make_adt_request(url))
+        resp = make_adt_request(url)
+        data = parse_scalar.parse(resp.content)
+        return _structured("scalar", data, _obj("transaction", transaction_name), raw=resp.text)
     except Exception as e:
         return _err(e)
 
@@ -159,7 +194,9 @@ def search_object(query: str, max_results: int = 100) -> AdtResult:
             f"{_base()}/sap/bc/adt/repository/informationsystem/search"
             f"?operation=quickSearch&query={_enc(query)}&maxResults={max_results}"
         )
-        return _ok(make_adt_request(url))
+        resp = make_adt_request(url)
+        data = parse_objects.parse(resp.content)
+        return _structured("objects", data, _obj("search", query), raw=resp.text)
     except Exception as e:
         return _err(e)
 
@@ -213,31 +250,6 @@ def _extract_lock_handle(resp: requests.Response) -> str:
     return ""
 
 
-def _parse_syntax_check(xml_text: str) -> str:
-    if not xml_text or not xml_text.strip():
-        return "Syntax OK — no issues found."
-    try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return xml_text
-
-    messages = []
-    for elem in root.iter():
-        flat = _flat_attribs(elem)
-        severity = flat.get("severity", "")
-        text = flat.get("text", "") or flat.get("description", "")
-        line = flat.get("line", "") or flat.get("offset", "")
-        if not severity or not text:
-            continue
-        tag = severity.upper()
-        if tag not in ("ERROR", "WARNING", "INFO"):
-            continue
-        line_str = f" line {line}:" if line and line != "0" else ""
-        messages.append(f"[{tag}]{line_str} {text}")
-
-    return "\n".join(messages) if messages else "Syntax OK — no issues found."
-
-
 def _parse_activation_errors(xml_text: str) -> list:
     if not xml_text or not xml_text.strip():
         return []
@@ -287,105 +299,6 @@ def _parse_where_used(xml_text: str) -> list:
     return items
 
 
-def _parse_sql_result(xml_text: str) -> list:
-    if not xml_text or not xml_text.strip():
-        return []
-    try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return []
-
-    columns_ordered = []
-
-    for elem in root.iter():
-        if _tag_local(elem) != "columns":
-            continue
-        meta = next((c for c in elem if _tag_local(c) == "metadata"), None)
-        if meta is None:
-            continue
-        col_name = _flat_attribs(meta).get("name", "")
-        if not col_name:
-            continue
-        dataset = next((c for c in elem if _tag_local(c) == "dataSet"), None)
-        values = []
-        if dataset is not None:
-            values = [d.text or "" for d in dataset if _tag_local(d) == "data"]
-        columns_ordered.append((col_name, values))
-
-    if not columns_ordered:
-        for elem in root.iter():
-            if _tag_local(elem) != "column":
-                continue
-            flat = _flat_attribs(elem)
-            col_name = flat.get("name", "")
-            if not col_name:
-                continue
-            rows = []
-            for child in elem:
-                cl = _tag_local(child)
-                if cl in ("row", "cell", "value"):
-                    rows.append(child.text or "")
-            if not rows:
-                for rows_elem in elem.iter():
-                    if _tag_local(rows_elem) == "rows":
-                        for row_elem in rows_elem:
-                            rows.append(row_elem.text or "")
-                        break
-            columns_ordered.append((col_name, rows))
-
-    if not columns_ordered:
-        return []
-    n_rows = max(len(v) for _, v in columns_ordered)
-    result = []
-    for i in range(n_rows):
-        row = {}
-        for col_name, values in columns_ordered:
-            row[col_name] = values[i] if i < len(values) else ""
-        result.append(row)
-    return result
-
-
-def _parse_transports(xml_text: str, status_filter: str = "") -> list:
-    if not xml_text or not xml_text.strip():
-        return []
-    try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return []
-
-    items = []
-    for elem in root.iter():
-        tl = _tag_local(elem)
-        if tl not in ("workitem", "transport", "request"):
-            continue
-        flat = _flat_attribs(elem)
-        attr_map = {}
-        for child in elem.iter():
-            if _tag_local(child) == "attribute":
-                cf = _flat_attribs(child)
-                aname = cf.get("name", "")
-                avalue = cf.get("value", "")
-                if aname:
-                    attr_map[aname] = avalue
-
-        trkorr = attr_map.get("TRKORR") or flat.get("number") or flat.get("TRKORR", "")
-        desc = attr_map.get("AS4TEXT") or flat.get("description") or flat.get("AS4TEXT", "")
-        status = attr_map.get("TRSTATUS") or flat.get("status") or flat.get("TRSTATUS", "")
-        owner = attr_map.get("AS4USER") or flat.get("owner") or flat.get("AS4USER", "")
-
-        if not trkorr:
-            continue
-        if status_filter and status.upper() != status_filter.upper():
-            continue
-        items.append({
-            "trkorr": trkorr,
-            "description": desc,
-            "status": status,
-            "owner": owner,
-        })
-    return items
-
-
 def syntax_check(
     object_type: str,
     object_name: str,
@@ -393,23 +306,29 @@ def syntax_check(
 ) -> AdtResult:
     try:
         uri = get_object_uri(object_type, object_name, group=group)
+        name = _xattr(object_name.upper())
+        # New check-run resource (the legacy /abapsource/syntaxcheck returns
+        # 404 on modern releases): checkObjectList request, checkmessages reply.
         body = (
             '<?xml version="1.0" encoding="utf-8"?>'
-            '<adtcore:objectReferences xmlns:adtcore="http://www.sap.com/adt/core">'
-            f'<adtcore:objectReference adtcore:uri="{_xattr(uri)}" adtcore:name="{_xattr(object_name.upper())}"/>'
-            '</adtcore:objectReferences>'
+            '<chk:checkObjectList xmlns:chk="http://www.sap.com/adt/checkrun" '
+            'xmlns:adtcore="http://www.sap.com/adt/core">'
+            f'<chk:checkObject adtcore:uri="{_xattr(uri)}" adtcore:name="{name}">'
+            '<chk:reporter chk:name="abapCheckRun"/>'
+            '</chk:checkObject>'
+            '</chk:checkObjectList>'
         ).encode("utf-8")
         resp = make_adt_request(
-            f"{_base()}/sap/bc/adt/abapsource/syntaxcheck",
+            f"{_base()}/sap/bc/adt/checkruns",
             method="POST",
             data=body,
             extra_headers={
-                "Content-Type": (
-                    "application/vnd.sap.adt.abapsource.syntaxcheckresult+xml; charset=utf-8"
-                )
+                "Content-Type": "application/vnd.sap.adt.checkobjects+xml",
+                "Accept": "application/vnd.sap.adt.checkmessages+xml",
             },
         )
-        return AdtResult(text=_parse_syntax_check(resp.text))
+        data = parse_findings.parse(resp.content)
+        return _structured("findings", data, _obj(object_type, object_name), raw=resp.text)
     except ValueError as e:
         return AdtResult(text=str(e), is_error=True)
     except Exception as e:
@@ -418,18 +337,20 @@ def syntax_check(
 
 def get_cds_view(name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(
+        resp = make_adt_request(
             f"{_base()}/sap/bc/adt/ddic/ddl/sources/{_enc(name)}/source/main"
-        ))
+        )
+        return _source_result(resp, "cds-view", name)
     except Exception as e:
         return _err(e)
 
 
 def get_type_group(name: str) -> AdtResult:
     try:
-        return _ok(make_adt_request(
+        resp = make_adt_request(
             f"{_base()}/sap/bc/adt/typegroups/groups/{_enc(name)}/source/main"
-        ))
+        )
+        return _source_result(resp, "type-group", name)
     except Exception as e:
         return _err(e)
 
@@ -483,23 +404,30 @@ def run_sql(sql: str, max_rows: int = 100) -> AdtResult:
                 },
                 timeout=60,
             )
-        rows = _parse_sql_result(resp.text)
-        return AdtResult(text=json.dumps(rows, indent=2))
+        data = parse_rows.parse(resp.content)
+        return _structured("rows", data, {"type": "run-sql", "name": None}, raw=resp.text)
     except Exception as e:
         return _err(e)
 
 
-def list_transports(user: str, status: str = "D") -> AdtResult:
+def list_transports(user: str = "", status: str = "D") -> AdtResult:
+    # New transport-organizer tree resource (the legacy /cts/transports
+    # worklist document returns 406 on modern releases).
     try:
         resp = make_adt_request(
-            f"{_base()}/sap/bc/adt/cts/transports",
-            params={"user": user, "target": "", "category": "Workbench"},
+            f"{_base()}/sap/bc/adt/cts/transportrequests",
             extra_headers={
-                "Accept": "application/vnd.sap.cts.transport.worklist+xml; charset=utf-8"
+                "Accept": "application/vnd.sap.adt.transportorganizertree.v1+xml"
             },
         )
-        items = _parse_transports(resp.text, status_filter=status)
-        return AdtResult(text=json.dumps(items, indent=2))
+        data = parse_records.parse(resp.content)
+        records = data["transports"]
+        # --user/--status stay supported via client-side filtering.
+        if user:
+            records = [t for t in records if (t.get("owner") or "").upper() == user.upper()]
+        if status:
+            records = [t for t in records if (t.get("status") or "").upper() == status.upper()]
+        return _structured("records", {"transports": records}, None, raw=resp.text)
     except Exception as e:
         return _err(e)
 

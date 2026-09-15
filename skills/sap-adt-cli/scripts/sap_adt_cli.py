@@ -48,13 +48,29 @@ __version__ = "1.3.0"
 _KEYSTORE_CHOICES = ("env", "keyring", "dpapi", "pass", "file")
 
 
+def _profile_name():
+    """Best-effort active profile name for the envelope; never blocks output."""
+    try:
+        return load_config().profile_name
+    except Exception:  # noqa: BLE001 - unconfigured/error results still print
+        return None
+
+
 def _output(result) -> None:
     if result.is_error:
-        # Batch 1: error stream/exit behavior is untouched; error envelopes
-        # and exit-code tiers land in the error-code batch.
+        # Error envelopes and exit-code tiers land in the error-code batch.
         click.echo(result.text, err=True)
         sys.exit(1)
-    click.echo(output.render(result, output.get_format()))
+    command = click.get_current_context().info_name
+    try:
+        rendered = output.render(
+            result, output.get_format(),
+            command=command, profile=_profile_name(),
+        )
+    except output.FormatUnsupported as exc:
+        click.echo(f"ERROR: {exc}", err=True)
+        sys.exit(1)
+    click.echo(rendered)
 
 
 def _require_write(config: SapConfig) -> None:
@@ -551,8 +567,13 @@ def syntax_check_cmd(object_type, object_name, group):
     if result.is_error:
         click.echo(result.text, err=True)
         sys.exit(1)
-    click.echo(result.text)
-    if "[ERROR]" in result.text:
+    command = click.get_current_context().info_name
+    click.echo(output.render(
+        result, output.get_format(), command=command, profile=_profile_name()
+    ))
+    # Exit 1 when the check found hard errors (warnings/info stay 0).
+    if any((f.get("severity") == "error")
+           for f in (result.data or {}).get("findings", [])):
         sys.exit(1)
 
 
