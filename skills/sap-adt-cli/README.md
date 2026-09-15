@@ -18,7 +18,10 @@ explicit capability flags and per-operation confirmation.
 - A SAP system (on-premise ECC / S/4HANA, or BTP ABAP) with ADT services activated
 - A SAP dialog user with the `SAP_ADT_BASE` role (or equivalent)
 
-Dependencies (`click`, `requests`, `urllib3`) are installed automatically on first run.
+Core dependencies (`click`, `requests`, `urllib3`) are installed automatically on first run.
+Keystore backends are optional: `pip install keyring` for desktop OS vaults,
+`pip install cryptography` for the encrypted-file fallback (WSL2 needs neither —
+it uses Windows DPAPI directly). See [Credential storage](#credential-storage-keystore).
 
 ---
 
@@ -129,8 +132,8 @@ and integrates with any agent framework that supports custom tools or skills:
 git clone https://github.com/shrek-abaper/sap-engineering-skill
 cd sap-engineering-skill
 
-# 2. Configure credentials (interactive wizard — password is not echoed;
-#    add more systems later with: configure --profile qas / prd)
+# 2. Configure credentials (interactive wizard — password is not echoed and is
+#    saved to the OS keystore; add more systems later with: configure --profile qas / prd)
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 
 # 3. Verify the connection
@@ -150,20 +153,24 @@ Credential lookup order is:
 
 1. Process environment variables
 2. `skills/sap-adt-cli/.env`
-3. The selected profile in `~/.sap-adt-cli/config.json`
+3. The selected profile in `~/.sap-adt-cli/config.json` (non-secret fields)
+   and its password in the OS keystore — see [Credential storage](#credential-storage-keystore)
 
 ### Multiple SAP environments (profiles)
 
 Each SAP system is stored as a named profile in `~/.sap-adt-cli/config.json`
-(the first `configure` run creates a profile called `default`; an old
-single-connection config is migrated automatically):
+(non-secret fields; the password goes to the keystore). The first `configure`
+run creates a profile called `default`; an old single-connection config is
+migrated automatically:
 
 ```bash
 CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
 
 # Add environments (each saved profile becomes the active one)
 $CLI configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
+$CLI credentials set dev                       # then store the password (hidden prompt)
 SAP_PASSWORD="..." $CLI configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
+                                               # ^ SAP_PASSWORD is moved into the keystore, not left in config.json
 
 # List environments; * marks the active profile
 $CLI profile list
@@ -305,12 +312,17 @@ after use and must be repeated for each subsequent operation.
 ### Non-interactive flags (agent / automation workflows)
 
 ```bash
-# Pass password via environment variable to avoid shell history exposure
+# Pass password via environment variable to avoid shell history exposure.
+# configure stores it in the keystore; it does not remain in config.json.
 SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
   --url      "https://my-sap.example.com:8000" \
   --username "MYUSER" \
   --client   "100"
 ```
+
+At runtime, CI can instead provide the password per profile via
+`SAP_ADT_<PROFILE>_PASSWORD` (read-only `env` backend), or use
+`--keystore file` together with `SAP_ADT_MASTER_PASSPHRASE`.
 
 ---
 

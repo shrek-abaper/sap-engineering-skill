@@ -14,7 +14,9 @@
 - SAP 系统（本地 ECC / S/4HANA 或 BTP ABAP），需已激活 ADT 服务
 - 拥有 `SAP_ADT_BASE` 角色（或等效权限）的 SAP 对话用户
 
-依赖包（`click`、`requests`、`urllib3`）在首次运行时自动安装。
+核心依赖（`click`、`requests`、`urllib3`）在首次运行时自动安装。密钥库后端为可选项：
+桌面系统密钥库需 `pip install keyring`，加密文件兜底需 `pip install cryptography`
+（WSL2 两者都不需要——直接使用 Windows DPAPI）。详见[凭据存储（密钥库）](#凭据存储密钥库)。
 
 ---
 
@@ -117,7 +119,7 @@ opencode 仅作为示例。`sap-adt-cli` 实现了标准 Agent Skill 接口（`S
 git clone https://github.com/shrek-abaper/sap-engineering-skill
 cd sap-engineering-skill
 
-# 2. 配置凭据（交互式向导 — 密码不回显；
+# 2. 配置凭据（交互式向导 — 密码不回显，并存入操作系统密钥库；
 #    之后可用 configure --profile qas / prd 添加更多环境）
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 
@@ -138,19 +140,22 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-function BAPI_SALESORDER_C
 
 1. 进程环境变量
 2. `skills/sap-adt-cli/.env`
-3. `~/.sap-adt-cli/config.json` 中选中的 profile
+3. `~/.sap-adt-cli/config.json` 中选中 profile 的非密字段，口令则从操作系统密钥库读取——见[凭据存储（密钥库）](#凭据存储密钥库)
 
 ### 多 SAP 环境（Profile）
 
 每套 SAP 系统以命名 profile 的形式保存在 `~/.sap-adt-cli/config.json` 中
-（首次运行 `configure` 会创建名为 `default` 的 profile；旧的单连接配置会自动迁移）：
+（只存非密字段，口令存入密钥库）。首次运行 `configure` 会创建名为
+`default` 的 profile；旧的单连接配置会自动迁移：
 
 ```bash
 CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
 
 # 添加环境（每次保存的 profile 会成为当前生效环境）
 $CLI configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
+$CLI credentials set dev                       # 随后以隐藏输入存入口令
 SAP_PASSWORD="..." $CLI configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
+                                               # ^ SAP_PASSWORD 会被转入密钥库，不会留在 config.json
 
 # 列出所有环境，* 为当前生效
 $CLI profile list
@@ -271,12 +276,16 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 ### 非交互式参数（智能体 / 自动化工作流）
 
 ```bash
-# 通过环境变量传递密码，避免暴露在 Shell 历史记录中
+# 通过环境变量传递密码，避免暴露在 Shell 历史记录中。
+# configure 会把口令转入密钥库，不会留在 config.json。
 SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
   --url      "https://my-sap.example.com:8000" \
   --username "MYUSER" \
   --client   "100"
 ```
+
+CI 运行期也可以按 profile 直接提供口令：`SAP_ADT_<PROFILE>_PASSWORD`（只读的
+`env` 后端），或配合 `--keystore file` 使用 `SAP_ADT_MASTER_PASSPHRASE`。
 
 ---
 
