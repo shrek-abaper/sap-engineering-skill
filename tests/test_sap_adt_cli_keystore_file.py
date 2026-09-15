@@ -75,8 +75,9 @@ class FileStoreContractTests(FileStoreTestBase):
         self.assertNotIn("file-secret", raw)
         data = json.loads(raw)
         self.assertIn("salt", data)
-        self.assertEqual(stat.S_IMODE(self.enc.stat().st_mode), 0o600)
-        self.assertEqual(stat.S_IMODE(self.enc.parent.stat().st_mode), 0o700)
+        if os.name == "posix":  # Windows does not model unix permission bits
+            self.assertEqual(stat.S_IMODE(self.enc.stat().st_mode), 0o600)
+            self.assertEqual(stat.S_IMODE(self.enc.parent.stat().st_mode), 0o700)
         # A second store gets a fresh random salt.
         other = self.tmp / "other.enc"
         s2 = file_store.FileStore(store_file=other)

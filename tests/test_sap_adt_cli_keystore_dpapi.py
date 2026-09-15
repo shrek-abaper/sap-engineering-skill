@@ -127,8 +127,9 @@ class DpapiContractTests(unittest.TestCase):
         self.assertNotIn("Sap-Pass-123", raw)  # only the DPAPI blob on disk
         data = json.loads(raw)
         self.assertIn("dev", data["entries"])
-        mode = stat.S_IMODE((self.tmp / ".sap-adt-cli" / "secrets.json").stat().st_mode)
-        self.assertEqual(mode, 0o600)
+        if os.name == "posix":  # Windows does not model unix permission bits
+            mode = stat.S_IMODE((self.tmp / ".sap-adt-cli" / "secrets.json").stat().st_mode)
+            self.assertEqual(mode, 0o600)
 
     def test_set_get_roundtrip(self):
         self.store.set("dev", "Sap-Pass-123")
@@ -166,6 +167,7 @@ class DpapiContractTests(unittest.TestCase):
         with self.assertRaises(KeyStoreError):
             broken.set("dev", "Sap-Pass-123")
 
+    @unittest.skipUnless(os.name == "posix", "unix mode bits only")
     def test_dir_permissions_are_0700(self):
         self.store.set("dev", "x")
         mode = stat.S_IMODE((self.tmp / ".sap-adt-cli").stat().st_mode)
