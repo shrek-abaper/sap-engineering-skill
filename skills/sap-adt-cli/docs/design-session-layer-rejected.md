@@ -4,7 +4,7 @@
 was written.** The rejection is based on **measured evidence**, not priority.
 The full approved design is archived below in case a future requirement
 reopens it; the protocol fixes uncovered during verification shipped instead
-(see `skills/sap-adt-cli/references/adt_api.md` facts 8–11).
+(see `../references/adt_api.md` facts 8–12).
 
 ## Why it was proposed
 

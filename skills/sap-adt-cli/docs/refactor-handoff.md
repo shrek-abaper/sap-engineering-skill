@@ -1,9 +1,10 @@
 # Output-standardization refactor — handoff
 
-End state after batches 0–9. Companion docs: `refactor-summary.md`
-(batches/commits, six→seven protocol facts, follow-ups), `known-issues.md`
-(unverified paths, trigger conditions), `../SKILL.md`
-(operational contract, ≤140 lines).
+End state after batches 0–10. Companion docs (same directory):
+`refactor-summary.md` (batches/commits, twelve protocol facts, follow-ups),
+`known-issues.md` (unverified paths, trigger conditions),
+`../SKILL.md` (operational contract, ≤141 lines),
+`../references/adt_api.md` (canonical protocol-fact table).
 
 ## 1. Completed batches
 
@@ -77,22 +78,28 @@ _LIST_KEY = {"fields":"fields","objects":"objects","rows":"rows",
 34 Click commands, 8 parser modules, 18 error codes. `check_contract.py`
 asserts all four tables stay aligned with SKILL.md and fails CI on drift.
 
-## 3. Seven verified protocol facts (S/4HANA 2021 / Basis 7.56)
+## 3. Twelve verified protocol facts (S/4HANA 2021 / Basis 7.56)
 
-Canonical copy in `../references/adt_api.md` (dated old→new table) and
+Canonical copy in `../references/adt_api.md` (dated old→new table, with the
+write-side "2xx ≠ completed" and read-side "empty ≠ absent" rules) and
 `refactor-summary.md`. Short form:
 
 1. Domain metadata: `/ddic/domains/{n}` v2, not `…/source/main`.
 2. Syntax: POST `/checkruns` checkObjectList/reporter, checkmessages XML.
-3. Transports: GET `/cts/transportrequests` transportorganizer.v1+xml.
+3. Transports: GET `/cts/transportrequests` transportorganizer.v1+xml; **an empty root tree is not proof of "no requests"** (per-TR GET is the positive check).
 4. Data preview: POST freestyle rowNumber body; vendor Accept (406 on application/xml); **rowNumber silently overrides SQL UP TO**.
 5. Where-used: POST usageReferences, relative lowercase URI, CT+Accept both `application/*`, empty affectedObjects; discovery declares no accept version → do not narrow.
 6. Package nodestructure has no namespace on payload elements (local-name matching); tables/structures source is CDS DDL; objectstructure is 404.
 7. Release: POST `/cts/transportrequests/{TR}/newreleasejobs` + readback `tm:status`; missing request = HTTP 400 ADT_TM_COMMON_EXCEPTION. Measured empty-TR release: R within the first 2 s poll (attempt 1).
+8. Lock: `POST {obj}?_action=LOCK&accessMode=MODIFY` (stateful header, lock.result ASX Accept, no body); handle in ASX `DATA/LOCK_HANDLE`. Legacy `?method=lock` → 400/415.
+9. Source PUT: handle/transport as query `?lockHandle=` / `?corrNr=` (not the `X-sap-adt-lock-handle` header / `sap-cts-request`).
+10. Unlock: `POST {obj}?_action=UNLOCK&lockHandle=`. 200 empty ≠ released: foreign-context unlock is a silent no-op; same-session `finally` release was confirmed by a fresh-process re-lock 200; cross-process recovery needs the original cookie jar.
+11. Activation: `POST /activation?method=activate&preauditRequested=true` (bare POST → 400); no lock/shared session needed; verify by inactiveobjects/`version` readback, not 200.
+12. Create transport: ASX `CreateCorrectionRequest` at `POST /cts/transports` (`DATA{DEVCLASS,REQUEST_TEXT,REF,OPERATION=I}`, Accept text/plain); the old `cts.transport.request+xml` document → 400. CLI `--package`/`--ref` required; REF mandatory-ness and real-package behavior unprobed.
 
 ## 4. Remaining engineering backlog (three items)
 
-1. **adt_api.md consolidation** — the file now carries the 11-row
+1. **adt_api.md consolidation** — the file now carries the 12-row
    verified-facts table, modern endpoint sections, and legacy subsections;
    fold the legacy/duplicated blocks into one canonical old→new structure
    (one source of truth per endpoint) without dropping measured status
@@ -140,7 +147,7 @@ ATC/Unit reporter expansion, doctor --coverage UI consumption.
   lock handles never logged (progress line shows a short hash only).
 - **Write-side 2xx is "accepted", never "completed"** — release, activate
   and unlock all require an independent readback; a foreign-context unlock
-  200 is a measured silent no-op (adt_api.md top rule).
+  200 is a measured silent no-op (`../references/adt_api.md` top rule).
 - Errors are JSON envelopes with the closed code set; Click usage errors
   stay plain text. `--yes` only by explicit user instruction.
 - Passwords in keystore only; fixtures via sanitizer, synthetic/ separated
@@ -160,7 +167,7 @@ ATC/Unit reporter expansion, doctor --coverage UI consumption.
 - Requirement to **hold locks across processes** (long transaction,
   interactive multi-process edit) → reopen the archived session-layer
   design (`design-session-layer-rejected.md`) and re-verify protocol
-  facts 8–11 on the target release first.
+  facts 8–12 on the target release first.
 - Basis upgrade → re-probe usageReferences content type and Unit config
   versions (currently v4, fallback application/*).
 - New command/kind/error code → update SKILL.md tables; check_contract

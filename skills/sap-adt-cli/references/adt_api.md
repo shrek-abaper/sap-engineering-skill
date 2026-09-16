@@ -25,11 +25,11 @@ Authentication is HTTP Basic Auth with the `X-SAP-Client` header for client sele
 A list endpoint returning an empty collection must not be read as "nothing
 exists". Known case: the root `GET /cts/transportrequests` tree behind
 `list-transports` can return an empty tree while the user owns a modifiable
-D request (measured 2026-09-17; per-TR GET confirms it). Do not
-branch on emptiness without a positive check; the trigger condition is
-unprobed. Background: project notes on the open trigger investigation
-live in `../docs/known-issues.md` ("empty root tree") — not required to
-act on this rule.
+D request (measured 2026-09-17; per-TR GET confirms it). Do not branch
+on emptiness without a positive check; the trigger condition is unprobed.
+Background: project notes on the open trigger investigation live in
+`../docs/known-issues.md` ("empty root tree") — not required to act on
+this rule.
 
 ## Authentication
 
@@ -60,7 +60,7 @@ real DEV system (old value → new value; fixtures under `tests/fixtures/`):
 |---|------|--------------------|-----------------|------|
 | 1 | Domain metadata | GET `/ddic/domains/{n}/source/main` → 404, silently fell back to data element | GET `/ddic/domains/{n}` (`vnd.sap.adt.domains.v2+xml`); fall back to data element only on genuine 404; output carries `resolved_as` | 2026-09-15 |
 | 2 | Syntax check | POST `/abapsource/syntaxcheck` → 404 | POST `/checkruns`, body root `chk:checkObjectList` with inner `chk:reporter chk:name="abapCheckRun"`, CT `…checkobjects+xml`, Accept `…checkmessages+xml`; findings at `chk:checkMessage@type/shortText`, line from `uri #start=L,C` | 2026-09-15 |
-| 3 | Transports | GET `/cts/transports` Accept `…transport.worklist+xml` → 406 | GET `/cts/transportrequests`, Accept `vnd.sap.adt.transportorganizertree.v1+xml` (empty `tm:root` when the user has none) | 2026-09-15 |
+| 3 | Transports | GET `/cts/transports` Accept `…transport.worklist+xml` → 406 | GET `/cts/transportrequests`, Accept `vnd.sap.adt.transportorganizertree.v1+xml`. **An empty `tm:root` is not proof of "no requests"** — it was also returned while the user owned a modifiable D request (2026-09-17); per-TR GET is the positive check, see the read-side rule above | 2026-09-15 |
 | 4 | Data preview (run-sql) | GET `freestyle?sqlCommand=…` → 405 | POST `freestyle?rowNumber=N`, `Content-Type: text/plain; charset=utf-8`, raw SQL body. **Accept must be `vnd.sap.adt.datapreview.table.v1+xml` — `application/xml` returns 406.** GET kept only as a 405 fallback. The `rowNumber` parameter is the hard row cap and overrides an SQL `UP TO N ROWS` clause (verified 2026-09-16) | 2026-09-16 |
 | 5 | Where-used | GET `/informationsystem/whereused?uri=<full URL>` → 405 | POST `/informationsystem/usageReferences?uri=<RELATIVE lower-case object URI>`; CT and Accept both `application/*`; body `usageReferenceRequest` with empty `<affectedObjects/>`; response `…usagereferences.result.v1+xml` (`referencedObject/adtObject`, optional `#start=` fragment). Discovery declares no `app:accept` for this collection, so `application/*` is the only workable value today — re-probe after a Basis upgrade before narrowing | 2026-09-16 |
 | 6 | Package contents | Parser qualified elements as `{http://www.sap.com/abapxml}…` → always `[]` on 7.56 | Response declares the namespace only on the `asx:` prefix; payload elements (`SEU_ADT_REPOSITORY_OBJ_NODE/OBJECT_*`) have **no** namespace — match by local name | 2026-09-15 |
@@ -189,9 +189,9 @@ in process B).
 the object, and the object resource must carry
 `adtcore:version="active"` (inactive → `"inactive"`). Non-empty failure
 bodies use `chkl:messages/msg` (`type` E/A/X) and `ioc:inactiveObjects` per
-the reference implementation. (The older `error/message/checkResult`
-shape is what the current parser looks for; a real failed activation
-fixture is still needed — background: `../docs/known-issues.md`.)
+the reference implementation. (The older `error/message/checkResult` shape
+is what the current parser looks for; a real failed activation fixture is
+still needed — background: `../docs/known-issues.md`.)
 
 ## Syntax Check (legacy — see verified facts #2)
 
@@ -325,7 +325,7 @@ Per the write-side rule, read the new request back:
 even while the user owned a modifiable request — direct per-TR readback is
 the reliable verification.
 
-### Create transport (legacy — rejected by 7.56; the CLI still ships this)
+### Create transport (legacy — rejected by 7.56; the CLI used this until 2026-09-17)
 
 ```http
 POST /sap/bc/adt/cts/transports

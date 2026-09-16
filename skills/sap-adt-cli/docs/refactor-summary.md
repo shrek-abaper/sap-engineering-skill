@@ -19,16 +19,29 @@ DEV system with read-only calls and an offline golden test suite.
 | 4b — exit tiers | `04980f5` | JSON error envelopes on stderr; exits 0/1/2/3/4; gates behavior unchanged; USER_ABORTED no longer exit 0 | 14 CLI tier tests; live gate verification before any HTTP |
 | 5.0 — configure | `3932175` | flagged non-interactive configure uses envelopes (selection by flags, not TTY); docstrings to kind language | 2 tests, sandbox-HOME live check |
 | 5 — docs | `15ad32a` | SKILL.md 522→118 lines; references split; adt_api verified facts; markdownlint clean | contract check; `tests/check_contract.py` |
-| 6 — verification | this batch | full DEV three-way comparison, contract checker in CI, current-exit baseline | 28/28 semantic checks; contract 16 codes / 31 commands / 7 kinds / 18 declarations |
+| 6 — verification | `f2707a3` | full DEV three-way comparison, contract checker in CI, current-exit baseline | 28/28 semantic checks; contract 16 codes / 31 commands / 7 kinds / 18 declarations |
+| 7.1 — run-sql | `a6f4bce` | rowNumber/UP TO meta (measured, not inferred) | DEV measured |
+| 7.2–7.4 — discovery | `f7f321e` | `discovery` (kind `capabilities`), `doctor --coverage`, application/* non-narrowing | DEV discovery capture |
+| 7.5 — markdown | `9394719` | `discovery --emit-markdown`, no auto-merge | offline + DEV |
+| 7.6 — coverage caveat | `5e5e69d` | explicit resource-root-only boundary | docs |
+| 8 — quality gates | `5ddf576`, `9ba237a` | run-unit-test (risk gates/findings) + run-atc (stable IDs, exemptions) | empty-shell/alert-only and priority-3 real; counts/priority-1-2 synthetic |
+| 9.1 — profile gates | `66eb7fc` | per-profile allow_write/transport + environment; prd hard refusal; SAP_ENVIRONMENT | gate matrix tests |
+| 9.2 — release | `f57128f` | newreleasejobs + TRSTATUS readback poll, `--dry-run`, RELEASE_* codes | real empty-TR release DEV400 |
+| post-9.2 | `d24bc88` | server status_text; real preflight/released fixtures | fixtures |
+| 10 — write protocol | `d1bf649`, `80d35ef` | first real-machine write verification: lock/PUT/unlock/activate corrected to measured protocol; create-transport CreateCorrectionRequest; facts 7→12; 403 enqueue → LOCKED_BY_OTHER; 34-command verification matrix | DEV400 write/activate/create + readback; 293 tests |
+| 10 — session layer | `40495b8` | cross-process session design **rejected by evidence** (separate-process activate works; orphan locks self-heal); archived with re-trigger condition | measured; no product code |
+| 10 — docs | `f42bc09` + this commit | empty-root-tree false negative; docs moved inside the skill dir; inward-only link + cross-doc number assertions in check_contract | link checker green |
 
-Tests: 232 at batch 5 (148 legacy + new). CI also runs
-`python tests/check_contract.py`.
+Tests: **293** (2026-09-17; was 232 at batch 5). CI also runs
+`python tests/check_contract.py` (18 codes / 34 commands / 8 kinds /
+21 command→kind declarations).
 
-## Eleven verified ADT protocol facts (not in SAP's public documentation)
+## Twelve verified ADT protocol facts (not in SAP's public documentation)
 
 Capture system: S/4HANA 2021 / SAP_BASIS 7.56, client 400.
-Canonical copy: `../references/adt_api.md` (with dated
-old→new table). These could only be learned by probing a live system.
+Canonical copy: `../references/adt_api.md` (dated old→new table plus the
+write-side "2xx ≠ completed" and read-side "empty ≠ absent" rules). These
+could only be learned by probing a live system.
 
 1. **Domain metadata** — `/ddic/domains/{n}/source/main` is 404; the
    resource is `/ddic/domains/{n}` (`application/vnd.sap.adt.domains.v2+xml`,
@@ -41,9 +54,12 @@ old→new table). These could only be learned by probing a live system.
    fragment. 2026-09-15.
 3. **Transport list** — `/cts/transports` worklist Accept returns 406;
    use GET `/cts/transportrequests` with
-   `application/vnd.sap.adt.transportorganizertree.v1+xml` (an empty
-   `tm:root` for a user with no requests; root carries per-request
-   timestamps). 2026-09-15.
+   `application/vnd.sap.adt.transportorganizertree.v1+xml` (root carries
+   per-request timestamps). **An empty `tm:root` is not evidence of "no
+   requests"**: on 2026-09-17 the root tree came back empty while the user
+   owned a modifiable D request; per-TR GET is the positive check (see
+   `known-issues.md` "empty root tree" and the read-side rule in
+   `../references/adt_api.md`). 2026-09-15/17.
 4. **Data preview** — GET `freestyle?sqlCommand=` is 405; POST
    `freestyle?rowNumber=N`, `Content-Type: text/plain; charset=utf-8`,
    raw SQL body. Accept **must** be
@@ -142,7 +158,7 @@ runs establish write-side correctness.
 is a false negative signal: an empty tree was returned while the user owned
 a modifiable D request (2026-09-17; per-TR GET is the reliable check).
 Do not conclude "no open transports" from an empty result — see
-known-issues "empty root tree".
+`known-issues.md` ("empty root tree").
 
 ## Methodology lesson: 287 offline tests green, write path 4-for-4 wrong
 
@@ -221,12 +237,19 @@ per call. They are normalized (fixed placeholders, not random values) by
 
 ## Next steps
 
-1. **Discovery self-introspection** — drive a coverage report from
-   `/sap/bc/adt/discovery` and `/compatibility/graph`: which resources the
-   connected system actually exposes (incl. an explicit
-   usageReferences content type and ATC/ABAP Unit reporters).
-2. **`doctor --coverage`** — command × endpoint support matrix for the
-   active system (e.g. "fields.description unavailable", transport tree
-   empty/non-empty), using the same discovery data.
-3. Then candidates: ATC findings and unit-test runs (checkrun reporters
-   beyond `abapCheckRun`), populated transport fixtures, ECC shape goldens.
+The authoritative engineering backlog is **§4 of `refactor-handoff.md`**
+(same directory); do not keep a second list here to avoid drift. Current
+three items:
+
+1. adt_api.md consolidation (12-row fact table + modern/legacy sections
+   into one canonical old→new structure);
+2. declarative object-type registry replacing the `get_object_uri`
+   if/elif chain;
+3. `configure` silent field reset — high/security.
+
+Discovery self-introspection (`discovery`, batch 7.2–7.4) and
+`doctor --coverage` (batches 7.2–7.6) are **already done** — listed here
+only so they are not scheduled again. Remaining conditional follow-ups
+(usageReferences vendor content type after a Basis upgrade, populated
+transport fixtures, ECC shapes, real failed-activation capture) are in
+handoff §6 and `known-issues.md`.

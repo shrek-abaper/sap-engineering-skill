@@ -46,7 +46,7 @@ Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status",
 | `objects` | search-object, get-package, where-used | `{objects:[{name,type,uri,package,description}]}`; where-used may add optional `usage_line`/`usage_uri` |
 | `rows` | run-sql | `{columns:[{name,type}], rows:[[…]]}` |
 | `records` | list-transports | `{transports:[{trkorr,description,status,status_text,owner,target,tasks}]}` |
-| `findings` | syntax-check | `{findings:[{severity,text,line,uri}]}` |
+| `findings` | syntax-check, run-unit-test, run-atc | `{findings:[{severity,text,line,uri}]}` |
 | `scalar` | get-type-info, get-transaction | object dictionary; type info has `resolved_as: domain\|dataelement` |
 | `capabilities` | discovery | `{collections:[{href,title,content_types}]}` (Atom discovery; use `credentials doctor --coverage` for the command matrix) |
 
@@ -66,7 +66,7 @@ Full examples: **references/examples.md**.
 | Exit | Meaning | Codes |
 |------|---------|-------|
 | 0 | success, including empty results | — |
-| 1 | operational (17 codes above incl. two release results) | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED`, `RELEASE_UNVERIFIED`, `RELEASE_REJECTED` |
+| 1 | operational, retryable (9 codes; incl. two release results) | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED`, `RELEASE_UNVERIFIED`, `RELEASE_REJECTED` |
 | 2 | configuration / credentials | `CONFIG_MISSING`, `PROFILE_NOT_FOUND`, `AUTH_FAILED` |
 | 3 | policy refusal / operation did not happen — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED` |
 | 4 | requested object does not exist | `OBJECT_NOT_FOUND` |
@@ -97,19 +97,18 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `syntax-check <TYPE> <N> [--group G]` | findings; hard errors exit 1, warnings exit 0 | findings |
 | `run-unit-test <N> [--type T] [--risk-level harmless\|dangerous\|critical] [--duration short\|medium\|long] [--fail-on error\|warning\|info\|never]` | ABAP Unit; harmless default (read-only); meta `no_tests_found` distinguishes "no tests" (total 0) from "all passed" | findings |
 | `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
-
-> **Unit risk levels**: `dangerous`/`critical` tests **execute ABAP that may modify
-> business data** — they require `allow_write`, show a risk-level + object +
-> data-change warning in the `[y/N]` preview, and are hard-refused (no prompt)
-> on `environment=prd`. Empty `runResult` is
-> `ok:true, no_tests_found:true, total:0, exit 0`; an alert-only run (defective
-> test class) also has `no_tests_found:true` with warning findings.
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
 | `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | stateful `_action=LOCK`→PUT→`_action=UNLOCK` in `finally` (real-verified Basis 7.56, 2026-09-16) | gated |
 | `activate <TYPE> <N> [--group G] [--yes]` | `?method=activate`; no lock/shared session needed, succeeds in a separate process (real-verified Basis 7.56) | gated |
 | `create-transport --package P --description D --ref URI [--yes]` | CreateCorrectionRequest ASX (`DEVCLASS`+`REF` required, `$TMP`=local); real-verified Basis 7.56, 2026-09-17 | gated |
 | `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
+
+> **Unit risk levels**: `dangerous`/`critical` tests execute ABAP that may
+> modify business data — require `allow_write`, a risk/object/data-change
+> warning in `[y/N]`, and are hard-refused on `environment=prd`. Empty
+> `runResult` → `ok:true, no_tests_found:true, total:0` (same for an
+> alert-only defective test class, with warning findings).
 
 ## Safety gates (do not weaken)
 
