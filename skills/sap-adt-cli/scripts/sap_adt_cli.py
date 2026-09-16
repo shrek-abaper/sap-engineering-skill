@@ -1053,19 +1053,22 @@ def create_transport_cmd(description, category, yes):
 @cli.command("release-transport")
 @click.argument("trkorr")
 @click.option("--yes", is_flag=True, default=False, help="Skip confirmation prompt. Use only in trusted automation.")
-def release_transport_cmd(trkorr, yes):
-    """Release a transport request — irreversible, requires allow_transport + confirmation each time.
+@click.option("--dry-run", is_flag=True, default=False,
+              help="Preflight only: existence, owner, status and gates; no release request.")
+def release_transport_cmd(trkorr, yes, dry_run):
+    """Release a transport request — irreversible, requires allow_transport + confirmation.
 
-    TRKORR is the transport request number, e.g. DEVK900001.
-
-    WARNING: This operation CANNOT be undone. Once released, the transport
-    cannot be recalled or modified.
-
-    Requires 'allow_transport' enabled in config. Run `configure` to enable.
+    After the release jobs are submitted the transport status is read back
+    (poll up to 120s). RELEASE_UNVERIFIED means the final state is unknown —
+    never re-release, verify manually in SE09/SE10.
     """
     config = _load_config()
     _require_config(config)
     _require_transport_write(config)
+    if dry_run:
+        result = handlers.release_transport(trkorr, dry_run=True)
+        _output(result)
+        return
     preview = [
         "Action  : Release transport request",
         f"TRKORR  : {trkorr}",
@@ -1073,7 +1076,14 @@ def release_transport_cmd(trkorr, yes):
         "          Once released, the transport cannot be recalled or modified.",
     ]
     _confirm_change(preview, yes=yes)
-    _output(handlers.release_transport(trkorr))
+
+    def _progress(msg: str):
+        click.echo(msg, err=True)
+
+    result = handlers.release_transport(trkorr, progress=_progress)
+    if result.is_error:
+        _abort_on_error(result)
+    _output(result)
 
 
 if __name__ == "__main__":

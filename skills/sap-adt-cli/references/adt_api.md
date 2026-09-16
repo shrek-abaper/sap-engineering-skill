@@ -220,9 +220,23 @@ Content-Type: application/vnd.sap.cts.transport.request+xml; charset=utf-8
 Response: `Location` header contains the new transport URI; extract the last path segment as `TRKORR`.
 All attribute values must be XML-escaped before interpolation.
 
-### Release transport
+### Release transport (modern)
 
-```xml
+```http
+POST /sap/bc/adt/cts/transportrequests/{TRKORR}/newreleasejobs
+Accept: application/*
+```
+
+Response `tm:root/tm:releasereports/chkrun:checkReport` with
+`chkrun:status="released"` or `"abortrelapifail"` (pre-release check failed).
+Readback: `GET /cts/transportrequests/{TRKORR}`
+(`vnd.sap.adt.transportorganizer.v1+xml`, `tm:request@tm:status`, D/R);
+CLI polls 2s/120s and emits `RELEASE_UNVERIFIED` (unknown final state — do
+not re-release, verify in SE09/SE10) or `RELEASE_REJECTED` (still D).
+
+### Release transport (legacy)
+
+```http
 POST /sap/bc/adt/cts/transports/{TRKORR}?action=release
 ```
 

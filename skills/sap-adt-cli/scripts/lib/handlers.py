@@ -772,12 +772,120 @@ def create_transport(
         return _err(e)
 
 
-def release_transport(trkorr: str) -> AdtResult:
+def _valid_trkorr(trkorr: str) -> bool:
+    t = (trkorr or "").upper()
+    return len(t) == 10 and t[0].isalpha() and t[1:].isalnum()
+
+
+def transport_preflight(trkorr: str) -> tuple[AdtResult, dict | None]:
+    """Read a single request: existence, owner, current status."""
+    if not _valid_trkorr(trkorr):
+        return _err(ValueError(f"Invalid transport number: {trkorr}")), None
     try:
-        make_adt_request(
-            f"{_base()}/sap/bc/adt/cts/transports/{_enc(trkorr)}?action=release",
-            method="POST",
+        resp = make_adt_request(
+            f"{_base()}/sap/bc/adt/cts/transportrequests/{_enc(trkorr.upper())}",
+            extra_headers={"Accept":
+                           "application/vnd.sap.adt.transportorganizer.v1+xml"},
         )
-        return AdtResult(text=f"Released transport: {trkorr}")
+        parsed = parse_records.parse_single_request(resp.content)
+        return _structured("records", parsed, {"type": "transport", "name": trkorr.upper()},
+                           raw=resp.text), parsed["transport"]
+    except AdtHttpError as e:
+        # The transport organizer reports a missing request as HTTP 400
+        # ADT_TM_COMMON_EXCEPTION "... does not exist in system".
+        if e.status == 400 and "does not exist in system" in str(e).lower():
+            return AdtResult(text=str(e), is_error=True,
+                             error_code=errors.OBJECT_NOT_FOUND,
+                             http_status=404, hint=errors.DEFAULT_HINTS[errors.OBJECT_NOT_FOUND]), None
+        return _err(e), None
+    except Exception as e:
+        return _err(e), None
+
+
+def release_transport(trkorr: str, *, dry_run: bool = False, progress=None,
+                      poll_interval: float = 2.0, timeout: float = 120.0,
+                      sleep=None) -> AdtResult:
+    """Release a request (newreleasejobs) and verify TRSTATUS readback.
+
+    Preflight → POST release jobs → poll the single-request resource until
+    status R. D after the timeout is a definite rejection; an unknown final
+    state is UNVERIFIED (never re-release automatically).
+    """
+    import time as _time
+    sleep = sleep or _time.sleep
+    pre, request = transport_preflight(trkorr)
+    if pre.is_error:
+        return pre
+    if dry_run:
+        pre.meta = {
+            "dry_run": True,
+            "release_possible": request["status"] == "D",
+            "checks": {
+                "exists": True,
+                "owner": request["owner"],
+                "status": request["status"],
+                "modifiable": request["status"] == "D",
+            },
+        }
+        return pre
+
+    if request["status"] == "R":
+        pre.meta = {"released": True, "already_released": True}
+        return pre
+
+    try:
+        resp = make_adt_request(
+            f"{_base()}/sap/bc/adt/cts/transportrequests/"
+            f"{_enc(trkorr.upper())}/newreleasejobs",
+            method="POST",
+            extra_headers={"Accept": "application/*"},
+            timeout=300,
+        )
+        report = parse_records.parse_release_report(resp.content)
+        failed_reports = [
+            r for r in report["release_reports"]
+            if (r.get("status") or "").lower() in ("abortrelapifail", "aborted")
+            or any((m.get("severity") or "").upper() == "E" for m in r.get("messages", []))
+        ]
+        if failed_reports:
+            msgs = "; ".join(
+                m["text"] for r in failed_reports for m in r["messages"] if m.get("text")
+            )
+            return AdtResult(
+                text=f"Transport {trkorr.upper()} release rejected: {msgs or 'check failure'}",
+                is_error=True, error_code=errors.RELEASE_REJECTED,
+            )
     except Exception as e:
         return _err(e)
+
+    # Release jobs run asynchronously: read back TRSTATUS with a hard timeout.
+    deadline = _time.monotonic() + timeout
+    attempt = 0
+    last_status = request["status"]
+    while _time.monotonic() < deadline:
+        attempt += 1
+        if progress:
+            progress(f"Release job submitted; reading status (attempt {attempt})…")
+        sleep(poll_interval)
+        check, current = transport_preflight(trkorr)
+        if check.is_error:
+            # Readback failed: the release itself may still be running.
+            return AdtResult(
+                text=(f"Transport {trkorr.upper()} release requested, but status "
+                      f"readback failed after {attempt} attempts; status unknown."),
+                is_error=True, error_code=errors.RELEASE_UNVERIFIED,
+            )
+        last_status = current["status"]
+        if last_status == "R":
+            check.meta = {"released": True, "poll_attempts": attempt}
+            return check
+    if last_status == "D":
+        return AdtResult(
+            text=f"Transport {trkorr.upper()} is still modifiable (D) after {timeout:.0f}s.",
+            is_error=True, error_code=errors.RELEASE_REJECTED,
+        )
+    return AdtResult(
+        text=(f"Transport {trkorr.upper()} release requested; final status "
+              f"{last_status or 'unknown'} after {timeout:.0f}s."),
+        is_error=True, error_code=errors.RELEASE_UNVERIFIED,
+    )

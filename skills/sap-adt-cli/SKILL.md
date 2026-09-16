@@ -66,16 +66,17 @@ Full examples: **references/examples.md**.
 | Exit | Meaning | Codes |
 |------|---------|-------|
 | 0 | success, including empty results | — |
-| 1 | operational, retryable | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED` |
+| 1 | operational (17 codes above incl. two release results) | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED`, `RELEASE_UNVERIFIED`, `RELEASE_REJECTED` |
 | 2 | configuration / credentials | `CONFIG_MISSING`, `PROFILE_NOT_FOUND`, `AUTH_FAILED` |
 | 3 | policy refusal / operation did not happen — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED` |
 | 4 | requested object does not exist | `OBJECT_NOT_FOUND` |
 
-All 16 codes: the 15 above. Our errors on stderr are **JSON envelopes**; Click
-usage errors (missing argument, bad `--format`) are **plain text** (also exit 2 —
-distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
-`ExceptionResourceNotFound` body (a 404 "No suitable resource found" is
-`BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`, CSRF 403 is `CSRF_EXPIRED`.
+All 18 codes. **`RELEASE_UNVERIFIED` = release sent, final status unknown
+(readback timeout) — never re-release, verify in SE09/SE10; `RELEASE_REJECTED`
+= still status D / check failed.** Our errors are **JSON envelopes** on stderr;
+Click usage errors are **plain text** (also exit 2 — distinguish by content).
+`OBJECT_NOT_FOUND` needs a 404 `ExceptionResourceNotFound` body (404 "No
+suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 
 ## Command index
 
@@ -108,7 +109,7 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 | `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | lock→PUT→unlock | gated |
 | `activate <TYPE> <N> [--group G] [--yes]` | activate objects | gated |
 | `create-transport --description D [--category C] [--yes]` | create workbench/customizing request | gated |
-| `release-transport <TRKORR> [--yes]` | irreversible release | gated |
+| `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
 
 ## Safety gates (do not weaken)
 
@@ -125,8 +126,7 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 - Off flags → exit 3 before any HTTP call. Every write/create/release then
   shows a preview and requires a fresh `[y/N]`, used for one operation only,
   never cached/reused even within the conversation.
-- Non-interactive stdin without `--yes` → `CONFIRM_REQUIRED` (exit 3);
-  answering N → `USER_ABORTED` (exit 3). Never add `--yes` on the user's behalf.
+- Non-interactive stdin without `--yes` → `CONFIRM_REQUIRED` (exit 3); N → `USER_ABORTED`.
 - **Env/.env writes**: `SAP_ALLOW_WRITE/TRANSPORT=true` requires `SAP_ENVIRONMENT`
   explicitly (nothing to infer from), else `CONFIG_MISSING` exit 3; `…=prd` refuses.
 - `run-sql` blocks non-SELECT DML before sending (`DML_REJECTED`, exit 3).

@@ -38,6 +38,8 @@ TRANSPORT_DISABLED = "TRANSPORT_DISABLED"
 CONFIRM_REQUIRED = "CONFIRM_REQUIRED"
 USER_ABORTED = "USER_ABORTED"
 DML_REJECTED = "DML_REJECTED"
+RELEASE_UNVERIFIED = "RELEASE_UNVERIFIED"
+RELEASE_REJECTED = "RELEASE_REJECTED"
 
 # Closed set. Every code here MUST appear in EXIT_CODE_MAP (enforced by test).
 ALL_CODES = (
@@ -57,6 +59,8 @@ ALL_CODES = (
     CONFIRM_REQUIRED,
     USER_ABORTED,
     DML_REJECTED,
+    RELEASE_UNVERIFIED,
+    RELEASE_REJECTED,
 )
 
 EXIT_CODE_MAP = {
@@ -80,6 +84,8 @@ EXIT_CODE_MAP = {
     LOCKED_BY_OTHER: 1,
     NETWORK_ERROR: 1,
     PARSE_FAILED: 1,
+    RELEASE_UNVERIFIED: 1,
+    RELEASE_REJECTED: 1,
 }
 
 # Codes produced by the local safety gates rather than HTTP responses.
@@ -108,6 +114,14 @@ DEFAULT_HINTS = {
     CONFIRM_REQUIRED: "Run in a terminal or pass --yes explicitly; the operation was not performed.",
     USER_ABORTED: "The confirmation prompt was declined; no changes were made.",
     DML_REJECTED: "Direct DML via run-sql is permanently disabled in this version.",
+    RELEASE_UNVERIFIED: (
+        "The release request was sent but the final status is unknown (readback "
+        "timed out). Do NOT re-release; have a human verify in SE09/SE10."
+    ),
+    RELEASE_REJECTED: (
+        "The transport is still modifiable (status D) after release; the release "
+        "job failed or reported a check failure."
+    ),
 }
 
 

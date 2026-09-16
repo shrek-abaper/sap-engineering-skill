@@ -14,7 +14,7 @@ exists.
 """
 from __future__ import annotations
 
-from .common import attr, localname, parse_xml
+from .common import ParseError, attr, localname, parse_xml
 
 # TRSTATUS codes callers should not have to memorize.
 STATUS_TEXT = {
@@ -74,6 +74,61 @@ def _record_from(element) -> dict | None:
 
 def _looks_like_trkorr(value) -> bool:
     return bool(value) and len(value) >= 6 and any(ch.isdigit() for ch in value[-6:])
+
+
+def parse_single_request(payload: bytes) -> dict:
+    """GET /cts/transportrequests/{trkorr}: one tm:request."""
+    root = parse_xml(payload)
+    request = next(
+        (el for el in root.iter() if localname(el.tag) == "request"), None
+    )
+    if request is None:
+        raise ParseError(f"not a transport request: {localname(root.tag)}")
+    tasks = [
+        {
+            "trkorr": attr(t, "number"),
+            "owner": attr(t, "owner"),
+            "status": (attr(t, "status") or "").upper() or None,
+            "status_text": STATUS_TEXT.get(attr(t, "status") or ""),
+        }
+        for t in request.iter() if localname(t.tag) == "task"
+    ]
+    status = (attr(request, "status") or "").upper() or None
+    return {
+        "transport": {
+            "trkorr": attr(request, "number"),
+            "description": attr(request, "desc"),
+            "status": status,
+            "status_text": STATUS_TEXT.get(attr(request, "status") or ""),
+            "owner": attr(request, "owner"),
+            "target": attr(request, "target") or None,
+            "tasks": tasks,
+        }
+    }
+
+
+def parse_release_report(payload: bytes) -> dict:
+    """POST .../{trkorr}/newreleasejobs release check reports."""
+    root = parse_xml(payload)
+    reports = []
+    for r in root.iter():
+        if localname(r.tag) != "checkReport":
+            continue
+        messages = [
+            {
+                "severity": attr(m, "type"),
+                "text": attr(m, "shortText") or attr(m, "text"),
+            }
+            for m in r.iter() if localname(m.tag) == "checkMessage"
+        ]
+        reports.append({
+            "reporter": attr(r, "reporter"),
+            "status": attr(r, "status"),
+            "status_text": attr(r, "statusText"),
+            "triggering_uri": attr(r, "triggeringUri"),
+            "messages": messages,
+        })
+    return {"release_reports": reports}
 
 
 def parse(payload: bytes) -> dict:
