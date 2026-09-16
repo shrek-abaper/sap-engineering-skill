@@ -71,6 +71,8 @@ FILE_MAP = {
     "atc.findings.raw.xml": "atc.findings.xml",
     # Single modifiable transport request (release-transport preflight)
     "transport.single.raw.xml": "transport.single.xml",
+    # Same request after release: tm:status R (29 KB incl. released objects)
+    "transport.released.raw.xml": "transport.released.xml",
     # where-used new usageReferences API (hits are trimmed SAP-only nodes)
     "where-used.hits.raw.xml": "where-used.CL_GUI_FRONTEND_SERVICES.xml",
     "where-used.empty.raw.xml": "where-used.empty.xml",
@@ -226,7 +228,7 @@ def render(raw_name: str, raw_bytes: bytes, repls: list[tuple[str, str]]) -> byt
         return text.encode("utf-8")
     if raw_name == "atc.findings.raw.xml":
         return normalize_atc(raw_bytes.decode("utf-8")).encode("utf-8")
-    if raw_name == "transport.single.raw.xml":
+    if raw_name in ("transport.single.raw.xml", "transport.released.raw.xml"):
         text = raw_bytes.decode("utf-8")
         import re as _re
         text = text.replace("JZ.ZHANG", "DEVELOPER")

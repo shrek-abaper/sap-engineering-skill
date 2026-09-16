@@ -91,6 +91,27 @@ synthetic fixture MUST be checked against it; on mismatch, change the
 parser/fixture to match the real payload. Unexpected node names are
 surfaced in `meta.unparsed_nodes` rather than ignored.
 
+## Release: RELEASE_UNVERIFIED / RELEASE_REJECTED long paths unverified
+
+The happy path is live-verified (2026-09-16, empty request ECDK944391,
+blank target): preflight D, `newreleasejobs`, readback R on poll attempt
+1 within the 2 s interval. NOT verified against a real system:
+
+- **RELEASE_UNVERIFIED** — requires a release whose final status stays
+  unknown past the 120 s timeout (60 × 2 s polls) or a failing readback.
+  The empty TR completes too quickly to trigger it; needs a large request
+  or a system with slow/pre-release ATC. Covered only by offline tests with
+  injected poll failures/timeout.
+- **RELEASE_REJECTED via release-report failure**
+  (`chkrun:status=abortrelapifail` / E messages) — the real
+  `newreleasejobs` POST response for ECDK944391 was one-shot and was not
+  captured; the response shape comes from abap-adt-api and is covered by
+  `synthetic/transport.release-report.synthetic.xml`. Capture a real
+  report (especially a failing one) at the first opportunity.
+
+Verification trigger: any release on a populated request or a system with
+mandatory pre-release checks.
+
 ## ATC: priority 1/2 mapping unverified (synthetic fixture)
 
 The real ATC capture (`atc.findings.xml`) contains only priority-3

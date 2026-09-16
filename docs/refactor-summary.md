@@ -70,6 +70,19 @@ old→new table). These could only be learned by probing a live system.
    local-name matching is required. The same DDL point:
    `/ddic/{tables,structures}/{n}/source/main` returns CDS-style DDL, and
    `/ddic/tables/{n}/objectstructure` is 404. 2026-09-15.
+7. **Transport release + readback** — the legacy
+   `POST /cts/transports/{TR}?action=release` (no verification) is replaced
+   by `POST /cts/transportrequests/{TR}/newreleasejobs`
+   (Accept `application/*`; response `tm:releasereports/chkrun:checkReport`,
+   status `released` / `abortrelapifail`) followed by readback of
+   `GET /cts/transportrequests/{TR}` (`tm:request@tm:status`, D/R; the
+   organizer reports a missing request as HTTP **400**
+   `ADT_TM_COMMON_EXCEPTION`, not 404). **Measured 2026-09-16 on the empty
+   request ECDK944391 (target blank): release finished within the first
+   2 s poll — readback returned R on `poll_attempts: 1`; CLI wall time was
+   dominated by the fixed 2 s interval, not the server.** Requests with a
+   pre-release ATC check or populated objects can take far longer, hence
+   the 120 s timeout (60 polls); that long path is not live-verified.
 
 ## Coverage matrix limitations (doctor --coverage)
 

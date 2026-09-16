@@ -109,6 +109,28 @@ class ReleaseHandlerTests(unittest.TestCase):
         self.assertEqual(r.data["transport"]["status"], "D")
         self.assertTrue(all(m == "GET" for m, _ in calls))
 
+    def test_real_released_readback_fixture(self):
+        path = ROOT / "skills/sap-adt-cli/tests/fixtures/transport.released.xml"
+        if not path.exists():
+            self.skipTest("transport.released.xml not present")
+        from lib.parsers import records
+        d = records.parse_single_request(path.read_bytes())["transport"]
+        self.assertEqual(d["trkorr"], "ECDK944391")
+        self.assertEqual(d["status"], "R")
+        self.assertEqual(d["status_text"], "Released")
+        self.assertEqual(d["tasks"], [])
+
+    def test_synthetic_release_report(self):
+        path = (ROOT / "skills/sap-adt-cli/tests/fixtures/synthetic"
+                / "transport.release-report.synthetic.xml")
+        if not path.exists():
+            self.skipTest("synthetic release report absent")
+        from lib.parsers import records
+        reports = records.parse_release_report(path.read_bytes())["release_reports"]
+        self.assertEqual(len(reports), 1)
+        self.assertEqual(reports[0]["status"], "released")
+        self.assertEqual(reports[0]["messages"][0]["severity"], "S")
+
     def test_real_single_request_fixture(self):
         payload = (
             ROOT / "skills/sap-adt-cli/tests/fixtures/transport.single.xml"

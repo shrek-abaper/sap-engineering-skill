@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC: POST newreleasejobs response shape inferred from
+     abap-adt-api src/api/transports.ts (transportRelease). The real
+     response for ECDK944391 was one-shot and not captured. Verify field
+     paths against the first real capture. -->
+<tm:root xmlns:tm="http://www.sap.com/cts/adt/tm"
+         xmlns:chkrun="http://www.sap.com/adt/checkrun">
+ <tm:releasereports>
+  <chkrun:checkReport chkrun:reporter="abapCheckRun"
+      chkrun:triggeringUri="/sap/bc/adt/cts/transportrequests/DEVK900001"
+      chkrun:status="released" chkrun:statusText="Released">
+   <chkrun:checkMessageList>
+    <chkrun:checkMessage chkrun:uri="/sap/bc/adt/programs/programs/x/source/main#start=1,0"
+        chkrun:type="S" chkrun:shortText="Object checked"/>
+   </chkrun:checkMessageList>
+  </chkrun:checkReport>
+ </tm:releasereports>
+</tm:root>
