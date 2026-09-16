@@ -1,0 +1,43 @@
+{
+  "columns": [
+    {
+      "name": "ARBGB",
+      "type": "C"
+    },
+    {
+      "name": "MSGNR",
+      "type": "C"
+    },
+    {
+      "name": "TEXT",
+      "type": "C"
+    }
+  ],
+  "rows": [
+    [
+      "DMEE_ABA",
+      "000",
+      "&1 &2 &3 &4"
+    ],
+    [
+      "DMEE_ABA",
+      "019",
+      "Action not possible while migration is running."
+    ],
+    [
+      "DMEE_ABA",
+      "020",
+      "Format tree was modified in DMEEX, now you can't use it in DMEE."
+    ],
+    [
+      "DMEE_ABA",
+      "076",
+      "Selected tree type must have the category 1 ('incoming files')"
+    ],
+    [
+      "DMEE_ABA",
+      "131",
+      "Tree type &1 is not supported in the current release"
+    ]
+  ]
+}

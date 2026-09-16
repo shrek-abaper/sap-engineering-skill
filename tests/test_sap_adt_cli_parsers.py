@@ -34,10 +34,12 @@ GOLDEN_CASES = [
     (fields, "get-table.VBAK.s4hana.xml", "fields.VBAK.json"),
     (fields, "get-table.T001.s4hana.xml", "fields.T001.json"),
     (fields, "get-structure.VBAKKOM.s4hana.xml", "fields.VBAKKOM.json"),
+    (fields, "get-table.REPOSRC.s4hana.xml", "fields.REPOSRC.json"),
     (objects, "search-object.CL_GUI_WILDCARD.xml", "objects.search-hits.json"),
     (objects, "search-object.empty.xml", "objects.search-empty.json"),
     (objects, "get-package.SABP_UNIT.asxml.xml", "objects.package.json"),
     (rows, "run-sql.t100.raw.xml", "rows.t100.json"),
+    (rows, "run-sql.t100.post.raw.xml", "rows.t100-post.json"),
     (records, "list-transports.empty.xml", "records.empty.json"),
     (findings, "syntax-check.CL_GUI.clean.xml", "findings.clean.json"),
     (findings, "syntax-check.SAPMV45A.warnings.xml", "findings.warnings.json"),
@@ -74,6 +76,47 @@ class GoldenParserTests(unittest.TestCase):
         )
         # CRLF wire endings survive untouched (text-mode redirection depends on it)
         self.assertIn("\r\n", out["source"])
+
+
+class FieldsBuiltinTypeTests(unittest.TestCase):
+    def _parse(self, body):
+        ddl = (
+            "define table ztest {\n" + body + "\n}\n"
+        ).encode()
+        return fields.parse(ddl)
+
+    def test_builtin_length_and_decimals(self):
+        out = self._parse(
+            "  key client : abap.char(3) not null;\n"
+            "  amount    : abap.dec(13,2);\n"
+            "  qty       : abap.quan(15,3);\n"
+            "  money     : abap.curr(11,2);\n"
+            "  counter   : abap.int4;\n"
+            "  note      : z_element_ref;\n"
+        )
+        f = {x["name"]: x for x in out["fields"]}
+        self.assertEqual((f["client"]["type"], f["client"]["length"], f["client"]["decimals"]),
+                         ("CHAR", 3, None))
+        self.assertTrue(f["client"]["is_key"])
+        self.assertTrue(f["client"]["not_null"])
+        self.assertEqual((f["amount"]["type"], f["amount"]["length"], f["amount"]["decimals"]),
+                         ("DEC", 13, 2))
+        self.assertEqual((f["qty"]["type"], f["qty"]["length"], f["qty"]["decimals"]),
+                         ("QUAN", 15, 3))
+        self.assertEqual(f["money"]["type"], "CURR")
+        self.assertEqual(f["counter"]["type"], "INT4")
+        # Element references stay null-length and are reported as unparsed.
+        self.assertIsNone(f["note"]["length"])
+        self.assertIn("z_element_ref", out["unparsed_types"])
+        self.assertNotIn("abap.char(3)", out["unparsed_types"])
+
+    def test_description_key_omitted_ddl(self):
+        out = self._parse("  f1 : abap.char(10);\n")
+        self.assertNotIn("description", out["fields"][0])
+
+    def test_unparsed_types_distinct_first_seen_order(self):
+        out = self._parse("  a : z_ref1;\n  b : z_ref1;\n  c : z_ref2;\n")
+        self.assertEqual(out["unparsed_types"], ["z_ref1", "z_ref2"])
 
 
 class EmptyResultTests(unittest.TestCase):

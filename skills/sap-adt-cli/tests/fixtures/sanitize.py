@@ -39,6 +39,7 @@ FILE_MAP = {
     # source / DDL
     "get-table.VBAK.xml": "get-table.VBAK.s4hana.xml",
     "get-table.T001.xml": "get-table.T001.s4hana.xml",
+    "get-table.REPOSRC.xml": "get-table.REPOSRC.s4hana.xml",
     "get-structure.VBAKKOM.xml": "get-structure.VBAKKOM.s4hana.xml",
     "get-class.source.abap": "get-class.CL_GUI_FRONTEND_SERVICES.abap",
     # type info (current-CLI dataelement outputs + true domain v2 payload)
@@ -67,6 +68,7 @@ FILE_MAP = {
     "run-sql.t001.xml": "run-sql.t001.json",
     # rows — raw dataPreview XML from SAP-standard table T100 (no customer data)
     "datapreview.t100.xml": "run-sql.t100.raw.xml",
+    "datapreview.t001.post.xml": "run-sql.t001.post.raw.xml",
     # error branches
     "error.404.txt.stderr": "error.404.txt",
     "error.404.raw.xml": "error.404.xml",

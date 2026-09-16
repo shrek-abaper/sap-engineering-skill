@@ -1,0 +1,311 @@
+{
+  "fields": [
+    {
+      "name": "progname",
+      "type": "progname",
+      "length": null,
+      "decimals": null,
+      "is_key": true,
+      "not_null": true
+    },
+    {
+      "name": "r3state",
+      "type": "r3state",
+      "length": null,
+      "decimals": null,
+      "is_key": true,
+      "not_null": true
+    },
+    {
+      "name": "sqlx",
+      "type": "sqlx",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "edtx",
+      "type": "edtx",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "dbna",
+      "type": "dbna",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "clas",
+      "type": "clas",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "type",
+      "type": "rdir_type",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "occurs",
+      "type": "occu",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "subc",
+      "type": "subc",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "appl",
+      "type": "rdir_appl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "secu",
+      "type": "secu",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "cnam",
+      "type": "cnam",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "cdat",
+      "type": "rdir_cdate",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "vern",
+      "type": "vern",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "levl",
+      "type": "rdir_levl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "rstat",
+      "type": "rdir_rstat",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "rmand",
+      "type": "rmand",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "rload",
+      "type": "rload",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "unam",
+      "type": "unam",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "udat",
+      "type": "rdir_udate",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "utime",
+      "type": "ddtime",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "datalg",
+      "type": "datalg",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "varcl",
+      "type": "varcl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "dbapl",
+      "type": "dbapl",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "fixpt",
+      "type": "fixpt",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "sset",
+      "type": "sset",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "sdate",
+      "type": "rdir_sdate",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "stime",
+      "type": "rdir_stime",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "idate",
+      "type": "rdir_idate",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "itime",
+      "type": "rdir_itime",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "ldbname",
+      "type": "ldbnam",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "uccheck",
+      "type": "uccheck",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "maxlineln",
+      "type": "maxlineln",
+      "length": null,
+      "decimals": null,
+      "is_key": false,
+      "not_null": true
+    },
+    {
+      "name": "data",
+      "type": "RAWSTRING",
+      "length": 0,
+      "decimals": null,
+      "is_key": false,
+      "not_null": false
+    }
+  ],
+  "unparsed_types": [
+    "progname",
+    "r3state",
+    "sqlx",
+    "edtx",
+    "dbna",
+    "clas",
+    "rdir_type",
+    "occu",
+    "subc",
+    "rdir_appl",
+    "secu",
+    "cnam",
+    "rdir_cdate",
+    "vern",
+    "rdir_levl",
+    "rdir_rstat",
+    "rmand",
+    "rload",
+    "unam",
+    "rdir_udate",
+    "ddtime",
+    "datalg",
+    "varcl",
+    "dbapl",
+    "fixpt",
+    "sset",
+    "rdir_sdate",
+    "rdir_stime",
+    "rdir_idate",
+    "rdir_itime",
+    "ldbnam",
+    "uccheck",
+    "maxlineln"
+  ]
+}

@@ -1,54 +1,63 @@
 # Known Issues — sap-adt-cli
 
-Issues discovered from real-machine (S/4HANA 2021 / SAP_BASIS 7.56, client
-DEV) fixture capture on 2026-09-15.
+Discovered and verified against a real **S/4HANA 2021 / SAP_BASIS 7.56** DEV
+system (client 400). Verification dates noted per item.
 
-## Resolved in batch 3 (output standardization)
+## Endpoint deviations (old → new)
 
-1. **`get-package` always returned `[]` (abapxml namespace bug).**
-   Nodestructure payload declares the abapxml namespace only on the `asx`
-   prefix; payload elements have no namespace. The shared `objects` parser
-   matches by local name, so `get-package SABP_UNIT` now returns its objects
-   (14 on the capture system). No HTTP change.
+| Command | Old call (fails on 7.56) | Status | New call (verified) | Verified |
+|---|---|---|---|---|
+| `list-transports` | GET `/sap/bc/adt/cts/transports`, Accept `application/vnd.sap.cts.transport.worklist+xml` → **406** | migrated | GET `/sap/bc/adt/cts/transportrequests`, Accept `application/vnd.sap.adt.transportorganizertree.v1+xml` | 2026-09-15 |
+| `syntax-check` | POST `/sap/bc/adt/abapsource/syntaxcheck` → **404** | migrated | POST `/sap/bc/adt/checkruns`, request `checkObjectList`/Content-Type `application/vnd.sap.adt.checkobjects+xml`, Accept `application/vnd.sap.adt.checkmessages+xml`, reporter `abapCheckRun` | 2026-09-15 |
+| `get-type-info` domain branch | GET `/ddic/domains/{name}/source/main` → **404** (always fell back to data element) | migrated | GET `/ddic/domains/{name}` (`vnd.sap.adt.domains.v2+xml`); fallback to `/ddic/dataelements/{name}` only on a genuine 404; `data.resolved_as` is explicit | 2026-09-15 |
+| `run-sql` | GET `freestyle?sqlCommand=...`, POST only as a 405 fallback | migrated (batch 3.5) | **POST** `/datapreview/freestyle?rowNumber=<N>`, `Content-Type: text/plain; charset=utf-8`, body = raw SQL; `Accept: application/vnd.sap.adt.datapreview.table.v1+xml` (**`application/xml` is rejected with 406**); GET kept only as a 405 fallback for older releases | 2026-09-16 |
+| `where-used` | GET `/informationsystem/whereused?uri=...` → **405** | **open — not migrated** | successor: POST `/informationsystem/usageReferences?uri=...` (request body not yet fully determined; see below) | 2026-09-16 |
 
-2. **`get-table` / `get-structure` returned DDL source, not field metadata.**
-   The `fields` parser normalizes the S/4 DDL shape
-   (`define table/structure`) into the unified `fields[]` shape;
-   `length`/`decimals`/`description` are `null` because the DDL response does
-   not carry them. `--format xml` passes the raw ADT response (DDL text on
-   S/4) through unchanged. The older field-metadata XML shape is still to be
-   added from an ECC fixture (`ParseError` until then).
+DML rejection, the `allow_write`/`allow_transport` gates, per-operation
+`[y/N]` confirmation and lock/unlock are unaffected. run-sql still rejects
+write statements before any request is sent.
 
-3. **`get-type-info` domain lookup always 404'd and silently fell back.**
-   The domain resource is `/sap/bc/adt/ddic/domains/{name}` (v2), not
-   `.../source/main`. Fallback to the data element now happens only on a
-   genuine HTTP 404, and the resolved branch is explicit as
-   `data.resolved_as: "domain" | "dataelement"`.
+## Fields: DDL shape on S/4
 
-The endpoint-level protocol migrations in the same batch:
-`list-transports` → `/cts/transportrequests` (transportorganizer tree),
-`syntax-check` → `/checkruns` (checkObjectList/checkmessages).
+`get-table`/`get-structure` serve CDS-style DDL (`define table/structure`),
+not field-metadata XML (2026-09-15):
 
-## Still open
+- built-in types resolve: `abap.char(18)` → `CHAR`/18, `abap.dec(13,2)` →
+  `DEC`/13/2; parenless fixed types (`abap.int4`) resolve with `length: null`;
+- data-element references (`mandt`, `vbeln_va`, …) keep `length`/`decimals`
+  null and are collected in `meta.unparsed_types`;
+- field descriptions are **not available**: `/ddic/tables/{name}/objectstructure`
+  returns 404 and the generic `/repository/objectstructure` does not serve
+  field text (2026-09-16). Field objects therefore omit `description`
+  entirely rather than emitting a permanently-null key.
 
-- **`where-used` is not migrated yet.** The legacy GET
-  `/repository/informationsystem/whereused` returns 405 on 7.56. Its
-  successor `/repository/informationsystem/usageReferences` requires POST
-  with a `?uri=` query parameter and a
-  `application/vnd.sap.adt.repository.usagereferences.request.v1+xml` body;
-  the request root must be the singular `usageReferenceRequest`
-  (plural → 400), but the correct inner object-reference structure is not
-  yet known (current attempts → 500 "Error while converting object
-  references"). Until then the command keeps the legacy call and its error
-  envelope; it is deliberately **not** downgraded with a workaround. The
-  empty-result contract (`ok:true`, `row_count:0`, exit 0) must hold once
-  migrated.
+## where-used: usageReferences request body (open)
 
-- **Non-empty `list-transports` tree parsing** is implemented but only
-  covered by an empty-tree fixture (the capture service user owns no
-  transports). A populated transport-organizer tree fixture is needed to
-  verify `tasks[]` nesting and the `status`/`status_text` mapping end to end.
+POST-only endpoint confirmed (GET → 405). Layered attempts on 2026-09-16:
 
-- **ECC 6 / older-release response shapes** for fields/where-used/transports/
-  syntax-check are still to be supplied; parsers accept the modern shapes
-  only for those kinds today.
+1. Singular root `<usagereferences:usageReferenceRequest>` with empty
+   `<affectedObjects/>` (full ADT resource uri in `?uri=`) → **500** "Error
+   while converting object references".
+2. Same body, `?uri=` as a VIT uri (`/vit/wb/object_type/clas/object_name/...`)
+   → **500** same error.
+3. `affectedObjects/<usagereferences:affectedObject …>` → **400** "System
+   expected the element `{http://www.sap.com/adt/core}objectReference`".
+4. `affectedObjects/<adtcore:objectReference uri name type="CLAS/OC">` with
+   full resource uri in `?uri=` → structure accepted, but again **500**
+   "Error while converting object references".
+
+So the envelope/element names are known but the accepted identity of the
+target object (query-`uri` form vs. body reference; resource uri vs. VIT uri)
+is not. The command intentionally stays on the legacy call; no workaround or
+endpoint downgrade was introduced. Needs the exact request body (or a
+populated example) before migration. Empty results must remain
+`ok:true,row_count:0,exit 0` afterwards.
+
+## Other open items
+
+- Non-empty `list-transports` tree: only an empty-tree fixture exists (the
+  capture user owns no transports); `tasks[]` nesting and the
+  `status`/`status_text` mapping need a populated tree fixture.
+- ECC 6 / older-release shapes for fields / where-used / transports /
+  syntax-check still need fixtures; those parsers accept the modern shapes
+  only today.

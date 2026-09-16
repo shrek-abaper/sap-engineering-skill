@@ -1,0 +1,45 @@
+@EndUserText.label : 'Report Sourcen'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #S
+@AbapCatalog.dataMaintenance : #RESTRICTED
+@AbapCatalog.primaryKey.invertedIndividualIndex : true
+define table reposrc {
+  key progname : progname not null;
+  key r3state  : r3state not null;
+  sqlx         : sqlx not null;
+  edtx         : edtx not null;
+  dbna         : dbna not null;
+  clas         : clas not null;
+  type         : rdir_type not null;
+  occurs       : occu not null;
+  subc         : subc not null;
+  appl         : rdir_appl not null;
+  secu         : secu not null;
+  cnam         : cnam not null;
+  cdat         : rdir_cdate not null;
+  vern         : vern not null;
+  levl         : rdir_levl not null;
+  rstat        : rdir_rstat not null;
+  rmand        : rmand not null;
+  @AbapCatalog.textLanguage
+  rload        : rload not null;
+  unam         : unam not null;
+  udat         : rdir_udate not null;
+  utime        : ddtime not null;
+  datalg       : datalg not null;
+  varcl        : varcl not null;
+  dbapl        : dbapl not null;
+  fixpt        : fixpt not null;
+  sset         : sset not null;
+  sdate        : rdir_sdate not null;
+  stime        : rdir_stime not null;
+  idate        : rdir_idate not null;
+  itime        : rdir_itime not null;
+  ldbname      : ldbnam not null;
+  uccheck      : uccheck not null;
+  maxlineln    : maxlineln not null;
+  @EndUserText.label : 'Source (komprimiert)'
+  data         : abap.rawstring(0);
+
+}

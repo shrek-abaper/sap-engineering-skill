@@ -6,8 +6,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "auart",
@@ -15,8 +14,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "submi",
@@ -24,8 +22,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vkorg",
@@ -33,8 +30,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vtweg",
@@ -42,8 +38,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "spart",
@@ -51,8 +46,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vkgrp",
@@ -60,8 +54,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vkbur",
@@ -69,8 +62,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vdatu",
@@ -78,8 +70,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vprgr",
@@ -87,8 +78,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "bstnk",
@@ -96,8 +86,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "bstzd",
@@ -105,8 +94,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "bname",
@@ -114,8 +102,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "telf1",
@@ -123,8 +110,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "lifsk",
@@ -132,8 +118,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "faksk",
@@ -141,8 +126,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "augru",
@@ -150,8 +134,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "angdt",
@@ -159,8 +142,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "bnddt",
@@ -168,8 +150,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "guebg",
@@ -177,8 +158,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "gueen",
@@ -186,8 +166,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "ktext",
@@ -195,8 +174,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kschl1",
@@ -204,8 +182,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kbetr1",
@@ -213,8 +190,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kwaer1",
@@ -222,8 +198,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kpein1",
@@ -231,8 +206,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kmein1",
@@ -240,8 +214,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kschl2",
@@ -249,8 +222,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kbetr2",
@@ -258,8 +230,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kwaer2",
@@ -267,8 +238,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kpein2",
@@ -276,8 +246,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kmein2",
@@ -285,8 +254,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kschl3",
@@ -294,8 +262,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kbetr3",
@@ -303,8 +270,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kwaer3",
@@ -312,8 +278,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kpein3",
@@ -321,8 +286,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kmein3",
@@ -330,8 +294,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kschl4",
@@ -339,8 +302,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kbetr4",
@@ -348,8 +310,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kwaer4",
@@ -357,8 +318,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kpein4",
@@ -366,8 +326,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kmein4",
@@ -375,8 +334,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "waerk",
@@ -384,8 +342,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "knuma",
@@ -393,8 +350,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vgbel",
@@ -402,8 +358,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vgtyp",
@@ -411,8 +366,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "xblnr",
@@ -420,8 +374,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "zuonr",
@@ -429,8 +382,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kvgr1",
@@ -438,8 +390,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kvgr2",
@@ -447,8 +398,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kvgr3",
@@ -456,8 +406,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kvgr4",
@@ -465,8 +414,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kvgr5",
@@ -474,8 +422,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "autlf",
@@ -483,8 +430,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "abrvw",
@@ -492,8 +438,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "abdis",
@@ -501,8 +446,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vsbed",
@@ -510,8 +454,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk1",
@@ -519,8 +462,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk2",
@@ -528,8 +470,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk3",
@@ -537,8 +478,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk4",
@@ -546,8 +486,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk5",
@@ -555,8 +494,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk6",
@@ -564,8 +502,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk7",
@@ -573,8 +510,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk8",
@@ -582,8 +518,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "taxk9",
@@ -591,8 +526,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "bukrs_vf",
@@ -600,8 +534,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "audat",
@@ -609,8 +542,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "gwldt",
@@ -618,8 +550,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "mahza",
@@ -627,8 +558,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "mahdt",
@@ -636,8 +566,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "landtx",
@@ -645,8 +574,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "stceg_l",
@@ -654,8 +582,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "xegdr",
@@ -663,8 +590,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vbeln_grp",
@@ -672,8 +598,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "scheme_grp",
@@ -681,8 +606,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "abruf_part",
@@ -690,8 +614,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "dat_fzau",
@@ -699,8 +622,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vsnmr_v",
@@ -708,8 +630,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "qmnum",
@@ -717,8 +638,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "ps_psp_pnr",
@@ -726,8 +646,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "ernam",
@@ -735,8 +654,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vbkla",
@@ -744,8 +662,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "h_curr",
@@ -753,8 +670,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "logsysb",
@@ -762,8 +678,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "vzeit",
@@ -771,8 +686,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "crm_guid",
@@ -780,8 +694,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "tas",
@@ -789,8 +702,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "betc",
@@ -798,8 +710,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "mod_allow",
@@ -807,8 +718,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "cancel_allow",
@@ -816,8 +726,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "pay_method",
@@ -825,8 +734,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "bpn",
@@ -834,8 +742,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "rep_freq",
@@ -843,8 +750,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "mndid",
@@ -852,8 +758,88 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     }
+  ],
+  "unparsed_types": [
+    "vbeln_va",
+    "auart",
+    "submi",
+    "vkorg",
+    "vtweg",
+    "spart",
+    "vkgrp",
+    "vkbur",
+    "edatu_vbak",
+    "prgrs_vbak",
+    "bstnk",
+    "bstzd",
+    "bname_v",
+    "telf1_vp",
+    "lifsk",
+    "faksk",
+    "augru",
+    "angdt_v",
+    "bnddt",
+    "guebg",
+    "gueen",
+    "ktext_v",
+    "kscha",
+    "kbetr",
+    "waers",
+    "kpein",
+    "kvmei",
+    "waerk",
+    "knuma",
+    "vgbel",
+    "vbtypl",
+    "xblnr_v1",
+    "ordnr_v",
+    "kvgr1",
+    "kvgr2",
+    "kvgr3",
+    "kvgr4",
+    "kvgr5",
+    "autlf",
+    "abrvw",
+    "abdis",
+    "vsbed",
+    "taxk1_ak",
+    "taxk2",
+    "taxk3",
+    "taxk4",
+    "taxk5",
+    "taxk6",
+    "taxk7",
+    "taxk8",
+    "taxk9",
+    "bukrs_vf",
+    "audat",
+    "gwldt",
+    "mahza",
+    "mahdt",
+    "landtx",
+    "land1tx",
+    "xegdr",
+    "vbeln_grp",
+    "scheme_grp",
+    "abruf_part",
+    "dat_fzau",
+    "vsnmr_v",
+    "qmnum",
+    "ps_psp_pnr",
+    "ernam",
+    "vbkla",
+    "logsys",
+    "ezeit_vbak",
+    "char70",
+    "psm_tas",
+    "psm_betc",
+    "psm_mod_allow",
+    "psm_canc_allow",
+    "dzwels",
+    "psm_bpn",
+    "psm_rep_freq",
+    "sepa_mndid"
   ]
 }

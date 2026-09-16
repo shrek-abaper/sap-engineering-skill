@@ -177,6 +177,13 @@ class EnvelopeCommandTests(unittest.TestCase):
         self.assertEqual(d["data"]["package"], "VA")
         self.assertEqual(d["data"]["application"], ["SD", "SD-SLS"])
 
+    def test_fields_meta_lists_unparsed_types_and_omits_description(self):
+        self._serve({"ddic/tables": fx("get-table.T001.s4hana.xml")})
+        d = self._invoke_json("get-table", "T001")
+        self.assertIn("unparsed_types", d["meta"])
+        self.assertIn("bukrs", d["meta"]["unparsed_types"])
+        self.assertNotIn("description", d["data"]["fields"][0])
+
     # ---- rows -------------------------------------------------------------
     def test_run_sql_rows(self):
         self._serve({"datapreview": fx("run-sql.t100.raw.xml")})
@@ -186,6 +193,34 @@ class EnvelopeCommandTests(unittest.TestCase):
                          ["ARBGB", "MSGNR", "TEXT"])
         self.assertEqual(d["meta"]["row_count"], 5)
         self.assertEqual(len(d["data"]["rows"]), 5)
+
+    def test_run_sql_posts_sql_body_first(self):
+        calls = []
+
+        def fake_request(url, method="GET", **kwargs):
+            calls.append((method, kwargs.get("data"), kwargs.get("params")))
+            return FakeResponse(fx("run-sql.t100.post.raw.xml"))
+
+        with patch.object(self.handlers, "make_adt_request", side_effect=fake_request):
+            d = self._invoke_json("run-sql", "SELECT arbgb FROM t100 UP TO 5 ROWS")
+        self.assertEqual(calls[0][0], "POST")
+        self.assertEqual(calls[0][1], b"SELECT arbgb FROM t100 UP TO 5 ROWS")
+        self.assertNotIn("sqlCommand", calls[0][2])
+        self.assertEqual(d["meta"]["row_count"], 5)
+
+    def test_run_sql_falls_back_to_get_on_405(self):
+        calls = []
+
+        def fake_request(url, method="GET", **kwargs):
+            calls.append(method)
+            if method == "POST":
+                raise self.AdtHttpError("HTTP 405", status=405)
+            return FakeResponse(fx("run-sql.t100.raw.xml"))
+
+        with patch.object(self.handlers, "make_adt_request", side_effect=fake_request):
+            d = self._invoke_json("run-sql", "SELECT x FROM z")
+        self.assertEqual(calls, ["POST", "GET"])
+        self.assertEqual(d["ok"], True)
 
     # ---- source -----------------------------------------------------------
     def test_source_default_text_is_verbatim(self):

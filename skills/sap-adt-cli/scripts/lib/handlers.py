@@ -98,13 +98,19 @@ def get_function(function_name: str, function_group: str) -> AdtResult:
         return _err(e)
 
 
+def _fields_result(resp: requests.Response, obj_type: str, name: str) -> AdtResult:
+    parsed = parse_fields.parse(resp.content)
+    unparsed = parsed.pop("unparsed_types", [])
+    meta = {"unparsed_types": unparsed} if unparsed else None
+    return _structured("fields", parsed, _obj(obj_type, name), raw=resp.text, meta=meta)
+
+
 def get_structure(structure_name: str) -> AdtResult:
     try:
         resp = make_adt_request(
             f"{_base()}/sap/bc/adt/ddic/structures/{_enc(structure_name)}/source/main"
         )
-        data = parse_fields.parse(resp.content)
-        return _structured("fields", data, _obj("structure", structure_name), raw=resp.text)
+        return _fields_result(resp, "structure", structure_name)
     except Exception as e:
         return _err(e)
 
@@ -114,8 +120,7 @@ def get_table(table_name: str) -> AdtResult:
         resp = make_adt_request(
             f"{_base()}/sap/bc/adt/ddic/tables/{_enc(table_name)}/source/main"
         )
-        data = parse_fields.parse(resp.content)
-        return _structured("fields", data, _obj("table", table_name), raw=resp.text)
+        return _fields_result(resp, "table", table_name)
     except Exception as e:
         return _err(e)
 
@@ -383,26 +388,32 @@ def where_used(
 
 def run_sql(sql: str, max_rows: int = 100) -> AdtResult:
     url = f"{_base()}/sap/bc/adt/datapreview/freestyle"
+    # Modern releases accept the SQL only as a POST body (GET -> 405);
+    # older releases took sqlCommand as a GET query parameter. Try POST
+    # first and fall back to GET on 405 for those systems. DML is rejected
+    # earlier, in the CLI before any request is sent.
     try:
         try:
-            resp = make_adt_request(
-                url,
-                params={"rowNumber": max_rows, "sqlCommand": sql},
-                extra_headers={"Accept": "application/vnd.sap.adt.datapreview.table.v1+xml"},
-            )
-        except AdtHttpError as e:
-            if e.status != 405:
-                raise
             resp = make_adt_request(
                 url,
                 method="POST",
                 params={"rowNumber": max_rows},
                 data=sql.encode("utf-8"),
                 extra_headers={
-                    "Content-Type": "text/plain",
+                    "Content-Type": "text/plain; charset=utf-8",
                     "Accept": "application/vnd.sap.adt.datapreview.table.v1+xml",
                 },
                 timeout=60,
+            )
+        except AdtHttpError as e:
+            if e.status != 405:
+                raise
+            resp = make_adt_request(
+                url,
+                params={"rowNumber": max_rows, "sqlCommand": sql},
+                extra_headers={
+                    "Accept": "application/vnd.sap.adt.datapreview.table.v1+xml"
+                },
             )
         data = parse_rows.parse(resp.content)
         return _structured("rows", data, {"type": "run-sql", "name": None}, raw=resp.text)

@@ -85,8 +85,9 @@ grep -rnE "<internal-ip>|<real-user>|Nextev|DEVK9[0-9]{6}" \
 
 | File | Kind | Notes |
 |---|---|---|
-| `get-table.VBAK.s4hana.xml` | fields | DDL source (`define table`), 7.56 shape; `length/decimals/description` absent |
+| `get-table.VBAK.s4hana.xml` | fields | DDL source (`define table`), 7.56 shape; element references only |
 | `get-table.T001.s4hana.xml` | fields | DDL source, customizing table |
+| `get-table.REPOSRC.s4hana.xml` | fields | DDL with a real built-in type (`abap.rawstring(0)`) |
 | `get-structure.VBAKKOM.s4hana.xml` | fields | DDL source (`define structure`) |
 | `get-class.CL_GUI_FRONTEND_SERVICES.abap` | source | plain ABAP source, byte-level text-mode baseline |
 | `get-type-info.MATNR.dtel.xml` | scalar | `DTEL/DE`, data element branch |
@@ -102,7 +103,8 @@ grep -rnE "<internal-ip>|<real-user>|Nextev|DEVK9[0-9]{6}" \
 | `syntax-check.CL_GUI.clean.xml` | findings | New checkrun API, zero messages |
 | `syntax-check.SAPMV45A.warnings.xml` | findings | real W-messages with line URIs |
 | `run-sql.t001.json` | rows | synthetic company rows; real columns/row count |
-| `run-sql.t100.raw.xml` | rows | raw dataPreview column-oriented XML (SAP-standard T100 messages, no customer data) — input for the `rows` parser |
+| `run-sql.t100.raw.xml` | rows | raw dataPreview column-oriented XML via legacy GET→POST fallback (SAP-standard T100 messages) |
+| `run-sql.t100.post.raw.xml` | rows | same shape via direct POST `freestyle` (current wire form) |
 | `golden/*.json` | all | expected parser output; keep in sync when parsers change |
 | `error.404.txt` / `error.404.xml` | error | CLI-wrapped text and raw `ExceptionResourceNotFound` body |
 | `error.403-csrf.txt` | error | expired-token 403 body |

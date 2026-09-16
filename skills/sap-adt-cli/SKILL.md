@@ -307,6 +307,12 @@ python3 "$SAP_CLI" get-table VBAK
 python3 "$SAP_CLI" get-structure VBAKKOM
 python3 "$SAP_CLI" get-type-info MATNR
 
+# NOTE (S/4HANA): get-table/get-structure are served as DDL. Built-in types
+# like abap.char(18)/abap.dec(13,2) carry length/decimals; data-element
+# references do not (null), and such types are listed in meta.unparsed_types.
+# Field descriptions are NOT available from this response (no objectstructure
+# resource); the field objects intentionally omit "description".
+
 # Discovery
 python3 "$SAP_CLI" search-object "ZCL_*" --max-results 20
 python3 "$SAP_CLI" get-package ZMYPACKAGE

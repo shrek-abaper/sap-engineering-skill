@@ -6,8 +6,7 @@
       "length": null,
       "decimals": null,
       "is_key": true,
-      "not_null": true,
-      "description": null
+      "not_null": true
     },
     {
       "name": "bukrs",
@@ -15,8 +14,7 @@
       "length": null,
       "decimals": null,
       "is_key": true,
-      "not_null": true,
-      "description": null
+      "not_null": true
     },
     {
       "name": "butxt",
@@ -24,8 +22,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "ort01",
@@ -33,8 +30,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "land1",
@@ -42,8 +38,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "waers",
@@ -51,8 +46,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "spras",
@@ -60,8 +54,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "ktopl",
@@ -69,8 +62,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "waabw",
@@ -78,8 +70,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "periv",
@@ -87,8 +78,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "kokfi",
@@ -96,8 +86,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "rcomp",
@@ -105,8 +94,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "adrnr",
@@ -114,8 +102,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "stceg",
@@ -123,8 +110,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "fikrs",
@@ -132,8 +118,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "xfmco",
@@ -141,8 +126,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "xfmcb",
@@ -150,8 +134,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "xfmca",
@@ -159,8 +142,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "txjcd",
@@ -168,8 +150,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "fmhrdate",
@@ -177,8 +158,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "xtemplt",
@@ -186,8 +166,7 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     },
     {
       "name": "transit_plant",
@@ -195,8 +174,31 @@
       "length": null,
       "decimals": null,
       "is_key": false,
-      "not_null": false,
-      "description": null
+      "not_null": false
     }
+  ],
+  "unparsed_types": [
+    "mandt",
+    "bukrs",
+    "butxt",
+    "ort01",
+    "land1",
+    "waers",
+    "spras",
+    "ktopl",
+    "waabw_001",
+    "periv",
+    "kokfi",
+    "rcomp_d",
+    "adrnr",
+    "stceg",
+    "fikrs",
+    "xfmco",
+    "xfmcb",
+    "xfmca",
+    "txjcd_nstx",
+    "fm_hrdate",
+    "fins_xtemplt",
+    "fins_transit_plant"
   ]
 }
