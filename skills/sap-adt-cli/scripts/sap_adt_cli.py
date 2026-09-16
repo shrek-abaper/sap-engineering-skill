@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -40,7 +41,8 @@ from lib.config import (
     remove_profile,
     SapConfig,
 )
-from lib import credentials, credentials_reports, handlers, log_redaction, output
+from lib import credentials, credentials_reports, errors, handlers, log_redaction, output
+from lib.config import ConfigError, ProfileNotFoundError
 from lib.keystore.base import KeyStoreError
 
 __version__ = "1.3.0"
@@ -56,11 +58,66 @@ def _profile_name():
         return None
 
 
+def _argv_command() -> str:
+    return next((a for a in sys.argv[1:] if not a.startswith("-")), "sap-adt-cli")
+
+
+def _emit_error(decision) -> None:
+    """Print the JSON error envelope on stderr and apply the tiered exit code."""
+    try:
+        command = click.get_current_context().info_name
+    except RuntimeError:
+        command = _argv_command()
+    envelope = decision.to_envelope(command, _profile_name())
+    click.echo(json.dumps(envelope, indent=2, ensure_ascii=False), err=True)
+    raise SystemExit(decision.exit_code)
+
+
+def _gate(code: str, message: str) -> None:
+    _emit_error(errors.decision(code, message))
+
+
+def _require_config(config):
+    """Emit the CONFIG_MISSING envelope for commands that pre-check config."""
+    if config is None:
+        _gate(errors.CONFIG_MISSING,
+              "Not configured. Run: sap-adt-cli configure")
+
+
+def _load_config():
+    """load_config() that turns ConfigError into the error envelope."""
+    try:
+        return load_config()
+    except (ConfigError, ProfileNotFoundError) as e:
+        _emit_error(errors.classify(e))
+
+
+def _load_config_with_source():
+    try:
+        return load_config_with_source()
+    except (ConfigError, ProfileNotFoundError) as e:
+        _emit_error(errors.classify(e))
+
+
+def _abort_on_error(result, stage: str = "") -> None:
+    """Fail a multi-stage command (write/activate) from a classified result."""
+    if result.is_error:
+        code = result.error_code or errors.SERVER_ERROR
+        message = f"{stage}: {result.text}" if stage else result.text
+        _emit_error(errors.decision(
+            code, message,
+            http_status=result.http_status,
+            hint=result.hint,
+        ))
+
+
 def _output(result) -> None:
     if result.is_error:
-        # Error envelopes and exit-code tiers land in the error-code batch.
-        click.echo(result.text, err=True)
-        sys.exit(1)
+        code = result.error_code or errors.SERVER_ERROR
+        _emit_error(errors.decision(
+            code, result.text,
+            http_status=result.http_status, hint=result.hint,
+        ))
     command = click.get_current_context().info_name
     try:
         rendered = output.render(
@@ -68,33 +125,28 @@ def _output(result) -> None:
             command=command, profile=_profile_name(),
         )
     except output.FormatUnsupported as exc:
-        click.echo(f"ERROR: {exc}", err=True)
-        sys.exit(1)
+        _gate(errors.BAD_REQUEST, str(exc))
     click.echo(rendered)
 
 
 def _require_write(config: SapConfig) -> None:
     if not config.allow_write:
-        click.echo(
-            "ERROR: Source code write is disabled.\n"
-            "Re-run `configure` and enable write mode "
-            "(answer 'y' to 'Enable source code write?'), "
-            "or use --allow-write flag during configure.",
-            err=True,
+        _gate(
+            errors.WRITE_DISABLED,
+            "Source code write is disabled. Re-run `configure` and enable "
+            "write mode (answer 'y' to 'Enable source code write?'), or use "
+            "the --allow-write flag during configure.",
         )
-        raise SystemExit(1)
 
 
 def _require_transport_write(config: SapConfig) -> None:
     if not config.allow_transport:
-        click.echo(
-            "ERROR: Transport write operations are disabled.\n"
-            "Re-run `configure` and enable transport mode "
-            "(answer 'y' to 'Enable transport write operations?'), "
-            "or use --allow-transport flag during configure.",
-            err=True,
+        _gate(
+            errors.TRANSPORT_DISABLED,
+            "Transport write operations are disabled. Re-run `configure` and "
+            "enable transport mode (answer 'y' to 'Enable transport write "
+            "operations?'), or use the --allow-transport flag during configure.",
         )
-        raise SystemExit(1)
 
 
 def _require_sql_write(config: dict) -> None:
@@ -111,18 +163,27 @@ def _require_sql_write(config: dict) -> None:
     allowed = False  # noqa: hardcoded policy
 
     if not allowed:
-        click.echo(
-            "ERROR: SQL write operations (INSERT/UPDATE/DELETE/MERGE/MODIFY/TRUNCATE) "
-            "are not permitted.\n"
-            "Direct DML execution via run-sql is disabled in this version.",
-            err=True,
+        _gate(
+            errors.DML_REJECTED,
+            "SQL write operations (INSERT/UPDATE/DELETE/MERGE/MODIFY/TRUNCATE) "
+            "are not permitted. Direct DML execution via run-sql is disabled "
+            "in this version.",
         )
-        raise SystemExit(1)
+
+
+def _stdin_is_tty() -> bool:
+    return sys.stdin is not None and sys.stdin.isatty()
 
 
 def _confirm_change(preview_lines: list, yes: bool = False) -> None:
     if yes:
         return
+    if not _stdin_is_tty():
+        _gate(
+            errors.CONFIRM_REQUIRED,
+            "Confirmation required but stdin is not a terminal; re-run in a "
+            "terminal or pass --yes explicitly for trusted automation.",
+        )
     click.echo("\u2500" * 50, err=True)
     click.echo("PREVIEW \u2014 changes to be made:", err=True)
     for line in preview_lines:
@@ -134,8 +195,7 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
         err=True,
     )
     if answer.strip().lower() != "y":
-        click.echo("Aborted \u2014 no changes made.", err=True)
-        raise SystemExit(0)
+        _gate(errors.USER_ABORTED, "Aborted \u2014 no changes made.")
 
 
 @click.group(name="sap-adt-cli")
@@ -218,17 +278,20 @@ def configure(url, username, password, client, language, no_verify_ssl, allow_wr
                 "the SAP_PASSWORD environment variable instead.",
                 err=True,
             )
-        save_config_from_flags(
-            url=url,
-            username=username,
-            password=password,
-            client=client,
-            language=language,
-            verify_ssl=not no_verify_ssl,
-            allow_write=allow_write,
-            allow_transport=allow_transport,
-            profile=profile,
-        )
+        try:
+            save_config_from_flags(
+                url=url,
+                username=username,
+                password=password,
+                client=client,
+                language=language,
+                verify_ssl=not no_verify_ssl,
+                allow_write=allow_write,
+                allow_transport=allow_transport,
+                profile=profile,
+            )
+        except (ConfigError, ProfileNotFoundError) as e:
+            _emit_error(errors.classify(e))
     else:
         run_configure_wizard(profile=profile)
 
@@ -236,11 +299,11 @@ def configure(url, username, password, client, language, no_verify_ssl, allow_wr
 @cli.command()
 def status():
     """Show the active SAP environment profile and connection configuration."""
-    config, source = load_config_with_source()
+    config, source = _load_config_with_source()
     if config is None:
-        click.echo("Not configured. Run: sap-adt-cli configure", err=True)
-        click.echo("Manage environments with: sap-adt-cli profile list", err=True)
-        sys.exit(1)
+        _gate(errors.CONFIG_MISSING,
+              "Not configured. Run: sap-adt-cli configure "
+              "(manage environments with 'profile list').")
     click.echo(f"Profile:         {config.profile_name or '(environment override)'}")
     click.echo(f"URL:             {config.url}")
     click.echo(f"Username:        {config.username}")
@@ -262,8 +325,8 @@ def profile_list():
     """List all configured SAP environments and show which one is active."""
     profiles = list_profiles()
     if profiles is None:
-        click.echo(f"Error: could not parse {config_module.CONFIG_FILE}. Fix or remove the file.", err=True)
-        sys.exit(1)
+        _gate(errors.CONFIG_MISSING,
+              f"Could not parse {config_module.CONFIG_FILE}. Fix or remove the file.")
     if not profiles:
         click.echo("No profiles configured. Run: sap-adt-cli configure")
         return
@@ -289,8 +352,7 @@ def profile_use(name):
     try:
         set_active_profile(name)
     except ValueError as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+        _gate(errors.PROFILE_NOT_FOUND, str(e))
     click.echo(f"Active profile is now '{name}'.")
 
 
@@ -301,8 +363,7 @@ def profile_remove(name):
     try:
         remove_profile(name)
     except ValueError as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+        _gate(errors.PROFILE_NOT_FOUND, str(e))
     click.echo(f"Profile '{name}' removed.")
 
 
@@ -319,12 +380,11 @@ def credentials_group():
 def _find_profile_or_exit(profile_name):
     profiles = {p["name"]: p for p in (config_module.list_profiles() or [])}
     if profile_name not in profiles:
-        click.echo(
-            f"Error: profile '{profile_name}' not found in {config_module.CONFIG_FILE}.\n"
+        _gate(
+            errors.PROFILE_NOT_FOUND,
+            f"Profile '{profile_name}' not found in {config_module.CONFIG_FILE}. "
             f"Create it first with `configure --profile {profile_name}`.",
-            err=True,
         )
-        raise SystemExit(1)
     return profiles[profile_name]
 
 
@@ -347,15 +407,13 @@ def _read_secret(profile_name, password_opt):
         first = getpass.getpass("Password (input hidden): ")
         second = getpass.getpass("Confirm password: ")
         if first != second:
-            click.echo("Error: passwords do not match.", err=True)
-            raise SystemExit(1)
+            _gate(errors.BAD_REQUEST, "Passwords do not match.")
         return first
-    click.echo(
-        f"Error: no password supplied and stdin is not a terminal. "
+    _gate(
+        errors.CONFIG_MISSING,
+        f"No password supplied and stdin is not a terminal. "
         f"Set {env_name} or pass --password.",
-        err=True,
     )
-    raise SystemExit(1)
 
 
 @credentials_group.command("set")
@@ -367,14 +425,13 @@ def credentials_set(profile_name, user, password):
     profile = _find_profile_or_exit(profile_name)
     username = user or profile.get("username")
     if not username:
-        click.echo(f"Error: profile '{profile_name}' has no username; pass --user.", err=True)
-        raise SystemExit(1)
+        _gate(errors.BAD_REQUEST,
+              f"Profile '{profile_name}' has no username; pass --user.")
     secret = _read_secret(profile_name, password)
     try:
         backend = credentials.save(profile_name, username, secret)
     except KeyStoreError as e:
-        click.echo(f"Error: {e}", err=True)
-        raise SystemExit(1)
+        _gate(errors.CONFIG_MISSING, str(e))
     click.echo(f"Password for profile '{profile_name}' stored in keystore '{backend}'.")
 
 
@@ -386,8 +443,7 @@ def credentials_forget(profile_name):
     try:
         removed = credentials.forget(profile_name)
     except KeyStoreError as e:
-        click.echo(f"Error: {e}", err=True)
-        raise SystemExit(1)
+        _gate(errors.CONFIG_MISSING, str(e))
     if removed:
         # delete() is idempotent: this is a purge across writable backends,
         # not a claim that every one of them held an entry.
@@ -565,8 +621,7 @@ def syntax_check_cmd(object_type, object_name, group):
     """
     result = handlers.syntax_check(object_type, object_name, group=group)
     if result.is_error:
-        click.echo(result.text, err=True)
-        sys.exit(1)
+        _abort_on_error(result)
     command = click.get_current_context().info_name
     click.echo(output.render(
         result, output.get_format(), command=command, profile=_profile_name()
@@ -617,10 +672,8 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
 
     Requires 'allow_write' enabled in config. Run `configure` to enable.
     """
-    config = load_config()
-    if config is None:
-        click.echo("Not configured. Run: sap-adt-cli configure", err=True)
-        sys.exit(1)
+    config = _load_config()
+    _require_config(config)
     _require_write(config)
 
     with click.open_file(source_file, "r", encoding="utf-8") as f:
@@ -640,15 +693,13 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
     try:
         uri = handlers.get_object_uri(object_type, object_name, group=group)
     except ValueError as e:
-        click.echo(str(e), err=True)
-        sys.exit(1)
+        _gate(errors.BAD_REQUEST, str(e))
 
     click.echo(f"[1/{n}] Locking {object_type.upper()} {object_name.upper()} ...", err=True, nl=False)
     lock_result = handlers.lock_object(uri)
     if lock_result.is_error:
         click.echo("  FAILED", err=True)
-        click.echo(lock_result.text, err=True)
-        sys.exit(1)
+        _abort_on_error(lock_result, "lock")
     lock_handle = lock_result.text
     click.echo(f"  OK  (handle: {lock_handle})", err=True)
 
@@ -657,8 +708,7 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
         put_result = handlers.put_source(uri, content, lock_handle, transport=transport)
         if put_result.is_error:
             click.echo("  FAILED", err=True)
-            click.echo(put_result.text, err=True)
-            sys.exit(1)
+            _abort_on_error(put_result, "write")
         click.echo("  OK", err=True)
     finally:
         click.echo(f"[3/{n}] Unlocking ...", err=True, nl=False)
@@ -670,8 +720,7 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
         act_result = handlers.activate_object(object_type, object_name, group=group)
         if act_result.is_error:
             click.echo("  FAILED", err=True)
-            click.echo(act_result.text, err=True)
-            sys.exit(1)
+            _abort_on_error(act_result, "activate")
         click.echo("  OK", err=True)
 
     click.echo("Write complete.")
@@ -690,10 +739,8 @@ def activate_cmd(object_type, object_name, group, yes):
 
     Requires 'allow_write' enabled in config. Run `configure` to enable.
     """
-    config = load_config()
-    if config is None:
-        click.echo("Not configured. Run: sap-adt-cli configure", err=True)
-        sys.exit(1)
+    config = _load_config()
+    _require_config(config)
     _require_write(config)
     preview = [
         "Action  : Activate object",
@@ -735,18 +782,15 @@ def run_sql_cmd(sql, max_rows):
     DML statements (INSERT, UPDATE, DELETE, MODIFY, TRUNCATE) are blocked.
     Detection is by first keyword, case-insensitive.
     """
-    config = load_config()
-    if config is None:
-        click.echo("Not configured. Run: sap-adt-cli configure", err=True)
-        sys.exit(1)
+    config = _load_config()
+    _require_config(config)
     _SQL_WRITE_KEYWORDS = {"INSERT", "UPDATE", "DELETE", "MERGE", "MODIFY", "TRUNCATE"}
     first_keyword = sql.strip().upper().split()[0] if sql.strip() else ""
     is_write_sql = first_keyword in _SQL_WRITE_KEYWORDS
     if is_write_sql:
         _require_sql_write(config)
     if max_rows > 10000:
-        click.echo("ERROR: --max-rows cannot exceed 10000.", err=True)
-        sys.exit(1)
+        _gate(errors.BAD_REQUEST, "--max-rows cannot exceed 10000.")
     _output(handlers.run_sql(sql, max_rows))
 
 
@@ -758,10 +802,8 @@ def list_transports_cmd(user, status):
 
     Returns a JSON array of {trkorr, description, status, owner} objects.
     """
-    config = load_config()
-    if config is None:
-        click.echo("Not configured. Run: sap-adt-cli configure", err=True)
-        sys.exit(1)
+    config = _load_config()
+    _require_config(config)
     effective_user = user or config.username
     _output(handlers.list_transports(effective_user, status=status))
 
@@ -777,10 +819,8 @@ def create_transport_cmd(description, category, yes):
 
     Requires 'allow_transport' enabled in config. Run `configure` to enable.
     """
-    config = load_config()
-    if config is None:
-        click.echo("Not configured. Run: sap-adt-cli configure", err=True)
-        sys.exit(1)
+    config = _load_config()
+    _require_config(config)
     _require_transport_write(config)
     preview = [
         "Action      : Create transport request",
@@ -805,10 +845,8 @@ def release_transport_cmd(trkorr, yes):
 
     Requires 'allow_transport' enabled in config. Run `configure` to enable.
     """
-    config = load_config()
-    if config is None:
-        click.echo("Not configured. Run: sap-adt-cli configure", err=True)
-        sys.exit(1)
+    config = _load_config()
+    _require_config(config)
     _require_transport_write(config)
     preview = [
         "Action  : Release transport request",

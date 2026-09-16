@@ -219,13 +219,19 @@ class EnvelopeCommandTests(unittest.TestCase):
         self.assertEqual(d["data"]["adt_type"], "DTEL/DE")
 
     def test_type_info_domain_non404_error_surfaces(self):
+        # 403 without a CSRF marker is an authorization failure -> tier 2;
+        # a non-404 must NOT silently fall back to the data element.
         def fake_request(url, method="GET", **kwargs):
             if "ddic/domains" in url:
                 raise self.AdtHttpError("HTTP 403", status=403)
             return FakeResponse(fx("get-type-info.MATNR.dtel.xml"))
         with patch.object(self.handlers, "make_adt_request", side_effect=fake_request):
             r = CliRunner().invoke(self.cli.cli, ["get-type-info", "MATNR"])
-        self.assertEqual(r.exit_code, 1)
+        self.assertEqual(r.exit_code, 2)
+        envelope = json.loads(r.output)
+        self.assertFalse(envelope["ok"])
+        self.assertEqual(envelope["error"]["code"], "AUTH_FAILED")
+        self.assertEqual(envelope["error"]["http_status"], 403)
 
     def test_transaction_scalar(self):
         self._serve({"objectproperties": fx("get-transaction.VA01.xml")})

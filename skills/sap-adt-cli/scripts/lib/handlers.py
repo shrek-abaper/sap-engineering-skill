@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 import requests
 
+from . import errors
 from .client import AdtHttpError, make_adt_request
 from .config import get_config
 from .parsers import fields as parse_fields
@@ -29,6 +30,10 @@ class AdtResult:
     meta: Optional[dict] = None
     # Original ADT payload kept for --format xml passthrough.
     raw: Optional[str] = None
+    # Classified error fields (is_error=True), produced via lib.errors.
+    error_code: Optional[str] = None
+    http_status: Optional[int] = None
+    hint: Optional[str] = None
 
 
 def _base() -> str:
@@ -40,8 +45,16 @@ def _enc(name: str) -> str:
 
 
 def _err(exc: Exception) -> AdtResult:
-    # AdtHttpError messages are pre-sanitized (no Authorization headers).
-    return AdtResult(text=str(exc), is_error=True)
+    # Single classification point lives in lib.errors; AdtHttpError
+    # messages are pre-sanitized (no Authorization headers).
+    d = errors.classify(exc)
+    return AdtResult(
+        text=d.message,
+        is_error=True,
+        error_code=d.code,
+        http_status=d.http_status,
+        hint=d.hint,
+    )
 
 
 def _obj(obj_type: str, name: str) -> dict:
@@ -306,7 +319,7 @@ def syntax_check(
         data = parse_findings.parse(resp.content)
         return _structured("findings", data, _obj(object_type, object_name), raw=resp.text)
     except ValueError as e:
-        return AdtResult(text=str(e), is_error=True)
+        return _err(e)
     except Exception as e:
         return _err(e)
 
@@ -375,7 +388,7 @@ def where_used(
         data["objects"] = data["objects"][:max_results]
         return _structured("objects", data, _obj(object_type, object_name), raw=resp.text)
     except ValueError as e:
-        return AdtResult(text=str(e), is_error=True)
+        return _err(e)
     except Exception as e:
         return _err(e)
 
@@ -519,7 +532,7 @@ def activate_object(
                 return AdtResult(text="\n".join(errors), is_error=True)
         return AdtResult(text=f"Activated {object_type.upper()} {object_name.upper()}.")
     except ValueError as e:
-        return AdtResult(text=str(e), is_error=True)
+        return _err(e)
     except Exception as e:
         return _err(e)
 

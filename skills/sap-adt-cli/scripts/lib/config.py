@@ -113,9 +113,20 @@ def validate_profile_name(name: str) -> str:
     return name
 
 
+class ConfigError(Exception):
+    """Configuration/credential problem (mapped to exit tier 2)."""
+
+
+class ProfileNotFoundError(ConfigError):
+    """Requested profile does not exist (exit tier 2)."""
+
+
 def _fail(message: str):
-    print(message, file=sys.stderr)
-    sys.exit(1)
+    raise ConfigError(message)
+
+
+def _fail_profile(message: str):
+    raise ProfileNotFoundError(message)
 
 
 # ---------------------------------------------------------------------------
@@ -296,7 +307,7 @@ def _select_profile_name(raw: Dict[str, Any], explicit: Optional[str] = None) ->
     if name:
         if name not in profiles:
             available = ", ".join(sorted(profiles)) or "(none configured)"
-            _fail(
+            _fail_profile(
                 f"Profile '{name}' not found in {CONFIG_FILE}.\n"
                 f"Available profiles: {available}\n"
                 f"Configure it with `configure --profile {name}` or list with `profile list`."
@@ -396,8 +407,7 @@ def load_config(profile: Optional[str] = None) -> Optional[SapConfig]:
 def get_config(profile: Optional[str] = None) -> SapConfig:
     config = load_config(profile)
     if config is None:
-        print(SETUP_GUIDE, file=sys.stderr)
-        sys.exit(1)
+        raise ConfigError("Not configured. Run: sap-adt-cli configure")
     return config
 
 

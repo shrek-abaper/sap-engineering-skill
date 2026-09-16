@@ -176,7 +176,9 @@ class ConfigKeystoreWriteTests(unittest.TestCase):
             },
         }
         self.write_config_file(raw)
-        with self.assertRaises(SystemExit):
+        # Batch 4b: bootstrap failure is a ConfigError (mapped to exit 2 by
+        # lib.errors) rather than print+SystemExit.
+        with self.assertRaises(self.module.ConfigError):
             self.module.get_config()
 
     def write_config_file(self, raw):

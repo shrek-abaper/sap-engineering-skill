@@ -407,19 +407,41 @@ python3 "$SAP_CLI" release-transport DEVK900001 --yes     # skip confirm (truste
 
 ---
 
-## Error Handling
+## Error Handling (output contract)
 
-| Error Output | Cause | Action |
-|--------------|-------|--------|
-| `Not configured` | No saved credentials | Guide user through `configure` |
-| `Profile 'x' not found` | `--profile`/`SAP_PROFILE` names an unknown profile | Run `profile list`, or `configure --profile x` to create it |
-| `is currently active` on remove | Tried to remove the active profile | `profile use <other>` first, then remove |
-| `HTTP 401` | Wrong username/password | Ask user to re-run `configure` or `credentials set <profile>` |
-| `no password ... in the keystore` | Profile has no stored password | Run `credentials set <profile>` or `credentials doctor` |
-| `HTTP 403` | Missing ADT authorization | User needs `SAP_ADT_BASE` role or equivalent |
-| `HTTP 404` | Object name not found | Try `search-object` to find the correct name |
-| `HTTP 503` | ADT service not active | SAP Basis must activate `/sap/bc/adt` in transaction SICF |
-| SSL error | Certificate issue | Re-configure with `SAP_VERIFY_SSL=0` |
+Errors are a JSON envelope on **stderr** (`ok:false, error.code, error.message,
+error.http_status, error.hint`) with a tiered exit code:
+
+| Exit | Meaning | Codes | Retry? |
+|------|---------|-------|--------|
+| 0 | success (empty results are still success) | — | — |
+| 1 | operational failure | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED` | yes |
+| 2 | configuration / credentials | `CONFIG_MISSING`, `PROFILE_NOT_FOUND`, `AUTH_FAILED` | fix config, do not blindly retry |
+| 3 | safety policy refusal / operation did not happen | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED` | no — requires a human |
+| 4 | requested object does not exist | `OBJECT_NOT_FOUND` | no, unless the name was wrong |
+
+**Distinguishing our errors from CLI usage errors:** configuration/operational
+errors print the JSON envelope above; Click usage errors (missing argument,
+invalid `--format`) are **plain text** and use Click's own exit code 2. Agents
+should inspect stderr content, not rely on exit code 2 alone.
+
+| Error code | Cause | Action |
+|------------|-------|--------|
+| `CONFIG_MISSING` | No saved credentials / unparseable config | Guide user through `configure` |
+| `PROFILE_NOT_FOUND` | `--profile`/`SAP_PROFILE` names an unknown profile | Run `profile list`, or `configure --profile x` |
+| `AUTH_FAILED` | 401 or non-CSRF 403 (wrong credentials / missing ADT authorization) | Re-run `configure`; user needs ADT authorizations |
+| `CSRF_EXPIRED` | 403 with a CSRF token body | Retry; the client refreshes the token automatically |
+| `OBJECT_NOT_FOUND` | 404 `ExceptionResourceNotFound` | Try `search-object` for the correct name |
+| `BAD_REQUEST` | 400/405/406/415, unknown object type, invalid parameter | The call/API version is wrong; check arguments |
+| `SERVICE_NOT_ACTIVE` | HTTP 503 | SAP Basis must activate `/sap/bc/adt` in SICF |
+| `SERVER_ERROR` | Unexpected 5xx | Check ST22; retry later |
+| `LOCKED_BY_OTHER` | 423 / lock refused | Release the foreign lock first |
+| `NETWORK_ERROR` | Timeout / connection failure | Check connectivity, retry |
+| `WRITE_DISABLED` / `TRANSPORT_DISABLED` | Capability switch off | Re-run `configure` and enable the switch |
+| `CONFIRM_REQUIRED` | Non-interactive stdin without `--yes` | Run in a terminal or pass `--yes` deliberately |
+| `USER_ABORTED` | User answered N at the prompt | Nothing was changed |
+| `DML_REJECTED` | INSERT/UPDATE/DELETE/MERGE/MODIFY/TRUNCATE via run-sql | Permanently blocked in this version |
+| `PARSE_FAILED` | Response could not be normalized | Re-run with `--format xml` for the raw payload |
 
 ---
 

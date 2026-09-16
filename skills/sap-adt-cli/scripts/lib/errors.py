@@ -216,6 +216,11 @@ def classify(
         name = type(exc).__name__
         text = str(exc)
         status = getattr(exc, "status", None)
+        # Name-based to avoid importing lib.config (layering).
+        if name == "ProfileNotFoundError":
+            return decision(PROFILE_NOT_FOUND, text)
+        if name == "ConfigError":
+            return decision(CONFIG_MISSING, text)
         if isinstance(exc, ValueError) and not status:
             # ParseError (bad payload) and local argument validation
             # (unknown object type, missing --group, ...) are distinct.
