@@ -88,7 +88,7 @@ def _fake_config(*, env="dev", env_source="inferred", allow_write=False,
 WRITE_COMMANDS = [
     (["write-source", "class", "ZCL_X"], lambda d: (d / "z.abap",)),
     (["activate", "class", "ZCL_X"], None),
-    (["create-transport", "--description", "x"], None),
+    (["create-transport", "--package", "$TMP", "--description", "x", "--ref", "/sap/bc/adt/programs/programs/zx/source/main"], None),
     (["release-transport", "DEVK900001"], None),
 ]
 
@@ -182,7 +182,7 @@ class EnvPathGateTests(unittest.TestCase):
         with patch.object(self.cli, "load_config", return_value=cfg):
             r = CliRunner().invoke(
                 self.cli.cli,
-                ["create-transport", "--description", "x", "--yes"])
+                ["create-transport", "--package", "$TMP", "--description", "x", "--ref", "/sap/bc/adt/programs/programs/zx/source/main", "--yes"])
         self.assertEqual(r.exit_code, 3, r.output)
         self.assertEqual(_env(r)["error"]["code"], "CONFIG_MISSING")
         self.assertIn("SAP_ENVIRONMENT", _env(r)["error"]["message"])
@@ -192,7 +192,7 @@ class EnvPathGateTests(unittest.TestCase):
         with patch.object(self.cli, "load_config", return_value=cfg):
             r = CliRunner().invoke(
                 self.cli.cli,
-                ["create-transport", "--description", "x", "--yes"])
+                ["create-transport", "--package", "$TMP", "--description", "x", "--ref", "/sap/bc/adt/programs/programs/zx/source/main", "--yes"])
         self.assertEqual(r.exit_code, 3, r.output)
         self.assertEqual(_env(r)["error"]["code"], "TRANSPORT_DISABLED")
 

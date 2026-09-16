@@ -164,6 +164,43 @@ Trigger: capture the first genuine failed activation on the DEV system
 parser + add a sanitized fixture. Until then treat an activation as complete
 only with an independent readback (inactiveobjects list / `version`).
 
+## create-transport: fixed 2026-09-17; two parameter questions still open
+
+The old `create-transport` had never succeeded on a real system. A
+two-variant real probe on S/4HANA 2021 / 7.56 measured the deviations,
+and the command was fixed the same day:
+
+| Dimension | Old CLI (rejected) | Current form (verified) |
+|---|---|---|
+| Content-Type | `application/vnd.sap.cts.transport.request+xml` → **400** `ExceptionDataTypeNotFound` | `application/vnd.sap.as+xml; charset=UTF-8; dataname=com.sap.adt.CreateCorrectionRequest` |
+| Accept | none | `text/plain` |
+| Body | `<cts:transportRequest><cts:attributes>` category/owner/description/target | ASX `DATA{DEVCLASS,REQUEST_TEXT,REF,OPERATION=I}` |
+| Response | `Location` header first | text/plain `/com.sap.cts/object_record/<TRKORR>` |
+| CLI options | `--category` (no server-side equivalent) | `--package` + `--description` + `--ref`, all required |
+
+Evidence: old shape → 400 (`tests/fixtures/transport.create.400-old-shape.xml`);
+ASX probe (`DEVCLASS=$TMP`, REF = probe program source URI, `OPERATION=I`)
+→ 200 creating local request ECDK944393; direct readback
+`GET /cts/transportrequests/ECDK944393` confirmed `tm:status="D"` /
+"Modifiable" and the description
+(`tests/fixtures/transport.create.success.txt`). The fixed CLI emits a
+request byte-identical to that live-200 probe (offline harness
+assertion); a second end-to-end creation was deliberately not run.
+Also measured: root `GET /cts/transportrequests` returned empty even
+while the user owned that modifiable D request — per-TR readback is the
+reliable check (see "non-empty tree" item below).
+
+Still unverified — do NOT loosen the interface until measured:
+
+1. whether `REF` is truly mandatory or any object URI is accepted;
+2. behavior with a real transportable package instead of `$TMP`
+   (transport layer, target, task creation);
+3. `OPERATION` values other than `I`.
+
+Trigger: first real creation against a transportable package, or a
+probe omitting `REF`. Relaxing a required option later is backward
+compatible; the command starts conservative on purpose.
+
 ## CSRF prefetch GET /activation returns 405 (harmless)
 
 For the first POST/PUT of a process, `client._fetch_csrf_token` issues GET

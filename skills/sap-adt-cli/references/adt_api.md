@@ -59,6 +59,7 @@ real DEV system (old value → new value; fixtures under `tests/fixtures/`):
 | 9 | Source PUT | Handle in `X-sap-adt-lock-handle` **header**; chosen transport as `?sap-cts-request=` (this shape never worked live) | `PUT {object}/source/main?lockHandle=<handle>` plus, for a chosen request, `&corrNr=<TRKORR>`; `Content-Type: text/plain; charset=utf-8`; 200 empty | 2026-09-16 |
 | 10 | Unlock (dequeue) | `POST {object}?method=unlock` with the handle header (never worked live) | `POST {object}?_action=UNLOCK&lockHandle=<urlencoded handle>`. **200 empty is not proof of release** (see write-side rule): cross-process without the original stateful cookie = silent no-op (next LOCK still 403); measured real only inside the owning stateful session (same-process `finally` path confirmed by an independent fresh-process re-lock 200) or cross-process replaying the original cookie jar | 2026-09-16/17 |
 | 11 | Activation | Bare `POST /activation` (no parameters) → **400** `ExceptionParameterNotFound` "Parameter method could not be found" | `POST /sap/bc/adt/activation?method=activate&preauditRequested=true` with the same `objectReferences` body; success verified by readback (`/activation/inactiveobjects`, `adtcore:version`), not by 200 alone | 2026-09-16 |
+| 12 | Create transport | `POST /cts/transports` with CT `application/vnd.sap.cts.transport.request+xml` and a `<cts:transportRequest><cts:attributes>` (category/owner/description/target) body → **400** `ExceptionDataTypeNotFound` "No data type found in content type …" | `POST /cts/transports`, CT `application/vnd.sap.as+xml; charset=UTF-8; dataname=com.sap.adt.CreateCorrectionRequest`, Accept `text/plain`, ASX body `DATA{DEVCLASS,REQUEST_TEXT,REF,OPERATION=I}`; 200 body `/com.sap.cts/object_record/<TRKORR>`; read back `GET /cts/transportrequests/<TRKORR>` (`tm:status` D). CLI fixed 2026-09-17 (`create-transport --package/--description/--ref`, all required; `--category` removed) | 2026-09-17 |
 
 Also verified: `/ddic/tables/{n}/source/main` and
 `/ddic/structures/{n}/source/main` return CDS-style DDL
@@ -274,13 +275,52 @@ Accept: application/vnd.sap.cts.transport.worklist+xml; charset=utf-8
 
 Response: XML with transport work items. Parse `TRKORR`, `AS4TEXT` (description), `TRSTATUS` (`D`=open, `R`=released), `AS4USER` (owner).
 
-### Create transport
+### Create transport (verified 2026-09-17, Basis 7.56)
+
+Creation is an ABAP-serialized function call — `CreateCorrectionRequest`
+— not a CTS resource document:
+
+```http
+POST /sap/bc/adt/cts/transports
+Accept: text/plain
+Content-Type: application/vnd.sap.as+xml; charset=UTF-8;
+              dataname=com.sap.adt.CreateCorrectionRequest
+
+<?xml version="1.0" encoding="UTF-8"?>
+<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values><DATA>
+    <DEVCLASS>$TMP</DEVCLASS>
+    <REQUEST_TEXT>ADT-CLI PROBE 20260917</REQUEST_TEXT>
+    <REF>/sap/bc/adt/programs/programs/z_adt_session_probe/source/main</REF>
+    <OPERATION>I</OPERATION>
+  </DATA></asx:values>
+</asx:abap>
+```
+
+200 with `text/plain` body `/com.sap.cts/object_record/<TRKORR>` (no
+`Location` header). Parameters measured only for this combination:
+
+- `DEVCLASS` — package; `$TMP` produces a **local** request
+  (`tm:target=""`, `target_desc="Local Change Requests"`, not releasable);
+- `REF` — object URI the request is created for (the reference
+  implementation validates it as an object URL); whether it is truly
+  mandatory and how real packages behave vs. `$TMP` is NOT probed;
+- `OPERATION` — `I` measured; other values unknown.
+
+Per the write-side rule, read the new request back:
+`GET /cts/transportrequests/<TRKORR>` with
+`application/vnd.sap.adt.transportorganizer.v1+xml` gives `tm:status` D
+("Modifiable"), owner and description. Note: a root
+`GET /cts/transportrequests` tree returned empty on the capture system
+even while the user owned a modifiable request — direct per-TR readback is
+the reliable verification.
+
+### Create transport (legacy — rejected by 7.56; the CLI still ships this)
 
 ```http
 POST /sap/bc/adt/cts/transports
 Content-Type: application/vnd.sap.cts.transport.request+xml; charset=utf-8
 
-<?xml version="1.0" encoding="utf-8"?>
 <cts:transportRequest xmlns:cts="http://www.sap.com/cts">
   <cts:attributes>
     <cts:attribute name="category"    value="Workbench"/>
@@ -291,8 +331,13 @@ Content-Type: application/vnd.sap.cts.transport.request+xml; charset=utf-8
 </cts:transportRequest>
 ```
 
-Response: `Location` header contains the new transport URI; extract the last path segment as `TRKORR`.
-All attribute values must be XML-escaped before interpolation.
+→ 400 `ExceptionDataTypeNotFound` "No data type found in content type …"
+(fixture `tests/fixtures/transport.create.400-old-shape.xml`). This was the
+CLI shape until 2026-09-17; `create-transport` now uses the verified
+CreateCorrectionRequest form above (`--package`/`--ref` required,
+`--category` removed). The fixed CLI's request body was verified
+byte-identical to the live 200 probe; an end-to-end second creation was
+not run to avoid a second probe request.
 
 ### Release transport (modern)
 

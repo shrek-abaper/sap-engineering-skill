@@ -70,7 +70,8 @@ python3 "$SAP_CLI" run-sql "SELECT bukrs, butxt FROM t001 UP TO 200 ROWS"
 
 ```bash
 python3 "$SAP_CLI" list-transports                      # read-only
-python3 "$SAP_CLI" create-transport --description "Fix rounding issue"   # allow_transport + confirm
+python3 "$SAP_CLI" create-transport --package '$TMP' --description "Fix rounding issue" \
+  --ref /sap/bc/adt/programs/programs/zfix_rounding/source/main   # allow_transport + confirm
 python3 "$SAP_CLI" release-transport DEVK900001          # irreversible + confirm
 ```
 
@@ -101,8 +102,9 @@ python3 "$SAP_CLI" write-source class ZCL_MY_CLASS --file ./zcl.abap --activate
 # data check without SE16N
 python3 "$SAP_CLI" run-sql "SELECT COUNT(*) AS cnt FROM ekko WHERE bstyp = 'F'"
 
-# two transports = two independent confirmations
-python3 "$SAP_CLI" create-transport --description "Sprint 12 invoice fix"
+# two transports = two independent confirmations (package + object REF required)
+python3 "$SAP_CLI" create-transport --package ZSPRINT12 --description "Sprint 12 invoice fix" \
+  --ref /sap/bc/adt/oo/classes/zcl_invoice/source/main
 python3 "$SAP_CLI" release-transport DEVK900042
 ```
 

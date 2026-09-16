@@ -28,7 +28,7 @@ End state after batches 0–9. Companion docs: `refactor-summary.md`
 | 9.2 | release-transport newreleasejobs + readback poll, `--dry-run`, RELEASE_* codes (`f57128f`) |
 | post-9.2 | server status_text + real preflight/released fixtures (`d24bc88`) |
 | 10 (canceled) | Cross-process session layer **designed, approved, then rejected by real-machine evidence** — separate-process activate works without shared session; design archived at `design-session-layer-rejected.md` (2026-09-17) |
-| 10 (protocol) | First real-machine write verification: lock/PUT/unlock/activate all four shapes were wrong; corrected to measured protocol, facts 7→11, 403 enqueue conflict → LOCKED_BY_OTHER (2026-09-16/17) |
+| 10 (protocol) | First real-machine write verification: lock/PUT/unlock/activate all four shapes were wrong; corrected to measured protocol, facts 7→12 (incl. create-transport CreateCorrectionRequest ASX shape — old shape 400, command changed to `--package`/`--ref`); 403 enqueue conflict → LOCKED_BY_OTHER; 34-command real-machine matrix in refactor-summary (23 real / 2 partial / 9 local) (2026-09-16/17) |
 
 Real release verified: empty request ECDK944391 released on DEV400,
 readback `R/Released` on poll attempt 1; capability flags restored to

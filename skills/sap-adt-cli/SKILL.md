@@ -108,7 +108,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
 | `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | stateful `_action=LOCK`→PUT→`_action=UNLOCK` in `finally` (real-verified Basis 7.56, 2026-09-16) | gated |
 | `activate <TYPE> <N> [--group G] [--yes]` | `?method=activate`; no lock/shared session needed, succeeds in a separate process (real-verified Basis 7.56) | gated |
-| `create-transport --description D [--category C] [--yes]` | create workbench/customizing request | gated |
+| `create-transport --package P --description D --ref URI [--yes]` | CreateCorrectionRequest ASX (`DEVCLASS`+`REF` required, `$TMP`=local); real-verified Basis 7.56, 2026-09-17 | gated |
 | `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
 
 ## Safety gates (do not weaken)

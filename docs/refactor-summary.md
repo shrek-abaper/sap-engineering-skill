@@ -109,6 +109,34 @@ old→new table). These could only be learned by probing a live system.
     No lock/shared session is needed: a separate process after unlock
     activates fine. 200 empty is accepted-not-completed; confirm via
     inactiveobjects / `adtcore:version` readback. 2026-09-16.
+12. **Create transport** — the `cts.transport.request+xml`
+    `<cts:transportRequest>` document (category/owner/description/target)
+    → 400 `ExceptionDataTypeNotFound`. Creation is an ABAP-serialized
+    `CreateCorrectionRequest`: POST `/cts/transports`, CT
+    `application/vnd.sap.as+xml; charset=UTF-8; dataname=com.sap.adt.CreateCorrectionRequest`,
+    Accept `text/plain`, ASX body `DATA{DEVCLASS,REQUEST_TEXT,REF,OPERATION=I}`;
+    the 200 text body is `/com.sap.cts/object_record/<TRKORR>` (no Location
+    header). Measured with `DEVCLASS=$TMP` (local, non-releasable request)
+    and REF = an object `source/main` URI; readback per-TR gives
+    `tm:status="D"`. The root transportrequests tree returned empty even
+    while the user owned that D request. CLI fixed 2026-09-17
+    (`--package`/`--ref` required, `--category` removed); whether REF is
+    truly mandatory and how real packages behave remain unverified.
+
+## Command × real-machine verification matrix (34 commands)
+
+**"Offline only" is not "works".** Batch 10 proved this twice: write-source
+and activate were 4-for-4 protocol-wrong with all 287 offline tests green,
+and create-transport carried three protocol deviations through every
+release. Offline tests mock below the protocol layer; only real-machine
+runs establish write-side correctness.
+
+| Status | # | Commands |
+|---|---|---|
+| **Real-verified (23)** | 23 | Eighteen read-side commands via the batch-6 DEV three-way comparison (28/28) plus real fixtures: get-program/class/function-group/function/include/interface/cds-view/type-group, get-table/structure, get-type-info, get-transaction, search-object, get-package, where-used, syntax-check, run-sql, list-transports; `discovery` (batch 7); `write-source`, `activate` (batch 10, `d1bf649`); `create-transport` (2026-09-17, ASX shape live-200, fixed CLI request byte-identical); `release-transport` (batch 9.2 — **empty-TR path only; long timeout paths, failing reports and non-empty object trees are not live-verified**) |
+| **Partially real (2)** | 2 | `run-unit-test` (empty shell + alert-only real; `testMethod` counts synthetic), `run-atc` (priority-3 real; priority 1/2/exemptions synthetic) |
+| **Offline only (0)** | 0 | — (create-transport moved out of this category on 2026-09-17) |
+| **N/A — local state (9)** | 9 | `status`, `configure`, `profile list/use/remove`, `credentials set/forget/status/doctor` (local config/keystore only, no SAP object protocol) |
 
 ## Methodology lesson: 287 offline tests green, write path 4-for-4 wrong
 

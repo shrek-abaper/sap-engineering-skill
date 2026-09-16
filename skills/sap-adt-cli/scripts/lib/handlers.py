@@ -776,36 +776,59 @@ def activate_object(
 
 
 def create_transport(
+    package: str,
     description: str,
-    category: str = "Workbench",
-    username: str = "",
+    ref: str,
 ) -> AdtResult:
+    # Verified 2026-09-17 on S/4HANA 2021 / Basis 7.56: request creation is
+    # the ABAP-serialized CreateCorrectionRequest (ASX body of
+    # DEVCLASS/REQUEST_TEXT/REF/OPERATION), not a CTS resource document.
+    # The legacy cts:transportRequest+xml shape returns 400
+    # ExceptionDataTypeNotFound ("No data type found in content type").
+    # DEVCLASS + REF is the only measured working combination (both
+    # required); "$TMP" creates a local, non-releasable request; the body
+    # is text/plain "/com.sap.cts/object_record/<TRKORR>".
     try:
+        package = (package or "").strip()
+        description = (description or "").strip()
+        ref = (ref or "").strip()
+        if not package or not description or not ref:
+            raise ValueError(
+                "create-transport requires --package, --description and --ref"
+            )
+        if not ref.startswith("/sap/bc/adt/"):
+            raise ValueError(
+                f"--ref must be a relative ADT object URI (got {ref!r})"
+            )
         body = (
-            '<?xml version="1.0" encoding="utf-8"?>'
-            '<cts:transportRequest xmlns:cts="http://www.sap.com/cts">'
-            "<cts:attributes>"
-            f'<cts:attribute name="category"    value="{_xattr(category)}"/>'
-            f'<cts:attribute name="owner"       value="{_xattr(username)}"/>'
-            f'<cts:attribute name="description" value="{_xattr(description)}"/>'
-            '<cts:attribute name="target"      value=""/>'
-            "</cts:attributes>"
-            "</cts:transportRequest>"
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">'
+            "<asx:values><DATA>"
+            f"<DEVCLASS>{_xattr(package)}</DEVCLASS>"
+            f"<REQUEST_TEXT>{_xattr(description)}</REQUEST_TEXT>"
+            f"<REF>{_xattr(ref)}</REF>"
+            "<OPERATION>I</OPERATION>"
+            "</DATA></asx:values>"
+            "</asx:abap>"
         ).encode("utf-8")
         resp = make_adt_request(
             f"{_base()}/sap/bc/adt/cts/transports",
             method="POST",
             data=body,
             extra_headers={
+                "Accept": "text/plain",
                 "Content-Type": (
-                    "application/vnd.sap.cts.transport.request+xml; charset=utf-8"
-                )
+                    "application/vnd.sap.as+xml; charset=UTF-8; "
+                    "dataname=com.sap.adt.CreateCorrectionRequest"
+                ),
             },
         )
-        location = resp.headers.get("Location", "")
-        trkorr = location.rstrip("/").rsplit("/", 1)[-1] if location else ""
-        if not trkorr:
-            trkorr = resp.text.strip() or "(unknown)"
+        trkorr = (resp.text or "").strip().rstrip("/").rsplit("/", 1)[-1]
+        if not _valid_trkorr(trkorr):
+            return _err(ValueError(
+                f"Transport creation returned an unreadable TRKORR: "
+                f"{(resp.text or '').strip()[:120]!r}"
+            ))
         return AdtResult(text=f"Created transport: {trkorr}")
     except Exception as e:
         return _err(e)

@@ -362,7 +362,7 @@ At runtime, CI can instead provide the password per profile via
 | `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | Write source code *(allow_write + confirm each time)*; `--activate` activates after writing; `--group` required when TYPE is `function`; `--transport` pins the transport request |
 | `activate <TYPE> <NAME> [--group <FG>]` | Activate ABAP object *(allow_write + confirm each time)*; `--group` required when TYPE is `function` |
 | `list-transports [--user U] [--status D\|R]` | List transport requests (JSON, read-only); default `--status D` (in development) |
-| `create-transport --description "<DESC>" [--category Workbench\|Customizing]` | Create transport *(allow_transport + confirm each time)*; default category: `Workbench` |
+| `create-transport --package <DEVCLASS> --description "<DESC>" --ref <object-uri>` | Create transport via CreateCorrectionRequest *(allow_transport + confirm each time)*; package + object REF required; `$TMP` creates a local request; real-verified on Basis 7.56 (2026-09-17) |
 | `release-transport <TRKORR> [--yes]` | Release transport — irreversible *(allow_transport + confirm each time)* |
 
 Run any command with `--help` for full details.
@@ -405,7 +405,8 @@ python3 $CLI activate class ZCL_MY_CLASS
 
 # Transport management
 python3 $CLI list-transports --status D                              # read-only
-python3 $CLI create-transport --description "My feature"            # allow_transport + confirm
+python3 $CLI create-transport --package '$TMP' --description "My feature" \
+  --ref /sap/bc/adt/programs/programs/zmy_feature/source/main        # allow_transport + confirm
 python3 $CLI release-transport DEVK900001                           # allow_transport + confirm
 ```
 

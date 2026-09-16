@@ -78,7 +78,7 @@ class GateTier3Tests(unittest.TestCase):
         with patch.object(self.cli, "load_config", return_value=self.cfg):
             r = CliRunner().invoke(
                 self.cli.cli,
-                ["create-transport", "--description", "x", "--yes"],
+                ["create-transport", "--package", "$TMP", "--description", "x", "--ref", "/sap/bc/adt/programs/programs/zx/source/main", "--yes"],
             )
         self.assertEqual(r.exit_code, 3, r.output)
         self.assertEqual(_envelope(r)["error"]["code"], "TRANSPORT_DISABLED")

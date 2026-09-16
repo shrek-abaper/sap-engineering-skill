@@ -325,7 +325,7 @@ CI 运行期也可以按 profile 直接提供口令：`SAP_ADT_<PROFILE>_PASSWOR
 | `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | 写入源代码 *（需 allow_write + 每次确认）*；`--activate` 可在写入后立即激活；TYPE 为 `function` 时需指定 `--group`；`--transport` 指定传输请求编号 |
 | `activate <TYPE> <NAME> [--group <FG>]` | 激活 ABAP 对象 *（需 allow_write + 每次确认）*；TYPE 为 `function` 时需指定 `--group` |
 | `list-transports [--user U] [--status D\|R]` | 列出传输请求（JSON，只读）；`--status` 默认为 `D`（开发中） |
-| `create-transport --description "<DESC>" [--category Workbench\|Customizing]` | 创建传输请求 *（需 allow_transport + 每次确认）*；默认类别：`Workbench` |
+| `create-transport --package <DEVCLASS> --description "<DESC>" --ref <object-uri>` | 通过 CreateCorrectionRequest 创建传输请求 *（需 allow_transport + 每次确认）*；必须提供包与对象 REF；`$TMP` 创建本地请求；Basis 7.56 真机验证（2026-09-17） |
 | `release-transport <TRKORR> [--yes]` | 释放传输——不可逆 *（需 allow_transport + 每次确认）* |
 
 任意命令加 `--help` 查看完整参数说明。
@@ -368,7 +368,8 @@ python3 $CLI activate class ZCL_MY_CLASS
 
 # 传输管理
 python3 $CLI list-transports --status D                              # 只读
-python3 $CLI create-transport --description "My feature"            # 需 allow_transport + 确认
+python3 $CLI create-transport --package '$TMP' --description "My feature" \
+  --ref /sap/bc/adt/programs/programs/zmy_feature/source/main        # 需 allow_transport + 确认
 python3 $CLI release-transport DEVK900001                           # 需 allow_transport + 确认
 ```
 

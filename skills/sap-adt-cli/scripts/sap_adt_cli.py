@@ -1028,12 +1028,18 @@ def list_transports_cmd(user, status):
 
 
 @cli.command("create-transport")
+@click.option("--package", "package", required=True,
+              help="Package (DEVCLASS) to create the request for; $TMP for a local request")
 @click.option("--description", required=True, help="Transport request description")
-@click.option("--category",    default="Workbench", show_default=True, help="Transport category: Workbench or Customizing")
-@click.option("--yes",         is_flag=True, default=False, help="Skip confirmation prompt. Use only in trusted automation.")
-def create_transport_cmd(description, category, yes):
+@click.option("--ref", "ref", required=True,
+              help="Relative ADT object URI the request refers to, e.g. "
+                   "/sap/bc/adt/programs/programs/zfoo/source/main")
+@click.option("--yes", is_flag=True, default=False, help="Skip confirmation prompt. Use only in trusted automation.")
+def create_transport_cmd(package, description, ref, yes):
     """Create a transport request — requires allow_transport + confirmation each time.
 
+    Uses the measured CreateCorrectionRequest protocol (real-verified on
+    Basis 7.56, 2026-09-17): DEVCLASS + object REF are both required.
     Returns the new transport request number (e.g. DEVK900003).
 
     Requires 'allow_transport' enabled in config. Run `configure` to enable.
@@ -1043,12 +1049,13 @@ def create_transport_cmd(description, category, yes):
     _require_transport_write(config)
     preview = [
         "Action      : Create transport request",
-        f"Category    : {category}",
+        f"Package     : {package}",
+        f"Ref object  : {ref}",
         f"Description : {description}",
         f"Owner       : {config.username}",
     ]
     _confirm_change(preview, yes=yes)
-    _output(handlers.create_transport(description, category=category, username=config.username))
+    _output(handlers.create_transport(package, description, ref))
 
 
 @cli.command("release-transport")
