@@ -11,7 +11,7 @@ system (client 400). Verification dates noted per item.
 | `syntax-check` | POST `/sap/bc/adt/abapsource/syntaxcheck` → **404** | migrated | POST `/sap/bc/adt/checkruns`, request `checkObjectList`/Content-Type `application/vnd.sap.adt.checkobjects+xml`, Accept `application/vnd.sap.adt.checkmessages+xml`, reporter `abapCheckRun` | 2026-09-15 |
 | `get-type-info` domain branch | GET `/ddic/domains/{name}/source/main` → **404** (always fell back to data element) | migrated | GET `/ddic/domains/{name}` (`vnd.sap.adt.domains.v2+xml`); fallback to `/ddic/dataelements/{name}` only on a genuine 404; `data.resolved_as` is explicit | 2026-09-15 |
 | `run-sql` | GET `freestyle?sqlCommand=...`, POST only as a 405 fallback | migrated (batch 3.5) | **POST** `/datapreview/freestyle?rowNumber=<N>`, `Content-Type: text/plain; charset=utf-8`, body = raw SQL; `Accept: application/vnd.sap.adt.datapreview.table.v1+xml` (**`application/xml` is rejected with 406**); GET kept only as a 405 fallback for older releases | 2026-09-16 |
-| `where-used` | GET `/informationsystem/whereused?uri=...` → **405** | **open — not migrated** | successor: POST `/informationsystem/usageReferences?uri=...` (request body not yet fully determined; see below) | 2026-09-16 |
+| `where-used` | GET `/informationsystem/whereused?uri=...` → **405** | migrated (batch 3.6) | POST `/informationsystem/usageReferences?uri=<relative lower-case object URI>`, `Content-Type: application/*`, `Accept: application/*`, body `usageReferenceRequest/affectedObjects` (empty); legacy GET kept as a 404/405 fallback for older releases | 2026-09-16 |
 
 DML rejection, the `allow_write`/`allow_transport` gates, per-operation
 `[y/N]` confirmation and lock/unlock are unaffected. run-sql still rejects
@@ -31,27 +31,40 @@ not field-metadata XML (2026-09-15):
   field text (2026-09-16). Field objects therefore omit `description`
   entirely rather than emitting a permanently-null key.
 
-## where-used: usageReferences request body (open)
+## where-used: usageReferences request body (resolved 2026-09-16)
 
-POST-only endpoint confirmed (GET → 405). Layered attempts on 2026-09-16:
+The endpoint is POST-only (GET → 405). Failed constructions during the
+layered investigation:
 
-1. Singular root `<usagereferences:usageReferenceRequest>` with empty
-   `<affectedObjects/>` (full ADT resource uri in `?uri=`) → **500** "Error
-   while converting object references".
-2. Same body, `?uri=` as a VIT uri (`/vit/wb/object_type/clas/object_name/...`)
-   → **500** same error.
-3. `affectedObjects/<usagereferences:affectedObject …>` → **400** "System
-   expected the element `{http://www.sap.com/adt/core}objectReference`".
-4. `affectedObjects/<adtcore:objectReference uri name type="CLAS/OC">` with
-   full resource uri in `?uri=` → structure accepted, but again **500**
+1. Singular root with empty `affectedObjects`, but the **full URL**
+   (`https://host/...`) in `?uri=` and vendor v1 content types → **500**
    "Error while converting object references".
+2. Same body with a VIT uri in `?uri=` → **500**.
+3. `affectedObjects/<usagereferences:affectedObject>` → **400** "expected
+   element `{...adt/core}objectReference`".
+4. `affectedObjects/<adtcore:objectReference …>` → **500** again.
 
-So the envelope/element names are known but the accepted identity of the
-target object (query-`uri` form vs. body reference; resource uri vs. VIT uri)
-is not. The command intentionally stays on the legacy call; no workaround or
-endpoint downgrade was introduced. Needs the exact request body (or a
-populated example) before migration. Empty results must remain
-`ok:true,row_count:0,exit 0` afterwards.
+Resolution came from the production reference implementation
+(github.com/marcellourbani/abap-adt-api, `src/api/syntax.ts`
+`usageReferences`):
+
+- `?uri=` is the **relative, lower-case** object root URI
+  (`/sap/bc/adt/oo/classes/cl_gui_frontend_services`); an optional
+  `#start=line,column` fragment selects a position;
+- body is exactly `usageReferenceRequest` with an empty `affectedObjects`
+  (no child reference elements, no adtcore declaration needed in the body);
+- request `Content-Type` **and** `Accept` are `application/*` (the vendor
+  `…request.v1+xml` content type is what triggered the conversion errors);
+- response is `application/vnd.sap.adt.repository.usagereferences.result.v1+xml`
+  (`usageReferenceResult/referencedObjects/referencedObject`, each with an
+  `adtObject` + `packageRef`).
+
+Verified: 200 with `numberOfResults=939` for CL_GUI_FRONTEND_SERVICES; a
+non-existent class returns 200 `numberOfResults=0` (normalized to
+`ok:true,row_count:0,exit 0`). `objects[]` gains the optional `usage_line` /
+`usage_uri` keys only when a referenced object URI carries a `#start=`
+fragment; search-object/get-package never emit them. The committed fixture
+is a trimmed SAP-only subset (the real tree contains customer Z/Y paths).
 
 ## Other open items
 

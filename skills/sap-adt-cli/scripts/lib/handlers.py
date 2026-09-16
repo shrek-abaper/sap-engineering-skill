@@ -274,35 +274,6 @@ def _parse_activation_errors(xml_text: str) -> list:
     return errors
 
 
-def _parse_where_used(xml_text: str) -> list:
-    if not xml_text or not xml_text.strip():
-        return []
-    try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return []
-
-    ns_core = "http://www.sap.com/adt/core"
-    items = []
-    for ref in root.iter(f"{{{ns_core}}}objectReference"):
-        name = ref.get(f"{{{ns_core}}}name") or ref.get("name", "")
-        type_ = ref.get(f"{{{ns_core}}}type") or ref.get("type", "")
-        uri = ref.get(f"{{{ns_core}}}uri") or ref.get("uri", "")
-        if name:
-            items.append({"type": type_, "name": name, "uri": uri})
-    if not items:
-        for elem in root.iter():
-            if _tag_local(elem) == "objectReference":
-                flat = _flat_attribs(elem)
-                name = flat.get("name", "")
-                if name:
-                    items.append({
-                        "type": flat.get("type", ""),
-                        "name": name,
-                        "uri": flat.get("uri", ""),
-                    })
-    return items
-
 
 def syntax_check(
     object_type: str,
@@ -366,20 +337,43 @@ def where_used(
     max_results: int = 50,
     group: Optional[str] = None,
 ) -> AdtResult:
+    # New POST-only usageReferences resource. Per the abap-adt-api reference
+    # implementation the uri query parameter is the RELATIVE, lower-case
+    # object URI and both content types are application/*.
+    usage_body = (
+        '<?xml version="1.0" encoding="ASCII"?>'
+        '<usagereferences:usageReferenceRequest '
+        'xmlns:usagereferences="http://www.sap.com/adt/ris/usageReferences">'
+        '<usagereferences:affectedObjects/>'
+        '</usagereferences:usageReferenceRequest>'
+    ).encode("utf-8")
     try:
-        uri = get_object_uri(object_type, object_name, group=group)
-        full_uri = f"{_base()}{uri}"
-        resp = make_adt_request(
-            f"{_base()}/sap/bc/adt/repository/informationsystem/whereused",
-            params={"uri": full_uri, "maxResults": max_results},
-            extra_headers={
-                "Accept": (
-                    "application/vnd.sap.adt.repository.informationsystem.whereused+xml"
-                )
-            },
-        )
-        items = _parse_where_used(resp.text)
-        return AdtResult(text=json.dumps(items, indent=2))
+        uri = get_object_uri(object_type, object_name, group=group).lower()
+        try:
+            resp = make_adt_request(
+                f"{_base()}/sap/bc/adt/repository/informationsystem/usageReferences",
+                method="POST",
+                params={"uri": uri},
+                data=usage_body,
+                extra_headers={"Content-Type": "application/*", "Accept": "application/*"},
+                timeout=120,
+            )
+        except AdtHttpError as e:
+            # Older releases: the legacy GET whereused resource.
+            if e.status not in (404, 405):
+                raise
+            resp = make_adt_request(
+                f"{_base()}/sap/bc/adt/repository/informationsystem/whereused",
+                params={"uri": f"{_base()}{uri}", "maxResults": max_results},
+                extra_headers={
+                    "Accept": (
+                        "application/vnd.sap.adt.repository.informationsystem.whereused+xml"
+                    )
+                },
+            )
+        data = parse_objects.parse(resp.content)
+        data["objects"] = data["objects"][:max_results]
+        return _structured("objects", data, _obj(object_type, object_name), raw=resp.text)
     except ValueError as e:
         return AdtResult(text=str(e), is_error=True)
     except Exception as e:

@@ -1,0 +1,106 @@
+{
+  "objects": [
+    {
+      "name": "CFG_ENGINE_TEST_TOOL_F01",
+      "type": "PROG",
+      "uri": "/sap/bc/adt/programs/includes/cfg_engine_test_tool_f01",
+      "package": "COM_CFG_API_UI",
+      "description": "Include"
+    },
+    {
+      "name": "DMEECONVERT_F01",
+      "type": "PROG",
+      "uri": "/sap/bc/adt/programs/includes/dmeeconvert_f01",
+      "package": "ID-DMEE",
+      "description": "Include"
+    },
+    {
+      "name": "DMEETRACE_IN_ABA_0050",
+      "type": "PROG",
+      "uri": "/sap/bc/adt/programs/includes/dmeetrace_in_aba_0050",
+      "package": "ID-DMEEA",
+      "description": "Include"
+    },
+    {
+      "name": "DMEETRACE_IN_ABA_0100",
+      "type": "PROG",
+      "uri": "/sap/bc/adt/programs/includes/dmeetrace_in_aba_0100",
+      "package": "ID-DMEEA",
+      "description": "Include"
+    },
+    {
+      "name": "RPC_PAYIT_CUR_CLASS",
+      "type": "PROG",
+      "uri": "/sap/bc/adt/programs/includes/rpc_payit_cur_class",
+      "package": "PC15",
+      "description": "Include"
+    },
+    {
+      "name": "RPCROEK0_XMPORTER_FORMS_CE",
+      "type": "PROG",
+      "uri": "/sap/bc/adt/programs/includes/rpcroek0_xmporter_forms_ce",
+      "package": "PAOC_PAY_CA_RP",
+      "description": "Include"
+    },
+    {
+      "name": "Local Class Implementation",
+      "type": null,
+      "uri": "/sap/bc/adt/oo/classes/cl_im_scm_cmx_da_srv_mda/includes/implementations#start=1,0",
+      "package": "CMX_DA",
+      "description": null,
+      "usage_uri": "/sap/bc/adt/oo/classes/cl_im_scm_cmx_da_srv_mda/includes/implementations#start=1,0",
+      "usage_line": 1
+    },
+    {
+      "name": "Local Class Implementation",
+      "type": null,
+      "uri": "/sap/bc/adt/oo/classes/cl_im_scm_cmx_da_srv_sys/includes/implementations#start=1,0",
+      "package": "CMX_DA",
+      "description": null,
+      "usage_uri": "/sap/bc/adt/oo/classes/cl_im_scm_cmx_da_srv_sys/includes/implementations#start=1,0",
+      "usage_line": 1
+    },
+    {
+      "name": "ASU/SSM_CLASSIC",
+      "type": "FUGR",
+      "uri": "/sap/bc/adt/functions/groups/%2fasu%2fssm_classic",
+      "package": "ASU/MAIN",
+      "description": "Function Group"
+    },
+    {
+      "name": "ASU/LSSM_CLASSICF13",
+      "type": "FUGR",
+      "uri": "/sap/bc/adt/functions/groups/%2fasu%2fssm_classic/includes/%2fasu%2flssm_classicf13",
+      "package": "ASU/MAIN",
+      "description": null
+    },
+    {
+      "name": "BSNAGT/F_DISPLAY_CONTENT",
+      "type": "FUGR",
+      "uri": "/sap/bc/adt/functions/groups/%2fbsnagt%2ff_display_content",
+      "package": "BSNAGT/COMMUNICATION",
+      "description": "Function Group"
+    },
+    {
+      "name": "BSNAGT/DOWNLOAD",
+      "type": "FUGR",
+      "uri": "/sap/bc/adt/functions/groups/%2fbsnagt%2ff_display_content/fmodules/%2fbsnagt%2fdownload",
+      "package": "BSNAGT/COMMUNICATION",
+      "description": null
+    },
+    {
+      "name": "PRA/ACCOUNTING_CONTROL_UI",
+      "type": "FUGR",
+      "uri": "/sap/bc/adt/functions/groups/%2fpra%2faccounting_control_ui",
+      "package": "PRA/ACCOUNTING_DOCUMENT",
+      "description": "Function Group"
+    },
+    {
+      "name": "PRA/LACCOUNTING_CONTROL_UII01",
+      "type": "FUGR",
+      "uri": "/sap/bc/adt/functions/groups/%2fpra%2faccounting_control_ui/includes/%2fpra%2flaccounting_control_uii01",
+      "package": "PRA/ACCOUNTING_DOCUMENT",
+      "description": null
+    }
+  ]
+}

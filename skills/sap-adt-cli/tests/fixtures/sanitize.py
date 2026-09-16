@@ -61,7 +61,9 @@ FILE_MAP = {
     "syntax-check.class.raw.xml": "syntax-check.CL_GUI.clean.xml",
     "syntax-check.warnings.raw.xml": "syntax-check.SAPMV45A.warnings.xml",
     "syntax-check.clean.xml.stderr": "error.404-syntaxcheck.txt",
-    # where-used legacy failures (no success payload captured yet)
+    # where-used new usageReferences API (hits are trimmed SAP-only nodes)
+    "where-used.hits.raw.xml": "where-used.CL_GUI_FRONTEND_SERVICES.xml",
+    "where-used.empty.raw.xml": "where-used.empty.xml",
     "where-used.hits.xml.stderr": "error.405-whereused-legacy.txt",
     "where-used.usageReferences.GET.raw.xml": "error.405-usageReferences.raw.xml",
     # rows — JSON with real business data, rebuilt synthetically
@@ -136,9 +138,68 @@ def sanitize_rows_json(raw_text: str) -> str:
     return json.dumps(synth, indent=2, ensure_ascii=False) + "\n"
 
 
+def trim_where_used(raw_text: str) -> str:
+    """Reduce a usageReferences tree to a small SAP-only, system-ID-free fixture.
+
+    Real where-used responses are large trees (~2k nodes) whose paths contain
+    customer Z/Y objects and a resultDescription with the SAP system ID. The
+    committed fixture keeps only the first non-customer nodes while retaining
+    every structural variety (parent group, isResult leaf, #start fragment).
+    """
+    import xml.etree.ElementTree as ET
+
+    ET.register_namespace("usageReferences", "http://www.sap.com/adt/ris/usageReferences")
+    ET.register_namespace("adtcore", "http://www.sap.com/adt/core")
+    root = ET.fromstring(raw_text)
+    U = "{http://www.sap.com/adt/ris/usageReferences}"
+
+    def is_customer(node) -> bool:
+        uri = (node.get("uri") or "").lower()
+        for seg in re.split(r"/|%2f", uri):
+            if len(seg) > 1 and seg[:1] in ("z", "y"):
+                return True
+        return False
+
+    # Two passes: reserve the informative leaves (actual isResult hits, and
+    # at least two #start fragments), then fill with hierarchy parents.
+    leaves, starts, picked = [], [], []
+    for node in root.iter(f"{U}referencedObject"):
+        if is_customer(node):
+            continue
+        uri = node.get("uri") or ""
+        if node.get("isResult") == "true" and len(leaves) < 6:
+            leaves.append(node)
+        elif "#start=" in uri and len(starts) < 2:
+            starts.append(node)
+    for node in root.iter(f"{U}referencedObject"):
+        if is_customer(node) or len(picked) >= 6:
+            continue
+        if node not in leaves and node not in starts:
+            picked.append(node)
+    kept = (leaves + starts + picked)[:14]
+
+    root.set("numberOfResults", str(len(kept)))
+    root.set("resultDescription",
+             "References for: CL_GUI_FRONTEND_SERVICES (Class)")
+    container = root.find(f"{U}referencedObjects")
+    if container is None:
+        container = ET.SubElement(root, f"{U}referencedObjects")
+    for child in list(container):
+        container.remove(child)
+    for node in kept:
+        container.append(node)
+    return '<?xml version="1.0" encoding="utf-8"?>' + ET.tostring(root, encoding="unicode")
+
+
 def render(raw_name: str, raw_bytes: bytes, repls: list[tuple[str, str]]) -> bytes:
     if raw_name == "run-sql.t001.xml":
         return sanitize_rows_json(raw_bytes.decode("utf-8")).encode("utf-8")
+    if raw_name == "where-used.hits.raw.xml":
+        return trim_where_used(raw_bytes.decode("utf-8")).encode("utf-8")
+    if raw_name == "where-used.empty.raw.xml":
+        # resultDescription carries the SAP system ID ("... [ECD]").
+        text = re.sub(r"\s*\[[A-Z0-9]{3}\]", "", raw_bytes.decode("utf-8"))
+        return text.encode("utf-8")
     return scrub_text(raw_bytes.decode("utf-8"), repls).encode("utf-8")
 
 

@@ -100,6 +100,8 @@ grep -rnE "<internal-ip>|<real-user>|Nextev|DEVK9[0-9]{6}" \
 | `get-package.SABP_UNIT.asxml.xml` | objects | Real nodestructure payload the new parser must handle |
 | `list-transports.empty.xml` | records | New transportorganizer tree, empty root (`DEVELOPER`) |
 | `list-transports.searchconfig.xml` | records | search-configuration metadata |
+| `where-used.CL_GUI_FRONTEND_SERVICES.xml` | objects | usageReferences result tree, trimmed to 14 SAP-only nodes (real response has ~2k nodes incl. customer paths); contains leaf results, parents and `#start` fragments |
+| `where-used.empty.xml` | objects | real 200 `numberOfResults=0` for a non-existent class |
 | `syntax-check.CL_GUI.clean.xml` | findings | New checkrun API, zero messages |
 | `syntax-check.SAPMV45A.warnings.xml` | findings | real W-messages with line URIs |
 | `run-sql.t001.json` | rows | synthetic company rows; real columns/row count |
@@ -116,9 +118,6 @@ grep -rnE "<internal-ip>|<real-user>|Nextev|DEVK9[0-9]{6}" \
 
 ## Known gaps
 
-- **where-used success payloads** (hits and empty): the new
-  `usageReferences` POST needs a request body whose inner structure was not
-  fully reverse-engineered yet; to be completed during the protocol migration.
 - **list-transports mixed-status**: the capture service user has an empty
   transport tree.
 - **ECC 6 / older-release shapes** (field-metadata XML, legacy where-used /

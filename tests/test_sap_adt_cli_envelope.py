@@ -116,6 +116,63 @@ class EnvelopeCommandTests(unittest.TestCase):
         self.assertEqual(r.exit_code, 0, r.output)
         self.assertEqual(r.output, payload.decode() + "\n")
 
+    # ---- where-used (usageReferences) ------------------------------------
+    def test_where_used_posts_new_endpoint_with_relative_lowercase_uri(self):
+        calls = []
+
+        def fake_request(url, method="GET", **kwargs):
+            calls.append((method, url, kwargs.get("params"),
+                          kwargs["extra_headers"]["Content-Type"],
+                          kwargs["extra_headers"]["Accept"], kwargs.get("data")))
+            return FakeResponse(fx("where-used.CL_GUI_FRONTEND_SERVICES.xml"))
+
+        with patch.object(self.handlers, "make_adt_request", side_effect=fake_request):
+            d = self._invoke_json(
+                "where-used", "class", "CL_GUI_FRONTEND_SERVICES",
+                "--max-results", "2",
+            )
+        method, url, params, ctype, accept, body = calls[0]
+        self.assertEqual(method, "POST")
+        self.assertTrue(url.endswith("/informationsystem/usageReferences"))
+        self.assertEqual(
+            params["uri"],
+            "/sap/bc/adt/oo/classes/cl_gui_frontend_services",
+        )
+        self.assertEqual(ctype, "application/*")
+        self.assertEqual(accept, "application/*")
+        self.assertIn(b"affectedObjects", body)
+        self.assertEqual(d["kind"], "objects")
+        self.assertEqual(d["meta"]["row_count"], 2)
+
+    def test_where_used_body_contains_empty_affected_objects(self):
+        captured = {}
+
+        def fake_request(url, method="GET", **kwargs):
+            captured["data"] = kwargs.get("data")
+            return FakeResponse(fx("where-used.empty.xml"))
+
+        with patch.object(self.handlers, "make_adt_request", side_effect=fake_request):
+            d = self._invoke_json("where-used", "class", "ZCL_X")
+        body = captured["data"].decode()
+        self.assertIn("usageReferenceRequest", body)
+        self.assertIn("<usagereferences:affectedObjects/>", body)
+        self.assertEqual(d["data"]["objects"], [])
+        self.assertEqual(d["meta"]["row_count"], 0)
+
+    def test_where_used_falls_back_to_legacy_get_on_405(self):
+        calls = []
+
+        def fake_request(url, method="GET", **kwargs):
+            calls.append(method)
+            if "usageReferences" in url:
+                raise self.AdtHttpError("HTTP 405", status=405)
+            return FakeResponse(fx("search-object.empty.xml"))
+
+        with patch.object(self.handlers, "make_adt_request", side_effect=fake_request):
+            d = self._invoke_json("where-used", "class", "ZCL_X")
+        self.assertEqual(calls, ["POST", "GET"])
+        self.assertEqual(d["data"]["objects"], [])
+
     # ---- records ----------------------------------------------------------
     def test_list_transports_empty(self):
         self._serve({"cts/transportrequests": fx("list-transports.empty.xml")})

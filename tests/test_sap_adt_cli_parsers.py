@@ -38,6 +38,8 @@ GOLDEN_CASES = [
     (objects, "search-object.CL_GUI_WILDCARD.xml", "objects.search-hits.json"),
     (objects, "search-object.empty.xml", "objects.search-empty.json"),
     (objects, "get-package.SABP_UNIT.asxml.xml", "objects.package.json"),
+    (objects, "where-used.CL_GUI_FRONTEND_SERVICES.xml", "objects.whereused-hits.json"),
+    (objects, "where-used.empty.xml", "objects.whereused-empty.json"),
     (rows, "run-sql.t100.raw.xml", "rows.t100.json"),
     (rows, "run-sql.t100.post.raw.xml", "rows.t100-post.json"),
     (records, "list-transports.empty.xml", "records.empty.json"),
@@ -117,6 +119,27 @@ class FieldsBuiltinTypeTests(unittest.TestCase):
     def test_unparsed_types_distinct_first_seen_order(self):
         out = self._parse("  a : z_ref1;\n  b : z_ref1;\n  c : z_ref2;\n")
         self.assertEqual(out["unparsed_types"], ["z_ref1", "z_ref2"])
+
+
+class WhereUsedShapeTests(unittest.TestCase):
+    def test_hits_carry_optional_position_fields(self):
+        out = objects.parse((FIXTURES / "where-used.CL_GUI_FRONTEND_SERVICES.xml").read_bytes())
+        self.assertTrue(out["objects"])
+        with_pos = [o for o in out["objects"] if "usage_line" in o]
+        self.assertTrue(with_pos)
+        for o in with_pos:
+            self.assertIsInstance(o["usage_line"], int)
+            self.assertIn("usage_uri", o)
+            self.assertIn("#start=", o["usage_uri"])
+        # search/package-style objects do not emit the position keys
+        plain = [o for o in out["objects"] if "usage_line" not in o]
+        self.assertTrue(plain)
+        self.assertNotIn("usage_line", plain[0])
+        self.assertNotIn("usage_uri", plain[0])
+
+    def test_empty_usage_result(self):
+        out = objects.parse((FIXTURES / "where-used.empty.xml").read_bytes())
+        self.assertEqual(out, {"objects": []})
 
 
 class EmptyResultTests(unittest.TestCase):
