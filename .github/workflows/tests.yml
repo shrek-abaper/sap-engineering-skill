@@ -31,6 +31,9 @@ jobs:
       - name: Run unittest suite
         run: python -m unittest discover -s tests -v
 
+      - name: Output contract consistency (SKILL.md vs code)
+        run: python tests/check_contract.py
+
       - name: Credentials doctor smoke (non-secret output only)
         run: python skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
 

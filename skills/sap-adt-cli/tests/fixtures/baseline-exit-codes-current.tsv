@@ -1,0 +1,17 @@
+file	exit	code	note
+get-table.VBAK.xml	0		success (fields envelope)
+get-table.T001.xml	0		success (fields envelope)
+get-structure.VBAKKOM.xml	0		success (fields envelope)
+get-type-info.dataelement.xml	0		success; MATNR resolves as domain on capture system (resolved_as)
+get-type-info.domain.xml	0		success; CHAR10 -> DOMA/DD via /ddic/domains/{n}
+get-transaction.VA01.xml	0		success (scalar envelope)
+search-object.wildcard.xml	0		success (objects envelope)
+search-object.empty.xml	0		empty results: ok:true, row_count:0
+where-used.hits	0		was 1 (legacy GET 405); migrated to POST usageReferences, 939 results
+get-package.json	0		was [] due to namespace bug; now 14 objects
+list-transports.xml	0		was 1 (legacy worklist 406); migrated to transportrequests (empty tree)
+syntax-check.clean.xml	0		was 1 (legacy endpoint 404); migrated to /checkruns
+run-sql.t001.xml	0		success (rows envelope, POST freestyle)
+get-class.source.abap	0		source defaults to verbatim text (byte-identical)
+error.404.txt	4	OBJECT_NOT_FOUND	was 1; 404 ExceptionResourceNotFound, not retryable
+error.dml-rejected.txt	3	DML_REJECTED	was 1; policy refusal, must not be retried
