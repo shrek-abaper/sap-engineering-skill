@@ -218,9 +218,9 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
     default=None,
     type=click.Choice(output.VALID_FORMATS),
     envvar=output.FORMAT_ENVVAR,
-    help="Output format. Currently every command is rendered as today "
-         "(raw passthrough); structured json/text/xml selection rolls out "
-         "command by command. Env: SAP_ADT_FORMAT (flag wins over env).",
+    help="Output format json|text|xml. Source commands default to plain "
+         "text, others to a JSON envelope; xml returns the raw ADT payload. "
+         "Env: SAP_ADT_FORMAT (flag wins over env).",
 )
 @click.option("-v", "--verbose", is_flag=True, default=False,
               help="Verbose logging (secrets stay redacted)")
@@ -278,6 +278,9 @@ def configure(url, username, password, client, language, no_verify_ssl, allow_wr
                 "the SAP_PASSWORD environment variable instead.",
                 err=True,
             )
+        # Non-interactive path: callers are agents, so failures are JSON
+        # envelopes with tiered exits (never plain text). Discrimination is
+        # by "any connection flag present", not TTY state.
         try:
             save_config_from_flags(
                 url=url,
@@ -290,9 +293,10 @@ def configure(url, username, password, client, language, no_verify_ssl, allow_wr
                 allow_transport=allow_transport,
                 profile=profile,
             )
-        except (ConfigError, ProfileNotFoundError) as e:
+        except (ConfigError, ProfileNotFoundError, ValueError) as e:
             _emit_error(errors.classify(e))
     else:
+        # Interactive wizard: human-in-the-loop flow keeps plain text.
         run_configure_wizard(profile=profile)
 
 
@@ -517,7 +521,7 @@ def get_structure(structure_name):
     """Retrieve ABAP DDIC structure definition.
 
     STRUCTURE_NAME is the dictionary structure name, e.g. VBAKKOM.
-    Returns the field list in XML format.
+    Returns a 'fields' envelope (JSON by default; --format xml for raw ADT).
     """
     _output(handlers.get_structure(structure_name))
 
@@ -528,7 +532,7 @@ def get_table(table_name):
     """Retrieve ABAP DDIC transparent table field definitions.
 
     TABLE_NAME is the dictionary table name, e.g. VBAK or MARA.
-    Returns the field list in XML format.
+    Returns a 'fields' envelope (JSON by default; --format xml for raw ADT).
     """
     _output(handlers.get_table(table_name))
 
@@ -539,8 +543,8 @@ def get_package(package_name):
     """List all objects in an ABAP package.
 
     PACKAGE_NAME is the development package name, e.g. ZMYPACKAGE.
-    Returns a JSON array of objects with keys:
-    OBJECT_TYPE, OBJECT_NAME, OBJECT_DESCRIPTION, OBJECT_URI.
+    Returns an 'objects' envelope (JSON by default; source commands default to
+    plain text; --format xml returns the raw ADT payload).
     """
     _output(handlers.get_package(package_name))
 
@@ -551,8 +555,8 @@ def get_type_info(type_name):
     """Retrieve domain or data element information from DDIC.
 
     TYPE_NAME is the domain or data element name, e.g. MATNR or BUKRS.
-    Tries domain first; falls back to data element if not found.
-    Returns XML.
+    Tries domain first; falls back to the data element only on HTTP 404.
+    Returns a 'scalar' envelope; data.resolved_as is 'domain' or 'dataelement'.
     """
     _output(handlers.get_type_info(type_name))
 
@@ -583,7 +587,7 @@ def get_transaction(transaction_name):
     """Retrieve transaction properties (package, application component).
 
     TRANSACTION_NAME is the transaction code, e.g. VA01 or MM60.
-    Returns XML with package and application component information.
+    Returns a 'scalar' envelope (facets: package/application/...).
     """
     _output(handlers.get_transaction(transaction_name))
 
@@ -595,7 +599,7 @@ def search_object(query, max_results):
     """Search for ABAP objects by name (supports * wildcard).
 
     QUERY is a name pattern, e.g. ZCL_ORDER* or BAPI_SALES*.
-    Returns XML with matching object names, types, and URIs.
+    Returns an 'objects' envelope (name/type/uri/package/description).
 
     Examples:
       search-object "ZCL_*"
@@ -761,8 +765,8 @@ def where_used_cmd(object_type, object_name, max_results, group):
     OBJECT_TYPE: program / class / interface / include / function
     OBJECT_NAME: SAP object name (UPPERCASE recommended)
 
-    Returns a JSON array of {type, name, uri} objects.
-    Returns [] if no usages found (exit 0).
+    Returns an 'objects' envelope; objects may carry usage_line/usage_uri.
+    An empty result is ok:true with row_count:0 (exit 0).
     """
     _output(handlers.where_used(object_type, object_name, max_results=max_results, group=group))
 
@@ -777,7 +781,7 @@ def run_sql_cmd(sql, max_rows):
       "SELECT * FROM t001 UP TO 10 ROWS"
 
     Supports SAP Open SQL syntax only — not Native SQL or JDBC-style syntax.
-    Returns a JSON array of row objects.
+    Returns a 'rows' envelope (columns + row matrix).
 
     DML statements (INSERT, UPDATE, DELETE, MODIFY, TRUNCATE) are blocked.
     Detection is by first keyword, case-insensitive.
@@ -800,7 +804,7 @@ def run_sql_cmd(sql, max_rows):
 def list_transports_cmd(user, status):
     """List transport requests — read-only, no capability flag required.
 
-    Returns a JSON array of {trkorr, description, status, owner} objects.
+    Returns a 'records' envelope with status/status_text per transport.
     """
     config = _load_config()
     _require_config(config)

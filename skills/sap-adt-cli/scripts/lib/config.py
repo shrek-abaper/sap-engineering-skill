@@ -561,8 +561,9 @@ def save_config_from_flags(
     ] if not val]
 
     if missing:
-        print(f"Error: missing required fields for profile '{name}': {', '.join(missing)}", file=sys.stderr)
-        sys.exit(1)
+        raise ConfigError(
+            f"Missing required fields for profile '{name}': {', '.join(missing)}"
+        )
 
     config = save_profile(
         name=name,

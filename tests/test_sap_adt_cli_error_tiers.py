@@ -209,5 +209,41 @@ class ConfigTier2Tests(unittest.TestCase):
         self.assertEqual(_envelope(r)["error"]["code"], "PROFILE_NOT_FOUND")
 
 
+class NonInteractiveConfigureTests(unittest.TestCase):
+    """5.0: flagged configure is an agent-facing path — errors are envelopes."""
+
+    def setUp(self):
+        self.cli, _ = load_cli_module()
+
+    def test_missing_required_fields_is_config_missing_tier_2(self):
+        def boom(**kwargs):
+            raise self.cli.config_module.ConfigError(
+                "Missing required fields for profile 'default': --url"
+            )
+
+        with patch.object(self.cli, "save_config_from_flags", side_effect=boom):
+            r = CliRunner().invoke(
+                self.cli.cli,
+                ["configure", "--username", "u", "--client", "100"],
+            )
+        self.assertEqual(r.exit_code, 2, r.output)
+        env = _envelope(r)
+        self.assertEqual(env["error"]["code"], "CONFIG_MISSING")
+        self.assertFalse(env["ok"])
+
+    def test_invalid_profile_name_is_bad_request_tier_1(self):
+        from click.exceptions import UsageError  # noqa: F401
+
+        with patch.object(self.cli, "save_config_from_flags",
+                          side_effect=ValueError("Invalid profile name")):
+            r = CliRunner().invoke(
+                self.cli.cli,
+                ["configure", "--profile", "bad/name", "--url", "https://h",
+                 "--username", "u", "--password", "p", "--client", "100"],
+            )
+        self.assertEqual(r.exit_code, 1, r.output)
+        self.assertEqual(_envelope(r)["error"]["code"], "BAD_REQUEST")
+
+
 if __name__ == "__main__":
     unittest.main()
