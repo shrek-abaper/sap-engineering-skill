@@ -109,6 +109,21 @@ class DiscoveryCliTests(unittest.TestCase):
         self.assertEqual(d["kind"], "capabilities")
         self.assertEqual(d["meta"]["row_count"], 4)
 
+    def test_emit_markdown_writes_table(self):
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "discovery.md")
+            r = CliRunner().invoke(
+                self.cli.cli, ["discovery", "--emit-markdown", path]
+            )
+            self.assertEqual(r.exit_code, 0, r.output)
+            text = open(path, encoding="utf-8").read()
+        self.assertIn("GENERATED", text)
+        self.assertIn("/sap/bc/adt/checkruns", text)
+        self.assertIn("application/vnd.sap.adt.tables.v2+xml", text)
+        # empty accept -> em dash placeholder
+        self.assertIn("/sap/bc/adt/checkruns` | Check | — |", text)
+
     def test_doctor_coverage_json(self):
         r = CliRunner().invoke(
             self.cli.cli,

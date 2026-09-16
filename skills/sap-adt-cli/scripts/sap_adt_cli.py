@@ -481,12 +481,26 @@ def credentials_doctor(coverage):
 
 
 @cli.command("discovery")
-def discovery_cmd():
+@click.option("--emit-markdown", "emit_markdown", default=None,
+              type=click.Path(writable=True, dir_okay=False),
+              help="Write a generated endpoint table to PATH (local file only).")
+def discovery_cmd(emit_markdown):
     """List ADT resources exposed by this system (Atom discovery document).
 
     Returns a 'capabilities' envelope (collections with href/title/
     content_types); --format xml returns the raw Atom service document.
     """
+    if emit_markdown:
+        result = handlers.discovery()
+        if result.is_error:
+            _abort_on_error(result)
+        md = handlers.coverage_lib.render_discovery_markdown(
+            result.data["collections"]
+        )
+        with click.open_file(emit_markdown, "w", encoding="utf-8") as f:
+            f.write(md)
+        click.echo(f"Wrote generated endpoint table to {emit_markdown}")
+        return
     _output(handlers.discovery())
 
 
