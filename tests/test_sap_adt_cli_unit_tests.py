@@ -2,7 +2,7 @@
 
 Real captures (empty shell, alert-only) live in tests/fixtures/. The
 testMethod path is exercised only against synthetic/*.synthetic.xml and
-is marked as such — see docs/known-issues.md.
+is marked as such — see skills/sap-adt-cli/docs/known-issues.md.
 """
 import json
 import sys

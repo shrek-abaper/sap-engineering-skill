@@ -134,6 +134,8 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 
 ## References (load on demand)
 
+Layers: this file = operational contract; `references/` = task detail; the bundled `docs` folder = project history for humans. Links point only inward, and no behavior rule is more than one hop away.
+
 - `references/credentials.md` — first-time setup, keystore backends, `.env`/env overrides, credential commands
 - `references/profiles.md` — multi-environment management and agent rules
 - `references/examples.md` — all command examples and workflows

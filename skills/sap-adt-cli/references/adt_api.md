@@ -25,9 +25,11 @@ Authentication is HTTP Basic Auth with the `X-SAP-Client` header for client sele
 A list endpoint returning an empty collection must not be read as "nothing
 exists". Known case: the root `GET /cts/transportrequests` tree behind
 `list-transports` can return an empty tree while the user owns a modifiable
-D request (measured 2026-09-17; per-TR GET confirms it — see
-`docs/known-issues.md`). Do not branch on emptiness without a positive
-check; the trigger condition is unprobed.
+D request (measured 2026-09-17; per-TR GET confirms it). Do not
+branch on emptiness without a positive check; the trigger condition is
+unprobed. Background: project notes on the open trigger investigation
+live in `../docs/known-issues.md` ("empty root tree") — not required to
+act on this rule.
 
 ## Authentication
 
@@ -187,9 +189,9 @@ in process B).
 the object, and the object resource must carry
 `adtcore:version="active"` (inactive → `"inactive"`). Non-empty failure
 bodies use `chkl:messages/msg` (`type` E/A/X) and `ioc:inactiveObjects` per
-the reference implementation — see `docs/known-issues.md` for the parser
-gap. (The older `error/message/checkResult` shape is what the current parser
-looks for; a real failed activation fixture is still needed.)
+the reference implementation. (The older `error/message/checkResult`
+shape is what the current parser looks for; a real failed activation
+fixture is still needed — background: `../docs/known-issues.md`.)
 
 ## Syntax Check (legacy — see verified facts #2)
 

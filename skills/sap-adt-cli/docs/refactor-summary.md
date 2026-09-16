@@ -27,7 +27,7 @@ Tests: 232 at batch 5 (148 legacy + new). CI also runs
 ## Eleven verified ADT protocol facts (not in SAP's public documentation)
 
 Capture system: S/4HANA 2021 / SAP_BASIS 7.56, client 400.
-Canonical copy: `skills/sap-adt-cli/references/adt_api.md` (with dated
+Canonical copy: `../references/adt_api.md` (with dated
 old→new table). These could only be learned by probing a live system.
 
 1. **Domain metadata** — `/ddic/domains/{n}/source/main` is 404; the
@@ -161,7 +161,7 @@ from this:
   like the read-side DEV fixtures;
 - never treat a write-side 2xx as completion — always add the independent
   readback (release/activate/unlock, see the top rule in
-  `skills/sap-adt-cli/references/adt_api.md`);
+  `../references/adt_api.md`);
 - when a write path has never been live-verified, say so explicitly
   rather than implying it works.
 

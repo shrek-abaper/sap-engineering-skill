@@ -2,7 +2,7 @@
 
 End state after batches 0–9. Companion docs: `refactor-summary.md`
 (batches/commits, six→seven protocol facts, follow-ups), `known-issues.md`
-(unverified paths, trigger conditions), `../skills/sap-adt-cli/SKILL.md`
+(unverified paths, trigger conditions), `../SKILL.md`
 (operational contract, ≤140 lines).
 
 ## 1. Completed batches
@@ -79,7 +79,7 @@ asserts all four tables stay aligned with SKILL.md and fails CI on drift.
 
 ## 3. Seven verified protocol facts (S/4HANA 2021 / Basis 7.56)
 
-Canonical copy in `references/adt_api.md` (dated old→new table) and
+Canonical copy in `../references/adt_api.md` (dated old→new table) and
 `refactor-summary.md`. Short form:
 
 1. Domain metadata: `/ddic/domains/{n}` v2, not `…/source/main`.
