@@ -80,7 +80,7 @@ def cells_of(line: str) -> list[str]:
 
 
 def expand_command_cell(cell: str) -> list[str]:
-    cell = cell.replace("`", "")
+    cell = re.sub(r"\s*\[.*?\]\s*", "", cell.replace("`", ""))
     m_multi = re.match(r"(\w+)\s+([a-z|]+)$", cell.strip())
     if m_multi:
         group, alts = m_multi.groups()
@@ -115,8 +115,9 @@ check("commands", index_commands, registered)
 # --------------------------------- 3. kinds ---------------------------------
 
 kind_section = section(skill, "## Output contract")
-skill_kinds = set(re.findall(r"`(source|fields|objects|rows|records|findings|scalar)`",
-                             kind_section))
+skill_kinds = set(re.findall(
+    r"`(source|fields|objects|rows|records|findings|scalar|capabilities)`",
+    kind_section))
 implemented = set(parser_modules)
 check("kinds", skill_kinds, implemented)
 

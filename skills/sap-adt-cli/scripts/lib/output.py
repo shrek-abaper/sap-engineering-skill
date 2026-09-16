@@ -30,6 +30,7 @@ RAW_KIND = "raw"
 
 STRUCTURED_KINDS = (
     "source", "fields", "objects", "rows", "records", "findings", "scalar",
+    "capabilities",
 )
 
 # data key holding the list whose length is the row_count for that kind.
@@ -39,6 +40,7 @@ _LIST_KEY = {
     "rows": "rows",
     "records": "transports",
     "findings": "findings",
+    "capabilities": "collections",
 }
 
 _format: Optional[str] = None
@@ -192,6 +194,13 @@ def _text_scalar(data: dict) -> str:
     return "\n".join(lines)
 
 
+def _text_capabilities(data: dict) -> str:
+    return "\n".join(
+        f"{c.get('href') or ''}\t{','.join(c.get('content_types') or [])}\t{c.get('title') or ''}"
+        for c in data.get("collections", [])
+    )
+
+
 _TEXT_RENDERERS = {
     "source": _text_source,
     "fields": _text_fields,
@@ -200,6 +209,7 @@ _TEXT_RENDERERS = {
     "records": _text_records,
     "findings": _text_findings,
     "scalar": _text_scalar,
+    "capabilities": _text_capabilities,
 }
 
 

@@ -48,6 +48,7 @@ Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status",
 | `records` | list-transports | `{transports:[{trkorr,description,status,status_text,owner,target,tasks}]}` |
 | `findings` | syntax-check | `{findings:[{severity,text,line,uri}]}` |
 | `scalar` | get-type-info, get-transaction | object dictionary; type info has `resolved_as: domain\|dataelement` |
+| `capabilities` | discovery | `{collections:[{href,title,content_types}]}` (Atom discovery; use `credentials doctor --coverage` for the command matrix) |
 
 Format selection: **source defaults to `text` (byte-identical, safe to redirect),
 every other kind defaults to `json`**. Global `-f/--format json|text|xml`
@@ -78,7 +79,8 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 | `status` | active profile, switches, config source (plain text) | — |
 | `configure [--profile N]` | save a profile (flags = non-interactive JSON; no flags = interactive wizard) | — |
 | `profile list\|use\|remove` | manage environments | — |
-| `credentials set\|forget\|status\|doctor` | keystore management | — |
+| `credentials set\|forget\|status\|doctor [--coverage]` | keystore management; `doctor --coverage` = command/resource matrix for this system | — |
+| `discovery` | ADT resources this system exposes (href/title/content-types) | capabilities |
 | `get-program / -class / -function-group / -function --group / -include / -interface / -cds-view / -type-group` | read source | source |
 | `get-table / get-structure <N>` | DDIC fields (DDL on S/4) | fields |
 | `get-type-info <N>` | domain/data element with `resolved_as` | scalar |

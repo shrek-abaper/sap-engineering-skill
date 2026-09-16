@@ -463,9 +463,31 @@ def credentials_status():
 
 
 @credentials_group.command("doctor")
-def credentials_doctor():
-    """Diagnose backend availability, selected backend, files and entries."""
+@click.option("--coverage", is_flag=True, default=False,
+              help="Instead of the keystore report, show command coverage for the "
+                   "connected ADT system (from its discovery document).")
+def credentials_doctor(coverage):
+    """Diagnose backend availability; --coverage adds the ADT resource matrix."""
+    if coverage:
+        result = handlers.coverage()
+        if result.is_error:
+            _abort_on_error(result)
+        if output.get_format() == "json":
+            click.echo(json.dumps(result.data, indent=2, ensure_ascii=False))
+        else:
+            click.echo(result.text)
+        return
     click.echo(credentials_reports.doctor_text())
+
+
+@cli.command("discovery")
+def discovery_cmd():
+    """List ADT resources exposed by this system (Atom discovery document).
+
+    Returns a 'capabilities' envelope (collections with href/title/
+    content_types); --format xml returns the raw Atom service document.
+    """
+    _output(handlers.discovery())
 
 
 @cli.command("get-program")

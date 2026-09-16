@@ -57,7 +57,12 @@ old→new table). These could only be learned by probing a live system.
    references"; a full URL in `?uri=` also 500s). Response
    `…usagereferences.result.v1+xml`, 939 results for
    CL_GUI_FRONTEND_SERVICES; non-existent object is 200
-   `numberOfResults=0`. 2026-09-16.
+   `numberOfResults=0`. **The discovery document (2026-09-16) declares no
+   `app:accept` for this collection, so `application/*` is currently the
+   only workable value and cannot be narrowed to an explicit vendor
+   version; re-probe after a Basis upgrade** (the output contract checker
+   intentionally does not validate this — there is no declared source to
+   check against). 2026-09-16.
 6. **Package nodestructure** — on 7.56 the abapxml namespace is declared
    only on the `asx:` prefix; payload elements
    (`SEU_ADT_REPOSITORY_OBJ_NODE`/`OBJECT_*`) carry no namespace. Matching

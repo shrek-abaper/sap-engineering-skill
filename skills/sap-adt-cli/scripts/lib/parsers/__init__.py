@@ -25,6 +25,7 @@ scalar             object dictionary (command-specific keys)
 from __future__ import annotations
 
 from . import (
+    capabilities,
     fields,
     findings,
     objects,
@@ -35,6 +36,7 @@ from . import (
 )
 
 __all__ = [
+    "capabilities",
     "fields",
     "findings",
     "objects",

@@ -7,9 +7,11 @@ from urllib.parse import quote
 
 import requests
 
+from . import coverage as coverage_lib
 from . import errors
 from .client import AdtHttpError, make_adt_request
 from .config import get_config
+from .parsers import capabilities as parse_capabilities
 from .parsers import fields as parse_fields
 from .parsers import findings as parse_findings
 from .parsers import objects as parse_objects
@@ -218,6 +220,32 @@ def search_object(query: str, max_results: int = 100) -> AdtResult:
         return _structured("objects", data, _obj("search", query), raw=resp.text)
     except Exception as e:
         return _err(e)
+
+
+def discovery() -> AdtResult:
+    try:
+        resp = make_adt_request(
+            f"{_base()}/sap/bc/adt/discovery",
+            extra_headers={"Accept": "application/atomsvc+xml, application/*"},
+        )
+        data = parse_capabilities.parse(resp.content)
+        return _structured("capabilities", data,
+                           {"type": "discovery", "name": None}, raw=resp.text)
+    except Exception as e:
+        return _err(e)
+
+
+def coverage() -> AdtResult:
+    """Coverage report (raw text for the CLI; structured data in .data)."""
+    result = discovery()
+    if result.is_error:
+        return result
+    report = coverage_lib.compute_coverage(result.data["collections"])
+    return AdtResult(
+        kind="raw",
+        data=report,
+        text=coverage_lib.render_text(report),
+    )
 
 
 def get_object_uri(object_type: str, object_name: str, group: Optional[str] = None) -> str:
