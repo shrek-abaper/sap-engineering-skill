@@ -84,12 +84,18 @@ def parse_single_request(payload: bytes) -> dict:
     )
     if request is None:
         raise ParseError(f"not a transport request: {localname(root.tag)}")
+    def _status_text(el):
+        code = (attr(el, "status") or "").upper()
+        # Prefer the server-provided localized text (status_text attribute),
+        # fall back to the local code map for payloads that omit it.
+        return attr(el, "status_text") or STATUS_TEXT.get(code, code or None)
+
     tasks = [
         {
             "trkorr": attr(t, "number"),
             "owner": attr(t, "owner"),
             "status": (attr(t, "status") or "").upper() or None,
-            "status_text": STATUS_TEXT.get(attr(t, "status") or ""),
+            "status_text": _status_text(t),
         }
         for t in request.iter() if localname(t.tag) == "task"
     ]
@@ -99,7 +105,7 @@ def parse_single_request(payload: bytes) -> dict:
             "trkorr": attr(request, "number"),
             "description": attr(request, "desc"),
             "status": status,
-            "status_text": STATUS_TEXT.get(attr(request, "status") or ""),
+            "status_text": _status_text(request),
             "owner": attr(request, "owner"),
             "target": attr(request, "target") or None,
             "tasks": tasks,

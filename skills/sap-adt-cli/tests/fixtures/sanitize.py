@@ -69,6 +69,8 @@ FILE_MAP = {
     "unit.zcl_ci_test_ddic_naming.raw.xml": "unit.alert-only.xml",
     # ATC worklist with priority-3 findings (volatile fields normalized)
     "atc.findings.raw.xml": "atc.findings.xml",
+    # Single modifiable transport request (release-transport preflight)
+    "transport.single.raw.xml": "transport.single.xml",
     # where-used new usageReferences API (hits are trimmed SAP-only nodes)
     "where-used.hits.raw.xml": "where-used.CL_GUI_FRONTEND_SERVICES.xml",
     "where-used.empty.raw.xml": "where-used.empty.xml",
@@ -224,6 +226,13 @@ def render(raw_name: str, raw_bytes: bytes, repls: list[tuple[str, str]]) -> byt
         return text.encode("utf-8")
     if raw_name == "atc.findings.raw.xml":
         return normalize_atc(raw_bytes.decode("utf-8")).encode("utf-8")
+    if raw_name == "transport.single.raw.xml":
+        text = raw_bytes.decode("utf-8")
+        import re as _re
+        text = text.replace("JZ.ZHANG", "DEVELOPER")
+        text = _re.sub(r'(adtcore:(?:createdAt|changedAt)=")[^"]*"', r'\g<1>1970-01-01T00:00:00Z"', text)
+        text = _re.sub(r'(tm:lastchanged_timestamp=")[^"]*"', r'\g<1>19700101000000"', text)
+        return text.encode("utf-8")
     return scrub_text(raw_bytes.decode("utf-8"), repls).encode("utf-8")
 
 

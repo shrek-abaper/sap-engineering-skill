@@ -109,6 +109,21 @@ class ReleaseHandlerTests(unittest.TestCase):
         self.assertEqual(r.data["transport"]["status"], "D")
         self.assertTrue(all(m == "GET" for m, _ in calls))
 
+    def test_real_single_request_fixture(self):
+        payload = (
+            ROOT / "skills/sap-adt-cli/tests/fixtures/transport.single.xml"
+        ).read_bytes() if (ROOT / "skills/sap-adt-cli/tests/fixtures/transport.single.xml").exists() else None
+        if payload is None:
+            self.skipTest("transport.single.xml not present")
+        from lib.parsers import records
+        d = records.parse_single_request(payload)["transport"]
+        self.assertEqual(d["trkorr"], "ECDK944391")
+        self.assertEqual(d["status"], "D")
+        self.assertEqual(d["status_text"], "Modifiable")
+        self.assertEqual(d["owner"], "DEVELOPER")
+        self.assertEqual(len(d["tasks"]), 1)
+        self.assertEqual(d["tasks"][0]["trkorr"], "ECDK944392")
+
     def test_nonexistent_tr_is_object_not_found(self):
         # Transport organizer reports missing requests as HTTP 400
         # ADT_TM_COMMON_EXCEPTION, not 404.
