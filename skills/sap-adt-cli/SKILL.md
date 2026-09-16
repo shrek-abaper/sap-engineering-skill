@@ -87,7 +87,7 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 | `get-package <N>` | package contents | objects |
 | `where-used <TYPE> <N> [--group G] [--max-results N]` | referencing objects | objects |
 | `syntax-check <TYPE> <N> [--group G]` | findings; hard errors exit 1, warnings exit 0 | findings |
-| `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only | rows |
+| `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
 | `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | lock→PUT→unlock | gated |
 | `activate <TYPE> <N> [--group G] [--yes]` | activate objects | gated |

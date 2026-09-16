@@ -271,6 +271,37 @@ class EnvelopeCommandTests(unittest.TestCase):
         self.assertNotIn("sqlCommand", calls[0][2])
         self.assertEqual(d["meta"]["row_count"], 5)
 
+    def _run_sql_handler(self, sql, max_rows):
+        with patch.object(self.handlers, "get_config", return_value=FakeConfig()), \
+                patch.object(self.handlers, "make_adt_request",
+                             return_value=FakeResponse(fx("run-sql.t100.post.raw.xml"))):
+            return self.handlers.run_sql(sql, max_rows)
+
+    def test_run_sql_meta_rownumber_when_no_up_to(self):
+        r = self._run_sql_handler("SELECT arbgb FROM t100", 7)
+        self.assertFalse(r.is_error)
+        self.assertEqual(r.meta["row_limit_applied"], 7)
+        self.assertEqual(r.meta["row_limit_source"], "rowNumber")
+        self.assertNotIn("row_limit_conflict", r.meta)
+
+    def test_run_sql_meta_flags_up_to_conflict(self):
+        # Verified on DEV: rowNumber (--max-rows) wins and "UP TO N" is
+        # ignored whenever it differs — not min(N, max_rows).
+        r = self._run_sql_handler(
+            "SELECT arbgb FROM t100 UP TO 5 ROWS WHERE sprsl = 'E'", 100
+        )
+        self.assertEqual(r.meta["row_limit_applied"], 100)
+        self.assertEqual(r.meta["row_limit_source"], "rowNumber")
+        self.assertTrue(r.meta["row_limit_conflict"])
+        self.assertEqual(r.meta["sql_up_to"], 5)
+
+    def test_run_sql_meta_no_conflict_when_equal(self):
+        r = self._run_sql_handler(
+            "SELECT arbgb FROM t100 UP TO 5 ROWS WHERE sprsl='E'", 5
+        )
+        self.assertNotIn("row_limit_conflict", r.meta)
+        self.assertEqual(r.meta["sql_up_to"], 5)
+
     def test_run_sql_falls_back_to_get_on_405(self):
         calls = []
 

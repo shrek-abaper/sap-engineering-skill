@@ -1,4 +1,5 @@
 import json
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import Optional
@@ -423,7 +424,19 @@ def run_sql(sql: str, max_rows: int = 100) -> AdtResult:
                 },
             )
         data = parse_rows.parse(resp.content)
-        return _structured("rows", data, {"type": "run-sql", "name": None}, raw=resp.text)
+        # The Data Preview rowNumber parameter (--max-rows) is the hard cap;
+        # verified 2026-09-16: an SQL "UP TO N ROWS" clause is IGNORED when
+        # rowNumber is present (tests: UP TO 5/100 -> 100 rows, UP TO 200/10
+        # -> 10 rows, no UP TO/7 -> 7 rows). Surface this instead of letting
+        # the SQL clause silently mislead callers.
+        meta = {"row_limit_applied": max_rows, "row_limit_source": "rowNumber"}
+        m = re.search(r"\bUP\s+TO\s+(\d+)\s+ROWS?\b", sql, re.IGNORECASE)
+        if m:
+            meta["sql_up_to"] = int(m.group(1))
+            if m and meta["sql_up_to"] != max_rows:
+                meta["row_limit_conflict"] = True
+        return _structured("rows", data, {"type": "run-sql", "name": None},
+                           raw=resp.text, meta=meta)
     except Exception as e:
         return _err(e)
 
