@@ -348,16 +348,16 @@ At runtime, CI can instead provide the password per profile via
 | `get-function <NAME> --group <FG>` | Function module source code |
 | `get-include <NAME>` | ABAP include source code |
 | `get-interface <NAME>` | ABAP interface source code |
-| `get-table <NAME>` | DDIC table field definitions (XML) |
-| `get-structure <NAME>` | DDIC structure definition (XML) |
-| `get-type-info <NAME>` | Domain or data element info (XML) |
+| `get-table <NAME>` | DDIC table fields — `fields` envelope (DDL on S/4) |
+| `get-structure <NAME>` | DDIC structure fields — `fields` envelope |
+| `get-type-info <NAME>` | Domain/data element — `scalar` envelope (`resolved_as`) |
 | `get-type-group <NAME>` | ABAP type group (TYPE POOL) source |
 | `get-cds-view <NAME>` | CDS View DDL source code |
-| `get-package <NAME>` | Package object list (JSON) |
-| `get-transaction <NAME>` | Transaction properties / package (XML) |
+| `get-package <NAME>` | Package objects — `objects` envelope |
+| `get-transaction <NAME>` | Transaction properties — `scalar` envelope |
 | `search-object <QUERY> [--max-results N]` | Object name search — `*` wildcard supported |
 | `syntax-check <TYPE> <NAME> [--group <FG>]` | Syntax check — read-only, no confirmation; `--group` required when TYPE is `function` |
-| `where-used <TYPE> <NAME> [--max-results N] [--group <FG>]` | Where-used list (JSON); `--group` required when TYPE is `function` |
+| `where-used <TYPE> <NAME> [--max-results N] [--group <FG>]` | Where-used list — `objects` envelope; `--group` required when TYPE is `function` |
 | `run-sql "<SQL>" [--max-rows N]` | Open SQL SELECT → JSON *(DML statements blocked)*; default 100 rows, max 10 000 |
 | `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | Write source code *(allow_write + confirm each time)*; `--activate` activates after writing; `--group` required when TYPE is `function`; `--transport` pins the transport request |
 | `activate <TYPE> <NAME> [--group <FG>]` | Activate ABAP object *(allow_write + confirm each time)*; `--group` required when TYPE is `function` |
@@ -433,17 +433,19 @@ In transaction `SICF`, activate the following service paths:
 
 ---
 
-## Output Formats
+## Output contract
 
-| Commands | Output |
-|----------|--------|
-| Source code commands (`get-program`, `get-class`, `get-function-group`, `get-function`, `get-include`, `get-interface`, `get-cds-view`, `get-type-group`) | Plain text ABAP source |
-| `get-table`, `get-structure`, `get-type-info`, `get-transaction`, `search-object` | Raw ADT XML |
-| `get-package`, `where-used`, `list-transports`, `run-sql` | JSON array |
-| `syntax-check` | Plain text messages (`[ERROR]`, `[WARNING]`, `[INFO]` prefixed); `"Syntax OK — no issues found."` if clean |
-| `status` | Plain text key-value pairs |
+All read commands emit the JSON envelope documented in **SKILL.md**
+(`ok`/`format_version`/`command`/`object`/`kind`/`data`/`meta`); source
+commands default to plain ABAP text and every kind defaults to JSON. Kinds:
+`source`, `fields`, `objects`, `rows`, `records`, `findings`, `scalar`.
+`-f/--format json|text|xml` (`SAP_ADT_FORMAT`) selects the format; `xml`
+returns the raw ADT payload. Empty results are `ok:true,row_count:0,exit 0`.
 
-All output is written to **stdout**. Errors are written to **stderr** with a non-zero exit code.
+Errors are JSON envelopes on **stderr** with exit tiers 1 (retryable),
+2 (config/credentials), 3 (safety-policy refusal — no retry), 4 (not found);
+`status`/`profile`/`credentials` remain human-readable text. See SKILL.md for
+all 16 error codes.
 
 ---
 
