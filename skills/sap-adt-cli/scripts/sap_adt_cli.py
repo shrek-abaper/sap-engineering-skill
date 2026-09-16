@@ -533,10 +533,33 @@ def _fail_on_findings(result, threshold: str) -> None:
         return
     levels = {"error": {"error"}, "warning": {"error", "warning"},
               "info": {"error", "warning", "info"}}
-    found = [f for f in (result.data or {}).get("findings", [])
-             if f.get("severity") in levels[threshold]]
+    # Human-approved exemptions are auditable in output but never fail CI.
+    found = [
+        f for f in (result.data or {}).get("findings", [])
+        if f.get("severity") in levels[threshold] and not f.get("exempted")
+    ]
     if found:
         sys.exit(1)
+
+
+@cli.command("run-atc")
+@click.argument("object_name")
+@click.option("--type", "object_type", default="class",
+              type=click.Choice(["program", "class", "interface", "include", "function"]))
+@click.option("--group", default=None, help="Function group (required for --type function)")
+@click.option("--variant", default="STANDARD", show_default=True, help="ATC check variant")
+@click.option("--max-results", default=100, show_default=True)
+@click.option("--fail-on", default="error",
+              type=click.Choice(["error", "warning", "info", "never"]))
+def run_atc_cmd(object_name, object_type, group, variant, max_results, fail_on):
+    """Run static ATC checks for an object (no side effects, no gate)."""
+    result = handlers.run_atc(object_type, object_name, group=group,
+                              variant=variant, max_results=max_results)
+    if result.is_error:
+        _abort_on_error(result)
+    click.echo(output.render(result, output.get_format(),
+                             command="run-atc", profile=_profile_name()))
+    _fail_on_findings(result, fail_on)
 
 
 @cli.command("discovery")

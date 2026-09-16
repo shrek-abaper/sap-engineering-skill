@@ -192,3 +192,85 @@ def parse_unit(payload: bytes) -> dict:
         meta["unparsed_nodes"] = sorted(set(unparsed))
     return {"findings": findings, "_meta": meta}
 
+
+# ---------------------------------------------------------------------------
+# ATC worklist (application/atc.worklist.v1+xml)
+#
+# Language-dependent text lives in checkTitle/messageTitle; the stable
+# identifiers are checkId/messageId. priority 1/2 -> error/warning,
+# 3 -> info, anything else -> info + an unparsed_nodes entry.
+# ---------------------------------------------------------------------------
+
+_ATC_KNOWN_TAGS = {
+    "worklist", "objectSets", "objectSet", "objects", "object", "findings",
+    "finding", "link", "quickfixes",
+}
+
+
+def parse_atc(payload: bytes) -> dict:
+    root = parse_xml(payload)
+    findings_out: list[dict] = []
+    by_priority = {1: 0, 2: 0, 3: 0}
+    exempted_count = 0
+    unparsed: list[str] = []
+
+    complete_attr = None
+    for el in root.iter():
+        if localname(el.tag) == "worklist":
+            complete_attr = attr(el, "objectSetIsComplete")
+
+    for obj in root.iter():
+        if localname(obj.tag) != "object":
+            continue
+        for f in obj.iter():
+            if localname(f.tag) != "finding":
+                continue
+            pri_raw = (attr(f, "priority") or "").strip()
+            try:
+                pri = int(pri_raw)
+            except (TypeError, ValueError):
+                pri = None
+            if pri in (1, 2, 3):
+                by_priority[pri] += 1
+                sev = {1: "error", 2: "warning", 3: "info"}[pri]
+            else:
+                # Unknown/missing priority defaults to info but surfaces.
+                by_priority[3] += 1
+                sev = "info"
+                unparsed.append(f"finding@priority={pri_raw or 'missing'}")
+
+            title = attr(f, "checkTitle") or ""
+            message = attr(f, "messageTitle") or ""
+            text = ": ".join(t for t in (title, message) if t) or None
+            line = _line_from_uri(attr(f, "location"))
+            exemption = (attr(f, "exemptionKind") or "").strip()
+
+            item = {
+                "severity": sev,
+                "text": text,
+                "line": line,
+                "uri": attr(f, "location"),
+                "check_id": attr(f, "checkId"),
+                "message_id": attr(f, "messageId"),
+                "source_severity": pri_raw or None,
+            }
+            if exemption:
+                item["exempted"] = True
+                exempted_count += 1
+            findings_out.append(item)
+
+    for el in root.iter():
+        if localname(el.tag) not in _ATC_KNOWN_TAGS and isinstance(el.tag, str):
+            unparsed.append(el.tag.split("}")[-1])
+
+    meta = {
+        "total": len(findings_out),
+        "by_priority": {"1": by_priority[1], "2": by_priority[2],
+                        "3": by_priority[3]},
+        "exempted_count": exempted_count,
+        "result_incomplete": str(complete_attr).lower() != "true",
+    }
+    if unparsed:
+        meta["unparsed_nodes"] = sorted(set(unparsed))
+    return {"findings": findings_out, "_meta": meta}
+

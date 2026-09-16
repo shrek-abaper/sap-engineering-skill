@@ -95,6 +95,7 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 | `where-used <TYPE> <N> [--group G] [--max-results N]` | referencing objects | objects |
 | `syntax-check <TYPE> <N> [--group G]` | findings; hard errors exit 1, warnings exit 0 | findings |
 | `run-unit-test <N> [--type T] [--risk-level harmless\|dangerous\|critical] [--duration short\|medium\|long] [--fail-on error\|warning\|info\|never]` | ABAP Unit; harmless default (read-only); meta `no_tests_found` distinguishes "no tests" (total 0) from "all passed" | findings |
+| `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
 
 > **Unit risk levels**: `dangerous`/`critical` tests **execute ABAP that may modify
 > business data** — they require `allow_write`, show a risk-level + object +

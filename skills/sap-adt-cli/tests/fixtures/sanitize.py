@@ -67,6 +67,8 @@ FILE_MAP = {
     # ABAP Unit real captures: empty shell + alert-only (no testMethod)
     "unit.empty.raw.xml": "unit.empty.xml",
     "unit.zcl_ci_test_ddic_naming.raw.xml": "unit.alert-only.xml",
+    # ATC worklist with priority-3 findings (volatile fields normalized)
+    "atc.findings.raw.xml": "atc.findings.xml",
     # where-used new usageReferences API (hits are trimmed SAP-only nodes)
     "where-used.hits.raw.xml": "where-used.CL_GUI_FRONTEND_SERVICES.xml",
     "where-used.empty.raw.xml": "where-used.empty.xml",
@@ -197,6 +199,20 @@ def trim_where_used(raw_text: str) -> str:
     return '<?xml version="1.0" encoding="utf-8"?>' + ET.tostring(root, encoding="unicode")
 
 
+def normalize_atc(raw_text: str) -> str:
+    """Stable form of an ATC worklist: fixed GUID/user/timestamp/index."""
+    text = raw_text
+    # 32-hex worklist/finding GUIDs -> a single stable placeholder
+    guids = sorted(set(re.findall(r"F79[0-9A-F]{29}", text)), reverse=True)
+    for i, g in enumerate(guids):
+        text = text.replace(g, f"ATCGUID{ i:026d}"[-32:])
+    text = re.sub(r'timestamp="[^"]+"', 'timestamp="1970-01-01T00:00:00Z"', text)
+    text = re.sub(r'(processor|lastChangedBy|author)="[^"]*"',
+                  r'\1="DEVELOPER"', text)
+    text = re.sub(r"/index/\d+", "/index/1", text)
+    return text
+
+
 def render(raw_name: str, raw_bytes: bytes, repls: list[tuple[str, str]]) -> bytes:
     if raw_name == "run-sql.t001.xml":
         return sanitize_rows_json(raw_bytes.decode("utf-8")).encode("utf-8")
@@ -206,6 +222,8 @@ def render(raw_name: str, raw_bytes: bytes, repls: list[tuple[str, str]]) -> byt
         # resultDescription carries the SAP system ID ("... [ECD]").
         text = re.sub(r"\s*\[[A-Z0-9]{3}\]", "", raw_bytes.decode("utf-8"))
         return text.encode("utf-8")
+    if raw_name == "atc.findings.raw.xml":
+        return normalize_atc(raw_bytes.decode("utf-8")).encode("utf-8")
     return scrub_text(raw_bytes.decode("utf-8"), repls).encode("utf-8")
 
 

@@ -348,6 +348,64 @@ def run_unit_test(object_type: str, object_name: str, group: Optional[str] = Non
         return _err(e)
 
 
+def run_atc(object_type: str, object_name: str, group: Optional[str] = None,
+            variant: str = "STANDARD", max_results: int = 100) -> AdtResult:
+    """Run ATC checks (static, no gate): worklist -> run -> worklist GET."""
+    try:
+        uri = _unit_uri(object_type, object_name, group)
+        # 1) create a worklist for the variant -> plain-text GUID
+        wl = make_adt_request(
+            f"{_base()}/sap/bc/adt/atc/worklists",
+            method="POST",
+            params={"checkVariant": variant},
+            extra_headers={"Accept": "text/plain"},
+            timeout=120,
+        )
+        worklist_id = wl.text.strip()
+        # 2) trigger the run (synchronous on this release; returns worklistRun)
+        body = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            f'<atc:run maximumVerdicts="{max_results}" xmlns:atc="http://www.sap.com/adt/atc">'
+            '<objectSets xmlns:adtcore="http://www.sap.com/adt/core">'
+            '<objectSet kind="inclusive"><adtcore:objectReferences>'
+            f'<adtcore:objectReference adtcore:uri="{uri}"/>'
+            '</adtcore:objectReferences></objectSet>'
+            '</objectSets></atc:run>'
+        ).encode("utf-8")
+        make_adt_request(
+            f"{_base()}/sap/bc/adt/atc/runs",
+            method="POST",
+            params={"worklistId": worklist_id},
+            data=body,
+            extra_headers={"Accept": "application/xml",
+                           "Content-Type": "application/xml"},
+            timeout=300,
+        )
+        # 3) fetch the populated worklist
+        def fetch():
+            return make_adt_request(
+                f"{_base()}/sap/bc/adt/atc/worklists/{worklist_id}",
+                extra_headers={"Accept": "application/atc.worklist.v1+xml"},
+                timeout=120,
+            )
+        resp = fetch()
+        parsed = parse_findings.parse_atc(resp.content)
+        meta = parsed.pop("_meta")
+        if meta.get("result_incomplete"):
+            # Object set not fully evaluated yet: re-fetch exactly once (no
+            # poll loop); if still incomplete the flag stays in meta and the
+            # caller sees result_incomplete:true plus the smaller-set advice.
+            resp = fetch()
+            parsed = parse_findings.parse_atc(resp.content)
+            meta = parsed.pop("_meta")
+        return _structured("findings", parsed, _obj(object_type, object_name),
+                           raw=resp.text, meta=meta)
+    except ValueError as e:
+        return _err(e)
+    except Exception as e:
+        return _err(e)
+
+
 def get_object_uri(object_type: str, object_name: str, group: Optional[str] = None) -> str:
     t = object_type.lower()
     if t == "program":

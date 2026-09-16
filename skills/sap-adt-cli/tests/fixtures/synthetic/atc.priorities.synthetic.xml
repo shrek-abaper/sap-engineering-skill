@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC: priority 1/2 and exemption mapping inferred from the real
+     priority-3 ATC fixture and abap-adt-api, NOT a real capture. Verify
+     against the first real response carrying these attributes. -->
+<atcworklist:worklist
+   atcworklist:id="ATCWORKLISTID00000000000000000"
+   atcworklist:timestamp="1970-01-01T00:00:00Z"
+   atcworklist:usedObjectSet="99999999999999999999999999999999"
+   atcworklist:objectSetIsComplete="true"
+   xmlns:atcworklist="http://www.sap.com/adt/atc/worklist">
+ <atcworklist:objectSets>
+  <atcworklist:objectSet atcworklist:title="Last Check Run" atcworklist:kind="LAST_RUN"/>
+ </atcworklist:objectSets>
+ <atcworklist:objects>
+  <atcobject:object adtcore:uri="/sap/bc/adt/atc/objects/R3TR/CLAS/ZCL_DEMO"
+    adtcore:type="CLAS" adtcore:name="ZCL_DEMO" adtcore:packageName="ZLOCAL"
+    atcobject:author="DEVELOPER" atcobject:objectTypeId="CLAS/OC"
+    xmlns:atcobject="http://www.sap.com/adt/atc/object"
+    xmlns:adtcore="http://www.sap.com/adt/core">
+   <atcobject:findings>
+    <atcfinding:finding
+       atcfinding:location="/sap/bc/adt/oo/classes/zcl_demo/source/main#start=10,0"
+       atcfinding:priority="1" atcfinding:checkId="CHECKID000000000000000000000001"
+       atcfinding:checkTitle="Critical thing" atcfinding:messageId="ERR01"
+       atcfinding:messageTitle="Must fix" atcfinding:exemptionKind=""
+       xmlns:atcfinding="http://www.sap.com/adt/atc/finding"/>
+    <atcfinding:finding
+       atcfinding:location="/sap/bc/adt/oo/classes/zcl_demo/source/main#start=20,0"
+       atcfinding:priority="2" atcfinding:checkId="CHECKID000000000000000000000002"
+       atcfinding:checkTitle="Should improve" atcfinding:messageId="WARN02"
+       atcfinding:messageTitle="Smell" atcfinding:exemptionKind=""
+       xmlns:atcfinding="http://www.sap.com/adt/atc/finding"/>
+    <atcfinding:finding
+       atcfinding:location="/sap/bc/adt/oo/classes/zcl_demo/source/main#start=30,0"
+       atcfinding:priority="2" atcfinding:checkId="CHECKID000000000000000000000002"
+       atcfinding:checkTitle="Should improve" atcfinding:messageId="WARN03"
+       atcfinding:messageTitle="Approved away" atcfinding:exemptionKind="A"
+       xmlns:atcfinding="http://www.sap.com/adt/atc/finding"/>
+   </atcobject:findings>
+  </atcobject:object>
+ </atcworklist:objects>
+</atcworklist:worklist>

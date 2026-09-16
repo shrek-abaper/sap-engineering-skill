@@ -88,7 +88,24 @@ Only real-machine fixture regression (the `tests/fixtures` + golden suite)
 catches those. Read the coverage matrix as "resource present", and rely on
 the offline/DEV fixtures for protocol correctness.
 
+## Known volatile fields (normalized in committed fixtures)
+
+Byte-level golden/XML regression breaks on fields the server regenerates
+per call. They are normalized (fixed placeholders, not random values) by
+`tests/fixtures/sanitize.py`:
+
+- transport organizer `tm:root` `createdAt`/`changedAt` (per-request timestamps);
+- data preview `<queryExecutionTime>`;
+- ATC worklist `id`/`timestamp`/`worklistTimestamp`, 32-hex worklist and
+  finding GUIDs, finding `/index/<n>`, and `author`/`processor`/`lastChangedBy`
+  (→ `DEVELOPER`);
+- where-used absolute service-root entries and the empty-result system ID.
+
 ## Known follow-ups (not bugs)
+
+- **ATC quickfixes**: `atcfinding:quickfixes` exposes `manual`/`automatic`/
+  `pseudo` booleans valuable for auto-fix workflows; not implemented in
+  `run-atc` yet.
 
 - **usageReferences content type is `application/*`** (per the reference
   implementation). After the discovery-completeness pass it should be

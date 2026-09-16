@@ -41,6 +41,7 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
      ["/sap/bc/adt/repository/informationsystem/usageReferences"]),
     ("syntax-check", ["/sap/bc/adt/checkruns"]),
     ("run-unit-test", ["/sap/bc/adt/abapunit/testruns"]),
+    ("run-atc", ["/sap/bc/adt/atc/runs", "/sap/bc/adt/atc/worklists"]),
     ("run-sql", ["/sap/bc/adt/datapreview/freestyle"]),
     ("list-transports", ["/sap/bc/adt/cts/transportrequests"]),
     ("create-transport", ["/sap/bc/adt/cts/transports"]),

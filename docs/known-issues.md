@@ -91,6 +91,17 @@ synthetic fixture MUST be checked against it; on mismatch, change the
 parser/fixture to match the real payload. Unexpected node names are
 surfaced in `meta.unparsed_nodes` rather than ignored.
 
+## ATC: priority 1/2 mapping unverified (synthetic fixture)
+
+The real ATC capture (`atc.findings.xml`) contains only priority-3
+findings. Priority 1→error, 2→warning and exemption suppression are
+exercised solely by `synthetic/atc.priorities.synthetic.xml` (inferred
+from `abap-adt-api` and the priority-3 shape). On the first real ATC
+worklist carrying priority 1/2 findings or `exemptionKind` values other
+than `""`/`"A"`, verify the mapping and update the fixture/parser to
+match the real payload. Unknown priority values already map to info and
+surface in `meta.unparsed_nodes`.
+
 ## Other open items
 
 - Non-empty `list-transports` tree: only an empty-tree fixture exists (the
