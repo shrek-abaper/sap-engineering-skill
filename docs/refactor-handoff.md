@@ -27,6 +27,8 @@ End state after batches 0–9. Companion docs: `refactor-summary.md`
 | 9.1 | Per-profile allow_write/transport + environment; prd hard refusal; SAP_ENVIRONMENT (`66eb7fc`) |
 | 9.2 | release-transport newreleasejobs + readback poll, `--dry-run`, RELEASE_* codes (`f57128f`) |
 | post-9.2 | server status_text + real preflight/released fixtures (`d24bc88`) |
+| 10 (canceled) | Cross-process session layer **designed, approved, then rejected by real-machine evidence** — separate-process activate works without shared session; design archived at `design-session-layer-rejected.md` (2026-09-17) |
+| 10 (protocol) | First real-machine write verification: lock/PUT/unlock/activate all four shapes were wrong; corrected to measured protocol, facts 7→11, 403 enqueue conflict → LOCKED_BY_OTHER (2026-09-16/17) |
 
 Real release verified: empty request ECDK944391 released on DEV400,
 readback `R/Released` on poll attempt 1; capability flags restored to
@@ -88,28 +90,42 @@ Canonical copy in `references/adt_api.md` (dated old→new table) and
 6. Package nodestructure has no namespace on payload elements (local-name matching); tables/structures source is CDS DDL; objectstructure is 404.
 7. Release: POST `/cts/transportrequests/{TR}/newreleasejobs` + readback `tm:status`; missing request = HTTP 400 ADT_TM_COMMON_EXCEPTION. Measured empty-TR release: R within the first 2 s poll (attempt 1).
 
-## 4. Remaining three items and how to do them
+## 4. Remaining engineering backlog (three items)
 
-1. **Long release paths (RELEASE_UNVERIFIED / failing report)** — happy path
-   is live-verified; timeout/unknown-status and `abortrelapifail` report are
-   offline-only. How: release a populated request on a system with mandatory
-   pre-release ATC; capture the real newreleasejobs response (currently
-   `synthetic/transport.release-report.synthetic.xml`) and any >2 s
-   readback; replace synthetic, keep parser contract.
-2. **ABAP Unit testMethod + ATC priority 1/2** — class/alert and priority-3
-   shapes are real; method pass/fail/skipped counts and priority-1/2/
-   exemption mappings use `synthetic/*.synthetic.xml`. How: run self-built
-   unit tests in QAS (SABP_UNIT samples complete) and a dirty object via
-   run-atc; verify field paths, delete synthetic if identical.
-3. **Non-empty transport tree + ECC shapes** — records parser handles
-   tm:request/task structure (verified real for single D and R), but a
-   populated `/cts/transportrequests` root tree, tasks nesting, and legacy
-   worklist/405-fallback payloads lack fixtures. How: capture on a system
-   where the service user owns requests, and an ECC system for legacy forms.
+1. **adt_api.md consolidation** — the file now carries the 11-row
+   verified-facts table, modern endpoint sections, and legacy subsections;
+   fold the legacy/duplicated blocks into one canonical old→new structure
+   (one source of truth per endpoint) without dropping measured status
+   codes/dates.
+2. **Object-type registry** — replace the ad-hoc `get_object_uri` if/elif
+   chain (and its per-type quirks: function needs `--group`, case, vendor
+   types) with a declarative type registry (type → URI template, media
+   types, group requirement, lock applicability) reused by handlers and
+   docs.
+3. **`configure` silently resets unspecified fields** — high/security
+   (both flip directions of `verify_ssl` are dangerous); only explicitly
+   passed flags must update stored values. Details in `known-issues.md`.
 
-Also queued (not one of the three, documented in summary):
-quickfix booleans, discovery-based ATC/Unit reporter expansion,
-doctor --coverage UI consumption.
+The session layer is **out of scope** (rejected, batch 10; see
+`design-session-layer-rejected.md` for the re-trigger condition).
+
+### Real-machine verification triggers (still open, tracked in known-issues.md)
+
+These are not engineering tasks but unverified response paths waiting for
+the first real capture:
+
+1. Long release paths — RELEASE_UNVERIFIED timeout and a real
+   `abortrelapifail` report (replace
+   `synthetic/transport.release-report.synthetic.xml`).
+2. ABAP Unit `testMethod` counts + ATC priority 1/2/exemptions (replace the
+   two synthetic fixtures when QAS/dirty-object captures exist).
+3. Non-empty transport tree (`tasks[]` nesting) + ECC legacy shapes.
+4. (new) A real **failed activation** to verify the `chkl:messages/msg`
+   parser shape (the current `error/message/checkResult` parser is
+   unverified for failures; happy path live-verified).
+
+Also queued (documented in summary): quickfix booleans, discovery-based
+ATC/Unit reporter expansion, doctor --coverage UI consumption.
 
 ## 5. Red lines (do not weaken without explicit approval)
 
@@ -119,7 +135,12 @@ doctor --coverage UI consumption.
   flag/global/env override. Env-path writes require explicit SAP_ENVIRONMENT.
 - run-sql: SELECT only, DML rejected before HTTP. dangerous/critical Unit
   = write semantics (gate + risk-specific prompt).
-- write-source always unlocks in `finally`; lock handles never logged.
+- write-source uses the measured stateful protocol (`_action=LOCK`,
+  `?lockHandle=` PUT, `_action=UNLOCK`) and always unlocks in `finally`;
+  lock handles never logged (progress line shows a short hash only).
+- **Write-side 2xx is "accepted", never "completed"** — release, activate
+  and unlock all require an independent readback; a foreign-context unlock
+  200 is a measured silent no-op (adt_api.md top rule).
 - Errors are JSON envelopes with the closed code set; Click usage errors
   stay plain text. `--yes` only by explicit user instruction.
 - Passwords in keystore only; fixtures via sanitizer, synthetic/ separated
@@ -133,6 +154,13 @@ doctor --coverage UI consumption.
   `synthetic/atc.priorities.synthetic.xml`.
 - First **populated/slow release** → verify release report + polling;
   RELEASE_UNVERIFIED means manual SE09/SE10, never auto re-release.
+- First real **failed activation** → verify `chkl:messages/msg` +
+  `ioc:inactiveObjects` parser paths (known-issues); until then always
+  confirm activations by readback, not 200.
+- Requirement to **hold locks across processes** (long transaction,
+  interactive multi-process edit) → reopen the archived session-layer
+  design (`design-session-layer-rejected.md`) and re-verify protocol
+  facts 8–11 on the target release first.
 - Basis upgrade → re-probe usageReferences content type and Unit config
   versions (currently v4, fallback application/*).
 - New command/kind/error code → update SKILL.md tables; check_contract
