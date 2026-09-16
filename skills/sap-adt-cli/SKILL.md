@@ -50,6 +50,11 @@ Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status",
 | `scalar` | get-type-info, get-transaction | object dictionary; type info has `resolved_as: domain\|dataelement` |
 | `capabilities` | discovery | `{collections:[{href,title,content_types}]}` (Atom discovery; use `credentials doctor --coverage` for the command matrix) |
 
+> `doctor --coverage` "available" only guarantees the **resource root**
+> exists — discovery omits sub-paths, HTTP methods and required content
+> types. Sub-path moves, GET→POST and content-type mismatches are invisible
+> to it and only real-machine fixture regression catches them.
+
 Format selection: **source defaults to `text` (byte-identical, safe to redirect),
 every other kind defaults to `json`**. Global `-f/--format json|text|xml`
 or `SAP_ADT_FORMAT` (flag wins). `--format xml` returns the original ADT payload

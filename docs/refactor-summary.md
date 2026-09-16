@@ -71,6 +71,23 @@ old→new table). These could only be learned by probing a live system.
    `/ddic/{tables,structures}/{n}/source/main` returns CDS-style DDL, and
    `/ddic/tables/{n}/objectstructure` is 404. 2026-09-15.
 
+## Coverage matrix limitations (doctor --coverage)
+
+"covered & available" is **not** "command verified working". Discovery lists
+resource roots only — it has no sub-paths, HTTP methods, or required content
+types. It can reveal a *missing root* (e.g. `/abapsource/syntaxcheck` gone)
+but cannot reveal three of the four deviations found during this refactor:
+
+1. sub-path changes (`/cts/transports` → `/cts/transportrequests`);
+2. method requirements (run-sql and where-used are POST, their GET ancestors
+   return 405);
+3. content-type requirements (run-sql vendor Accept, where-used
+   `application/*`).
+
+Only real-machine fixture regression (the `tests/fixtures` + golden suite)
+catches those. Read the coverage matrix as "resource present", and rely on
+the offline/DEV fixtures for protocol correctness.
+
 ## Known follow-ups (not bugs)
 
 - **usageReferences content type is `application/*`** (per the reference
