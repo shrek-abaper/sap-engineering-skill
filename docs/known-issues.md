@@ -164,6 +164,29 @@ Trigger: capture the first genuine failed activation on the DEV system
 parser + add a sanitized fixture. Until then treat an activation as complete
 only with an independent readback (inactiveobjects list / `version`).
 
+## list-transports: empty root tree does not mean "no transport requests"
+
+Measured 2026-09-17 during the create-transport verification. After the
+service user had created and owned a modifiable local D request
+(ECDK944393, confirmed by direct per-TR readback), the root
+`GET /sap/bc/adt/cts/transportrequests`
+(Accept `application/vnd.sap.adt.transportorganizertree.v1+xml`, which is
+the call behind `list-transports`) **still returned an empty tree**.
+
+Consequence: an empty `list-transports` result must never be read as
+"the user has no usable/open transport request". An agent acting on that
+signal would create a duplicate of an already-open request — a silent
+wrong branch, harder to spot than an error.
+
+Reliable check: per-TR GET
+`/sap/bc/adt/cts/transportrequests/<TRKORR>` with Accept
+`application/vnd.sap.adt.transportorganizer.v1+xml`
+(`tm:request@tm:status`, D/R, owner, description). The trigger condition
+of the empty root tree is not established (may depend on user context,
+client, request type/target, or request filters); do not "fix" the
+parser until a populated real tree is captured (see also the non-empty
+tree / `tasks[]` nesting open item below).
+
 ## create-transport: fixed 2026-09-17; two parameter questions still open
 
 The old `create-transport` had never succeeded on a real system. A

@@ -21,6 +21,14 @@ Authentication is HTTP Basic Auth with the `X-SAP-Client` header for client sele
 >    enqueue is gone. The object resource's `program:lockedByEditor="false"`
 >    is per-session state, NOT proof that SM12 is empty.
 
+**Read-side counterpart: an empty result is not evidence of absence.**
+A list endpoint returning an empty collection must not be read as "nothing
+exists". Known case: the root `GET /cts/transportrequests` tree behind
+`list-transports` can return an empty tree while the user owns a modifiable
+D request (measured 2026-09-17; per-TR GET confirms it — see
+`docs/known-issues.md`). Do not branch on emptiness without a positive
+check; the trigger condition is unprobed.
+
 ## Authentication
 
 Every request requires:

@@ -133,10 +133,16 @@ runs establish write-side correctness.
 
 | Status | # | Commands |
 |---|---|---|
-| **Real-verified (23)** | 23 | Eighteen read-side commands via the batch-6 DEV three-way comparison (28/28) plus real fixtures: get-program/class/function-group/function/include/interface/cds-view/type-group, get-table/structure, get-type-info, get-transaction, search-object, get-package, where-used, syntax-check, run-sql, list-transports; `discovery` (batch 7); `write-source`, `activate` (batch 10, `d1bf649`); `create-transport` (2026-09-17, ASX shape live-200, fixed CLI request byte-identical); `release-transport` (batch 9.2 — **empty-TR path only; long timeout paths, failing reports and non-empty object trees are not live-verified**) |
+| **Real-verified (23)** | 23 | Eighteen read-side commands via the batch-6 DEV three-way comparison (28/28) plus real fixtures: get-program/class/function-group/function/include/interface/cds-view/type-group, get-table/structure, get-type-info, get-transaction, search-object, get-package, where-used, syntax-check, run-sql, list-transports¹; `discovery` (batch 7); `write-source`, `activate` (batch 10, `d1bf649`); `create-transport` (2026-09-17, ASX shape live-200, fixed CLI request byte-identical); `release-transport` (batch 9.2 — **empty-TR path only; long timeout paths, failing reports and non-empty object trees are not live-verified**) |
 | **Partially real (2)** | 2 | `run-unit-test` (empty shell + alert-only real; `testMethod` counts synthetic), `run-atc` (priority-3 real; priority 1/2/exemptions synthetic) |
 | **Offline only (0)** | 0 | — (create-transport moved out of this category on 2026-09-17) |
 | **N/A — local state (9)** | 9 | `status`, `configure`, `profile list/use/remove`, `credentials set/forget/status/doctor` (local config/keystore only, no SAP object protocol) |
+
+¹ `list-transports` protocol/path is real-verified, but its empty root tree
+is a false negative signal: an empty tree was returned while the user owned
+a modifiable D request (2026-09-17; per-TR GET is the reliable check).
+Do not conclude "no open transports" from an empty result — see
+known-issues "empty root tree".
 
 ## Methodology lesson: 287 offline tests green, write path 4-for-4 wrong
 
