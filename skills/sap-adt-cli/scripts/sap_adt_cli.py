@@ -62,19 +62,24 @@ def _argv_command() -> str:
     return next((a for a in sys.argv[1:] if not a.startswith("-")), "sap-adt-cli")
 
 
-def _emit_error(decision) -> None:
-    """Print the JSON error envelope on stderr and apply the tiered exit code."""
+def _emit_error(decision, exit_code: int | None = None) -> None:
+    """Print the JSON error envelope on stderr and apply the tiered exit code.
+
+    ``exit_code`` overrides the tier map only for deliberate exceptions:
+    the env-write safety refusal carries CONFIG_MISSING (SAP_ENVIRONMENT is
+    genuinely not configured) but must act as a non-retryable refusal (3).
+    """
     try:
         command = click.get_current_context().info_name
     except RuntimeError:
         command = _argv_command()
     envelope = decision.to_envelope(command, _profile_name())
     click.echo(json.dumps(envelope, indent=2, ensure_ascii=False), err=True)
-    raise SystemExit(decision.exit_code)
+    raise SystemExit(decision.exit_code if exit_code is None else exit_code)
 
 
-def _gate(code: str, message: str) -> None:
-    _emit_error(errors.decision(code, message))
+def _gate(code: str, message: str, exit_code: int | None = None) -> None:
+    _emit_error(errors.decision(code, message), exit_code)
 
 
 def _require_config(config):
@@ -129,24 +134,87 @@ def _output(result) -> None:
     click.echo(rendered)
 
 
+def _production_refusal_hint(config) -> str:
+    if config.environment_source == "inferred":
+        return (
+            f"environment 'prd' was inferred from the profile name; if this "
+            f"is not a production system, set it explicitly with "
+            f"`configure --profile {config.profile_name} --environment dev`."
+        )
+    return "the profile is explicitly marked environment=prd."
+
+
+def _profile_or_env_hint(config, flag: str) -> str:
+    return (
+        f"Re-run `configure --profile {config.profile_name} {flag}` to enable "
+        f"it on this profile, or set the legacy global switch."
+    )
+
+
 def _require_write(config: SapConfig) -> None:
-    if not config.allow_write:
+    _require_env_write_context(config, "write")
+    if config.is_production:
         _gate(
             errors.WRITE_DISABLED,
-            "Source code write is disabled. Re-run `configure` and enable "
-            "write mode (answer 'y' to 'Enable source code write?'), or use "
-            "the --allow-write flag during configure.",
+            f"Write operations are hard-refused on profile "
+            f"'{config.profile_name}' (environment=prd); neither the global "
+            f"nor the profile flag can override this. "
+            f"{_production_refusal_hint(config)}",
+        )
+    if not config.allow_write:
+        who = config.profile_name or "(environment variables)"
+        _gate(
+            errors.WRITE_DISABLED,
+            f"Source code write is disabled for '{who}' (effective flag "
+            f"source: {config.write_source}). {_profile_or_env_hint(config, '--allow-write')}",
         )
 
 
 def _require_transport_write(config: SapConfig) -> None:
-    if not config.allow_transport:
+    _require_env_write_context(config, "transport")
+    if config.is_production:
         _gate(
             errors.TRANSPORT_DISABLED,
-            "Transport write operations are disabled. Re-run `configure` and "
-            "enable transport mode (answer 'y' to 'Enable transport write "
-            "operations?'), or use the --allow-transport flag during configure.",
+            f"Transport write operations are hard-refused on profile "
+            f"'{config.profile_name}' (environment=prd); neither the global "
+            f"nor the profile flag can override this. "
+            f"{_production_refusal_hint(config)}",
         )
+    if not config.allow_transport:
+        who = config.profile_name or "(environment variables)"
+        _gate(
+            errors.TRANSPORT_DISABLED,
+            f"Transport write operations are disabled for '{who}' "
+            f"(effective flag source: {config.transport_source}). "
+            f"{_profile_or_env_hint(config, '--allow-transport')}",
+        )
+
+
+def _require_env_write_context(config, kind: str = "write") -> None:
+    """Env-var/.env connections need SAP_ENVIRONMENT before any write.
+
+    Reads are unaffected: there is no profile name to infer the environment
+    from, so CI/container callers must declare the target explicitly.
+    """
+    if not getattr(config, "from_environment", False):
+        return
+    requested = (config.env_write_requested if kind == "write"
+                 else config.env_transport_requested)
+    if not requested:
+        return
+    if config.environment_source == "default":
+        # Configuration is missing (SAP_ENVIRONMENT), but this is also a
+        # non-retryable safety refusal: exit 3 with the CONFIG_MISSING code.
+        _gate(
+            errors.CONFIG_MISSING,
+            "SAP_ENVIRONMENT must be set explicitly when enabling writes via "
+            "environment variables (no profile context available to infer "
+            "from).",
+            exit_code=3,
+        )
+    if config.is_production:
+        code = errors.WRITE_DISABLED if kind == "write" else errors.TRANSPORT_DISABLED
+        _gate(code, "Writes are hard-refused when SAP_ENVIRONMENT=prd.")
 
 
 def _require_sql_write(config: dict) -> None:
@@ -252,10 +320,19 @@ def cli(profile, keystore, fmt, verbose):
 @click.option("--client",                 default=None, help="SAP client number (e.g. 100)")
 @click.option("--language",               default=None, help="Language code (default: EN)")
 @click.option("--no-verify-ssl",          is_flag=True, default=False, help="Disable SSL certificate verification")
-@click.option("--allow-write/--no-allow-write",         default=False, help="Enable source code write (write-source, activate); GLOBAL, applies to every profile")
-@click.option("--allow-transport/--no-allow-transport", default=False, help="Enable transport write operations (create-transport, release-transport); GLOBAL, applies to every profile")
+@click.option("--allow-write/--no-allow-write",         default=False, help="Enable source code write for THIS profile (preferred)")
+@click.option("--allow-transport/--no-allow-transport", default=False, help="Enable transport writes for THIS profile (preferred)")
+@click.option("--global-allow-write/--no-global-allow-write", default=None,
+              help="Write the LEGACY global fallback switch (applies only when the profile declares neither)")
+@click.option("--global-allow-transport/--no-global-allow-transport", default=None,
+              help="Write the LEGACY global transport fallback switch")
+@click.option("--environment", default=None,
+              type=click.Choice(["dev", "qas", "prd"]),
+              help="Logical environment (default: inferred from profile name; prd hard-refuses writes)")
 @click.option("--profile", default=None, help="Profile name to create or update (default: active profile, or 'default' on first run)")
-def configure(url, username, password, client, language, no_verify_ssl, allow_write, allow_transport, profile):
+def configure(url, username, password, client, language, no_verify_ssl,
+              allow_write, allow_transport, global_allow_write,
+              global_allow_transport, environment, profile):
     """Save SAP connection credentials for one environment profile.
 
     The saved profile becomes the active profile. Add more environments
@@ -282,6 +359,9 @@ def configure(url, username, password, client, language, no_verify_ssl, allow_wr
         # envelopes with tiered exits (never plain text). Discrimination is
         # by "any connection flag present", not TTY state.
         try:
+            # Profile-scoped is the default; --allow-write/--allow-transport
+            # write the profile section, the --global-* legacy flags the
+            # top-level fallback. Setting neither leaves existing values.
             save_config_from_flags(
                 url=url,
                 username=username,
@@ -292,6 +372,10 @@ def configure(url, username, password, client, language, no_verify_ssl, allow_wr
                 allow_write=allow_write,
                 allow_transport=allow_transport,
                 profile=profile,
+                environment=environment,
+                profile_scope=True,
+                global_write=global_allow_write,
+                global_transport=global_allow_transport,
             )
         except (ConfigError, ProfileNotFoundError, ValueError) as e:
             _emit_error(errors.classify(e))
@@ -314,8 +398,26 @@ def status():
     click.echo(f"Client:          {config.client}")
     click.echo(f"Language:        {config.language}")
     click.echo(f"SSL:             {'verify' if config.verify_ssl else 'skip (self-signed allowed)'}")
-    click.echo(f"Write mode:      {'ENABLED' if config.allow_write else 'DISABLED'} (global)")
-    click.echo(f"Transport write: {'ENABLED' if config.allow_transport else 'DISABLED'} (global)")
+    env_note = {
+        "inferred": " (inferred from profile name)",
+        "explicit": " (explicit)",
+        "default": "",
+    }.get(config.environment_source, "")
+    click.echo(f"Environment:     {config.environment}{env_note}")
+    legacy = " (legacy fallback)" if config.write_source == "global" else ""
+    legacy_t = " (legacy fallback)" if config.transport_source == "global" else ""
+    refused = config.write_source == "hard-refused"
+    refused_t = config.transport_source == "hard-refused"
+    click.echo(
+        "Write mode:      "
+        + ("HARD-REFUSED (environment=prd)" if refused
+           else f"{'ENABLED' if config.allow_write else 'DISABLED'} (source: {config.write_source}{legacy})")
+    )
+    click.echo(
+        "Transport write: "
+        + ("HARD-REFUSED (environment=prd)" if refused_t
+           else f"{'ENABLED' if config.allow_transport else 'DISABLED'} (source: {config.transport_source}{legacy_t})")
+    )
     click.echo(f"Config source:   {source}")
 
 
@@ -335,16 +437,16 @@ def profile_list():
         click.echo("No profiles configured. Run: sap-adt-cli configure")
         return
     allow_write, allow_transport = config_module.get_global_capabilities()
-    click.echo(f"{'':1} {'NAME':<16} {'CLIENT':<7} {'USERNAME':<16} URL")
+    click.echo(f"{'':1} {'NAME':<16} {'ENV':<5} {'CLIENT':<7} {'USERNAME':<16} URL")
     for p in profiles:
         marker = "*" if p["active"] else " "
         click.echo(
-            f"{marker} {p['name']:<16} {p['client']:<7} {p['username']:<16} {p['url']}"
+            f"{marker} {p['name']:<16} {p['environment']:<5} {p['client']:<7} {p['username']:<16} {p['url']}"
         )
     active = next((p["name"] for p in profiles if p["active"]), None)
     click.echo(f"\nActive profile: {active or '(none)'}")
     click.echo(
-        f"Global switches — write: {'ENABLED' if allow_write else 'DISABLED'}, "
+        f"Legacy global fallback switches — write: {'ENABLED' if allow_write else 'DISABLED'}, "
         f"transport write: {'ENABLED' if allow_transport else 'DISABLED'}"
     )
 
@@ -501,15 +603,9 @@ def run_unit_test_cmd(object_name, object_type, group, risk_level, duration, yes
     _require_config(config)
     if risk_level in ("dangerous", "critical"):
         # Executing code at these levels may modify business data: treat as
-        # a write operation, gated by allow_write and a risk-specific prompt.
+        # a write operation (profile-level prd refusal happens inside the
+        # shared gate), then show the risk-specific confirmation preview.
         _require_write(config)
-        profile = (config.profile_name or "").lower()
-        if "prd" in profile or "prod" in profile:
-            _gate(
-                errors.WRITE_DISABLED,
-                f"Refusing to run {risk_level}-level tests against production-like "
-                f"profile '{config.profile_name}'.",
-            )
         preview = [
             f"Action   : Run ABAP Unit tests ({risk_level} risk, {duration} duration)",
             f"Object   : {object_type.upper()} {object_name.upper()}",

@@ -32,6 +32,16 @@ class GateTier3Tests(unittest.TestCase):
             profile_name = "dev"
             allow_write = False
             allow_transport = False
+            environment = "dev"
+            environment_source = "inferred"
+            from_environment = False
+            write_source = "global"
+            transport_source = "global"
+            env_write_requested = False
+            env_transport_requested = False
+            @property
+            def is_production(self):
+                return self.environment == "prd"
 
         self.cfg = Cfg()
         self.tmp = tempfile.NamedTemporaryFile("w", suffix=".abap", delete=False)

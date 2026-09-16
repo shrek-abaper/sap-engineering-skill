@@ -74,6 +74,16 @@ class UnitCommandTests(unittest.TestCase):
             profile_name = "dev"
             allow_write = False
             allow_transport = False
+            environment = "dev"
+            environment_source = "inferred"
+            from_environment = False
+            write_source = "global"
+            transport_source = "global"
+            env_write_requested = False
+            env_transport_requested = False
+            @property
+            def is_production(self):
+                return self.environment == "prd"
 
         self.cfg = Cfg()
         self.payload = (FIXTURES / "unit.empty.xml").read_bytes()
@@ -118,13 +128,28 @@ class UnitCommandTests(unittest.TestCase):
         self.assertEqual(json.loads(r.output)["error"]["code"], "WRITE_DISABLED")
         no_http.assert_not_called()
 
-    def test_critical_against_prod_profile_refused_before_prompt(self):
+    def test_critical_against_prd_profile_refused_before_prompt(self):
+        # 9.1: refusal keys off the resolved environment, not the raw name.
         self.cfg.allow_write = True
         self.cfg.profile_name = "PRD-100"
+        self.cfg.environment = "prd"
         r = self._invoke("ZCL_X", "--risk-level", "critical", "--yes")
         self.assertEqual(r.exit_code, 3, r.output)
-        self.assertEqual(json.loads(r.output)["error"]["code"], "WRITE_DISABLED")
-        self.assertIn("production", json.loads(r.output)["error"]["message"])
+        env = json.loads(r.output)["error"]
+        self.assertEqual(env["code"], "WRITE_DISABLED")
+
+    def test_inferred_prod_hint_guides_self_service(self):
+        # Loose inference: a name containing 'prod' resolves to prd even when
+        # allow_write is on; the hint must tell the user how to override.
+        self.cfg.allow_write = True
+        self.cfg.profile_name = "reproduce"  # deliberately matches 'prod'
+        self.cfg.environment = "prd"
+        self.cfg.environment_source = "inferred"
+        r = self._invoke("ZCL_X", "--risk-level", "dangerous", "--yes")
+        self.assertEqual(r.exit_code, 3, r.output)
+        message = json.loads(r.output)["error"]["message"]
+        self.assertIn("inferred", message)
+        self.assertIn("--environment dev", message)
 
     def test_dangerous_requires_risk_text_in_confirmation(self):
         self.cfg.allow_write = True

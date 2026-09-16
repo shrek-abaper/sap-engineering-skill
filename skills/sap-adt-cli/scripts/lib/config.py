@@ -75,11 +75,29 @@ class SapConfig:
     # Name of the profile this connection was loaded from. None when the
     # connection comes from environment variables / .env rather than a profile.
     profile_name: Optional[str] = None
+    # Logical environment: dev | qas | prd.
+    environment: str = "dev"
+    # Where the environment value came from: "explicit" (profile/env),
+    # "inferred" (profile name substring) or "default".
+    environment_source: str = "default"
+    # True when the connection comes from SAP_* env vars / .env (no profile).
+    from_environment: bool = False
+    # Raw write intent on the env path, before prd hard-refusal forces the
+    # effective flag to False. None on the profile path.
+    env_write_requested: Optional[bool] = None
+    env_transport_requested: Optional[bool] = None
+    # Effective capability provenance for status reporting.
+    write_source: str = "global"        # profile | global | env | hard-refused
+    transport_source: str = "global"
 
     def base_url(self) -> str:
         from urllib.parse import urlparse
         parsed = urlparse(self.url.rstrip("/"))
         return f"{parsed.scheme}://{parsed.netloc}"
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment == "prd"
 
     def __repr__(self) -> str:
         # The highest-frequency real leak path is an exception traceback
@@ -102,6 +120,55 @@ _profile_override: Optional[str] = None
 def set_profile_override(name: Optional[str]) -> None:
     global _profile_override
     _profile_override = name or None
+
+
+VALID_ENVIRONMENTS = ("dev", "qas", "prd")
+
+
+def infer_environment(profile_name: Optional[str], explicit: Optional[str] = None,
+                      ) -> Tuple[str, str]:
+    """Return (environment, source). Explicit always beats inference.
+
+    Substring matching is deliberately loose: a false prd only blocks writes
+    (one explicit --environment fixes it), while a missed prd could open
+    production. 'reproduce' matching 'prod' is accepted on purpose. Only the
+    profile name is inspected, never the hostname.
+    """
+    if explicit:
+        env = explicit.lower()
+        if env not in VALID_ENVIRONMENTS:
+            raise ValueError(
+                f"Invalid environment '{explicit}'. Use dev, qas or prd."
+            )
+        return env, "explicit"
+    if profile_name:
+        low = profile_name.lower()
+        if "prd" in low or "prod" in low:
+            return "prd", "inferred"
+        if "qas" in low or "qa" in low:
+            return "qas", "inferred"
+    return "dev", "default"
+
+
+def effective_capabilities(section: dict, raw_global: dict, environment: str
+                           ) -> Tuple[bool, bool, str, str]:
+    """Merge profile-level flags with legacy global flags.
+
+    prd profiles are hard-refused regardless of any flag. A profile-level
+    declaration wins over the global fallback (which only applies when the
+    profile section does not declare the flag).
+    """
+    if environment == "prd":
+        return False, False, "hard-refused", "hard-refused"
+
+    def one(key: str) -> Tuple[bool, str]:
+        if key in section:
+            return bool(section[key]), "profile"
+        return bool(raw_global.get(key, False)), "global"
+
+    w, ws = one("allow_write")
+    t, ts = one("allow_transport")
+    return w, t, ws, ts
 
 
 def validate_profile_name(name: str) -> str:
@@ -339,6 +406,12 @@ def _config_from_section(
             f"`credentials set {name}` or re-run `configure --profile {name}`."
         )
     try:
+        environment, env_source = infer_environment(
+            name, section.get("environment")
+        )
+        allow_write, allow_transport, wsrc, tsrc = effective_capabilities(
+            section, raw, environment
+        )
         return SapConfig(
             url=section["url"],
             username=section["username"],
@@ -346,9 +419,13 @@ def _config_from_section(
             client=section["client"],
             language=section.get("language", "EN"),
             verify_ssl=section.get("verify_ssl", True),
-            allow_write=bool(raw.get("allow_write", False)),
-            allow_transport=bool(raw.get("allow_transport", False)),
+            allow_write=allow_write,
+            allow_transport=allow_transport,
             profile_name=name,
+            environment=environment,
+            environment_source=env_source,
+            write_source=wsrc,
+            transport_source=tsrc,
         )
     except KeyError as e:
         _fail(f"Profile '{name}' in {CONFIG_FILE} is missing required field {e}. Re-run `configure --profile {name}`.")
@@ -370,8 +447,22 @@ def load_config_with_source(profile: Optional[str] = None) -> Tuple[Optional[Sap
             "SAP_VERIFY_SSL",
             "SAP_ALLOW_WRITE",
             "SAP_ALLOW_TRANSPORT",
+            "SAP_ENVIRONMENT",
         ]
         selected = profile or _profile_override or os.getenv("SAP_PROFILE")
+        env_explicit = _env_value("SAP_ENVIRONMENT", dotenv)
+        environment, env_source = infer_environment(selected, env_explicit)
+        if env_explicit:
+            # SAP_ENVIRONMENT is explicit; inference used the provided value.
+            env_source = "explicit"
+        raw_write = _env_bool("SAP_ALLOW_WRITE", dotenv)
+        raw_transport = _env_bool("SAP_ALLOW_TRANSPORT", dotenv)
+        allow_write, allow_transport = raw_write, raw_transport
+        wsrc = tsrc = "env"
+        if environment == "prd":
+            # Same hard refusal as a prd profile; env cannot override it.
+            allow_write = allow_transport = False
+            wsrc = tsrc = "hard-refused"
         return SapConfig(
             url=url,
             username=username,
@@ -379,9 +470,16 @@ def load_config_with_source(profile: Optional[str] = None) -> Tuple[Optional[Sap
             client=client,
             language=_env_value("SAP_LANGUAGE", dotenv, "EN"),
             verify_ssl=_env_value("SAP_VERIFY_SSL", dotenv, "1") != "0",
-            allow_write=_env_bool("SAP_ALLOW_WRITE", dotenv),
-            allow_transport=_env_bool("SAP_ALLOW_TRANSPORT", dotenv),
+            allow_write=allow_write,
+            allow_transport=allow_transport,
             profile_name=selected,
+            environment=environment,
+            environment_source=env_source,
+            from_environment=True,
+            env_write_requested=raw_write,
+            env_transport_requested=raw_transport,
+            write_source=wsrc,
+            transport_source=tsrc,
         ), _env_source(source_keys, dotenv)
 
     raw = _read_raw()
@@ -422,6 +520,7 @@ def list_profiles() -> Optional[List[Dict[str, Any]]]:
     active = raw.get("active_profile")
     result = []
     for name, section in sorted((raw.get("profiles") or {}).items()):
+        env, env_src = infer_environment(name, section.get("environment"))
         result.append({
             "name": name,
             "active": name == active,
@@ -430,6 +529,8 @@ def list_profiles() -> Optional[List[Dict[str, Any]]]:
             "client": section.get("client", ""),
             "language": section.get("language", "EN"),
             "verify_ssl": section.get("verify_ssl", True),
+            "environment": env,
+            "environment_source": env_src,
         })
     return result
 
@@ -448,30 +549,41 @@ def save_profile(
     client: str,
     language: str = "EN",
     verify_ssl: bool = True,
-    allow_write: bool = False,
-    allow_transport: bool = False,
+    allow_write: Optional[bool] = None,
+    allow_transport: Optional[bool] = None,
+    environment: Optional[str] = None,
 ) -> SapConfig:
     """Create/update one profile and make it the active profile.
 
-    Non-secret fields go into config.json (human-reviewable); the password
-    goes to the selected keystore. A blank password leaves an existing
-    keystore entry untouched (interactive re-edit of other fields).
+    Non-secret fields (including per-profile capability flags and
+    environment) go into the profile section; the password goes to the
+    keystore. ``None`` capability flags leave the existing section value
+    untouched (never written to the legacy global keys here).
     """
     validate_profile_name(name)
     raw = _read_raw() or {}
     profiles = raw.setdefault("profiles", {})
+    existing = profiles.get(name) or {}
 
+    env, _ = infer_environment(name, environment or existing.get("environment"))
     section = {
         "url": url.rstrip("/"),
         "username": username,
         "client": client,
-        "language": language or "EN",
+        "language": language or existing.get("language") or "EN",
         "verify_ssl": verify_ssl,
+        "environment": env,
     }
+    # Carry over unspecified profile-level flags rather than resetting them.
+    for key, val in (("allow_write", allow_write),
+                     ("allow_transport", allow_transport)):
+        if val is None:
+            if key in existing:
+                section[key] = existing[key]
+        else:
+            section[key] = bool(val)
     profiles[name] = section
     raw["active_profile"] = name
-    raw["allow_write"] = allow_write
-    raw["allow_transport"] = allow_transport
 
     effective_password = ""
     if password:
@@ -482,6 +594,7 @@ def save_profile(
 
     _write_raw(raw)
 
+    w, t, wsrc, tsrc = effective_capabilities(section, raw, env)
     return SapConfig(
         url=section["url"],
         username=username,
@@ -489,10 +602,21 @@ def save_profile(
         client=client,
         language=section["language"],
         verify_ssl=verify_ssl,
-        allow_write=allow_write,
-        allow_transport=allow_transport,
+        allow_write=w,
+        allow_transport=t,
         profile_name=name,
+        environment=env,
+        write_source=wsrc,
+        transport_source=tsrc,
     )
+
+
+def set_global_capabilities(allow_write: bool, allow_transport: bool) -> None:
+    """Write the LEGACY global fallback switches (top-level config keys)."""
+    raw = _read_raw() or {}
+    raw["allow_write"] = bool(allow_write)
+    raw["allow_transport"] = bool(allow_transport)
+    _write_raw(raw)
 
 
 def set_active_profile(name: str) -> None:
@@ -534,6 +658,10 @@ def save_config_from_flags(
     allow_write: bool = False,
     allow_transport: bool = False,
     profile: Optional[str] = None,
+    environment: Optional[str] = None,
+    profile_scope: bool = False,
+    global_write: Optional[bool] = None,
+    global_transport: Optional[bool] = None,
 ) -> SapConfig:
     raw = _read_raw() or {}
     name = profile or os.getenv("SAP_PROFILE") or raw.get("active_profile") or DEFAULT_PROFILE_NAME
@@ -565,6 +693,18 @@ def save_config_from_flags(
             f"Missing required fields for profile '{name}': {', '.join(missing)}"
         )
 
+    if profile_scope:
+        # Capability flags are written to the profile section (default).
+        # --allow-write=False is meaningful (explicit disable), but the
+        # Click default False on an unused flag must not wipe an existing
+        # value: callers wanting "leave as-is" pass None. save_config_from_flags
+        # is only called with connection flags present, so explicit False is
+        # treated as a declared disable here.
+        w, t = allow_write, allow_transport
+    else:
+        # Legacy: top-level fallback switches; profile section inherits.
+        w, t = None, None
+
     config = save_profile(
         name=name,
         url=resolved_url,
@@ -573,9 +713,21 @@ def save_config_from_flags(
         client=resolved_client,
         language=resolved_language,
         verify_ssl=verify_ssl,
-        allow_write=allow_write,
-        allow_transport=allow_transport,
+        allow_write=w,
+        allow_transport=t,
+        environment=environment,
     )
+    if not profile_scope:
+        # Non-scoped call (legacy wizard/flag path): write top-level keys.
+        set_global_capabilities(allow_write, allow_transport)
+    elif global_write is not None or global_transport is not None:
+        cur_raw = _read_raw() or {}
+        set_global_capabilities(
+            global_write if global_write is not None
+            else bool(cur_raw.get("allow_write", False)),
+            global_transport if global_transport is not None
+            else bool(cur_raw.get("allow_transport", False)),
+        )
     print(f"Profile '{name}' saved to {CONFIG_FILE} (active profile: {name})")
     print("Password stored in the keystore; run `credentials doctor` to see which backend is in use.")
     return config

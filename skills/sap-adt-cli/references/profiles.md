@@ -23,6 +23,22 @@ Profile selection order (highest first): `--profile` > `SAP_PROFILE` >
 `active_profile` (`profile use`). With exactly one profile it is used even
 when `active_profile` is unset.
 
+## Per-profile environment and capability flags
+
+Each profile section carries `environment` (`dev|qas|prd`) and its own
+`allow_write`/`allow_transport` flags. `configure --environment N` and
+`configure --allow-write/--allow-transport` write the **profile section**
+(the preferred scope). `configure --global-allow-write/--global-allow-transport`
+writes the legacy top-level fallback, used only when the profile declares
+neither flag. Effective value resolution: `environment=prd` → always refused;
+else profile value if declared; else legacy global.
+
+- Environment defaults to an inference from the profile name (`prd`/`prod`
+  anywhere → `prd`, loose substring match by design; `qas`/`qa` → `qas`).
+  Override with `--environment`. `status` shows the resolved value and source.
+- A prd profile hard-refuses all write/transport operations regardless of
+  any flag; the env-var path requires explicit `SAP_ENVIRONMENT` to write.
+
 ## Agent rules
 
 - When the user names an environment ("在 QAS 看一下 / check in PRD"), run

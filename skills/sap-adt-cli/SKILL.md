@@ -100,7 +100,7 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 > **Unit risk levels**: `dangerous`/`critical` tests **execute ABAP that may modify
 > business data** — they require `allow_write`, show a risk-level + object +
 > data-change warning in the `[y/N]` preview, and are hard-refused (no prompt)
-> on profiles whose name contains `prd`/`prod`. Empty `runResult` is
+> on `environment=prd`. Empty `runResult` is
 > `ok:true, no_tests_found:true, total:0, exit 0`; an alert-only run (defective
 > test class) also has `no_tests_found:true` with warning findings.
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
@@ -112,18 +112,24 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 
 ## Safety gates (do not weaken)
 
-- Two independent capability flags (global, in `configure`): `allow_write` for
-  write-source/activate; `allow_transport` for create/release-transport.
-  Off → exit 3 before any HTTP call.
-- Every write/create/release shows a preview and requires a fresh `[y/N]`.
-  A confirmation is used for that one operation only — never cached or reused,
-  even within the same conversation. Ask again for the next operation.
+- Capabilities are **profile-scoped** (`configure --allow-write/--allow-transport`
+  write the profile section). The top-level `--global-allow-*` switches are a
+  legacy fallback used only when the profile declares neither. Agents should
+  always use the profile scope.
+- Each profile has `environment: dev|qas|prd` (`--environment`; default inferred
+  loosely from the name: contains `prd`/`prod`→prd, `qas`/`qa`→qas, else dev;
+  `reproduce` matches `prod` by design — a false prd only blocks, use `--environment dev`).
+- **environment=prd hard-refuses ALL writes** (write/activate/create/release,
+  dangerous/critical Unit): no prompt, no flag override → exit 3; inferred-prd
+  hints explain how to override via `--environment dev`.
+- Off flags → exit 3 before any HTTP call. Every write/create/release then
+  shows a preview and requires a fresh `[y/N]`, used for one operation only,
+  never cached/reused even within the conversation.
 - Non-interactive stdin without `--yes` → `CONFIRM_REQUIRED` (exit 3);
-  answering N → `USER_ABORTED` (exit 3; the operation did not happen).
-- Never pass `--yes` on the user's behalf from a prior confirmation; only with
-  explicit out-of-band authorization (trusted automation).
-- `run-sql` blocks INSERT/UPDATE/DELETE/MERGE/MODIFY/TRUNCATE before sending
-  anything (`DML_REJECTED`, exit 3); SELECT only.
+  answering N → `USER_ABORTED` (exit 3). Never add `--yes` on the user's behalf.
+- **Env/.env writes**: `SAP_ALLOW_WRITE/TRANSPORT=true` requires `SAP_ENVIRONMENT`
+  explicitly (nothing to infer from), else `CONFIG_MISSING` exit 3; `…=prd` refuses.
+- `run-sql` blocks non-SELECT DML before sending (`DML_REJECTED`, exit 3).
 - write-source always unlocks in `finally`; release-transport cannot be undone.
 
 ## References (load on demand)
