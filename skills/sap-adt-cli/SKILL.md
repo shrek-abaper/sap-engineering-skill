@@ -94,6 +94,14 @@ distinguish by content, not code). `OBJECT_NOT_FOUND` requires a 404
 | `get-package <N>` | package contents | objects |
 | `where-used <TYPE> <N> [--group G] [--max-results N]` | referencing objects | objects |
 | `syntax-check <TYPE> <N> [--group G]` | findings; hard errors exit 1, warnings exit 0 | findings |
+| `run-unit-test <N> [--type T] [--risk-level harmless\|dangerous\|critical] [--duration short\|medium\|long] [--fail-on error\|warning\|info\|never]` | ABAP Unit; harmless default (read-only); meta `no_tests_found` distinguishes "no tests" (total 0) from "all passed" | findings |
+
+> **Unit risk levels**: `dangerous`/`critical` tests **execute ABAP that may modify
+> business data** — they require `allow_write`, show a risk-level + object +
+> data-change warning in the `[y/N]` preview, and are hard-refused (no prompt)
+> on profiles whose name contains `prd`/`prod`. Empty `runResult` is
+> `ok:true, no_tests_found:true, total:0, exit 0`; an alert-only run (defective
+> test class) also has `no_tests_found:true` with warning findings.
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
 | `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | lock→PUT→unlock | gated |

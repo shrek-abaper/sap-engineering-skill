@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC: structure inferred from abap-adt-api src/api/unittest.ts,
+     NOT a real SAP capture. Verify against the first real response with
+     executed testMethod nodes. -->
+<aunit:runResult xmlns:aunit="http://www.sap.com/adt/aunit">
+ <program xmlns:adtcore="http://www.sap.com/adt/core"
+   adtcore:uri="/sap/bc/adt/oo/classes/zcl_demo" adtcore:type="CLAS/OC"
+   adtcore:name="ZCL_DEMO" uriType="semantic">
+  <testClasses>
+   <testClass adtcore:uri="/sap/bc/adt/oo/classes/zcl_demo#testclass=TESTS"
+     adtcore:type="CLAS/OL" adtcore:name="TESTS" uriType="semantic"
+     navigationUri="/sap/bc/adt/oo/classes/zcl_demo/includes/testclasses#type=CLAS%2FOCL;name=TESTS"
+     durationCategory="short" riskLevel="harmless">
+    <testMethods>
+     <testMethod adtcore:uri="/sap/bc/adt/oo/classes/zcl_demo/includes/testclasses#type=CLAS%2FOCL;name=LTC_DEMO%23M1"
+       adtcore:type="CLAS/OM" adtcore:name="SHOULD_ADD" uriType="semantic"
+       executionTime="42" unit="passed"
+       navigationUri="/sap/bc/adt/oo/classes/zcl_demo/includes/testclasses#start=12,1"/>
+     <testMethod adtcore:uri="/sap/bc/adt/oo/classes/zcl_demo/includes/testclasses#type=CLAS%2FOCL;name=LTC_DEMO%23M2"
+       adtcore:type="CLAS/OM" adtcore:name="SHOULD_FAIL" uriType="semantic"
+       executionTime="7" unit="failed">
+      <alerts>
+       <alert kind="failedAssertion" severity="critical">
+        <title>Assertion failed</title>
+        <details>
+         <detail text="Expected: 2 but was: 3"/>
+        </details>
+        <stack>
+         <stackEntry adtcore:uri="/sap/bc/adt/oo/classes/zcl_demo/source/main#start=18,1"
+           adtcore:type="CLAS/OC" adtcore:name="ZCL_DEMO"
+           adtcore:description="Include: ZCL_DEMO===========CP Line: 18"/>
+        </stack>
+       </alert>
+      </alerts>
+     </testMethod>
+     <testMethod adtcore:uri="/sap/bc/adt/oo/classes/zcl_demo/includes/testclasses#type=CLAS%2FOCL;name=LTC_DEMO%23M3"
+       adtcore:type="CLAS/OM" adtcore:name="SKIPPED_CASE" uriType="semantic"
+       executionTime="0" unit="skipped"/>
+    </testMethods>
+   </testClass>
+  </testClasses>
+ </program>
+</aunit:runResult>

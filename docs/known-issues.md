@@ -66,6 +66,31 @@ non-existent class returns 200 `numberOfResults=0` (normalized to
 fragment; search-object/get-package never emit them. The committed fixture
 is a trimmed SAP-only subset (the real tree contains customer Z/Y paths).
 
+## ABAP Unit: testMethod path unverified (synthetic fixture)
+
+`run-unit-test` is implemented against the checkrun/abap-adt-api structure,
+but on the capture S/4HANA DEV system no healthy, executable test class was
+found via `where-used CL_ABAP_UNIT_ASSERT` (30 referencing classes +
+source-scanned candidates all return an empty 99-byte shell; one local class
+returns an alert-only response). Therefore:
+
+- **verified on a real system**: empty shell → `no_tests_found:true,total:0`;
+  alert-only (defective test class) → warning finding with
+  `source_severity`, still `no_tests_found:true`; risk-level gating and
+  explicit config `v4` content type (response `…result.v2+xml`);
+- **NOT verified**: the `testMethod` pass/fail/skipped counts,
+  `executionTime` duration, failed-assertion text extraction and the
+  `unit` status attribute values. These are exercised only by
+  `tests/fixtures/synthetic/unit.methods.synthetic.xml`, inferred from
+  abap-adt-api `src/api/unittest.ts`.
+
+Verification trigger: when the first REAL response containing `testMethod`
+nodes arrives (recommended: a QAS with self-developed unit tests, or any
+system with complete SABP_UNIT sample content), every field path in the
+synthetic fixture MUST be checked against it; on mismatch, change the
+parser/fixture to match the real payload. Unexpected node names are
+surfaced in `meta.unparsed_nodes` rather than ignored.
+
 ## Other open items
 
 - Non-empty `list-transports` tree: only an empty-tree fixture exists (the

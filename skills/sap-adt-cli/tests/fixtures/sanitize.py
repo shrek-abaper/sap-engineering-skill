@@ -35,6 +35,9 @@ TR_RE = re.compile(r"\b[A-Z][A-Z0-9]{2}K[0-9]{7}\b")
 
 # Explicit allow-list: raw file -> committed fixture name.
 # Anything not listed stays in raw/ and is never copied.
+# The synthetic/ directory (hand-built *.synthetic.xml fixtures) is NEVER
+# mapped: it is inferred structure, not a real capture, and must stay out
+# of both sanitization and the golden/byte-level regression set.
 FILE_MAP = {
     # source / DDL
     "get-table.VBAK.xml": "get-table.VBAK.s4hana.xml",
@@ -61,6 +64,9 @@ FILE_MAP = {
     "syntax-check.class.raw.xml": "syntax-check.CL_GUI.clean.xml",
     "syntax-check.warnings.raw.xml": "syntax-check.SAPMV45A.warnings.xml",
     "syntax-check.clean.xml.stderr": "error.404-syntaxcheck.txt",
+    # ABAP Unit real captures: empty shell + alert-only (no testMethod)
+    "unit.empty.raw.xml": "unit.empty.xml",
+    "unit.zcl_ci_test_ddic_naming.raw.xml": "unit.alert-only.xml",
     # where-used new usageReferences API (hits are trimmed SAP-only nodes)
     "where-used.hits.raw.xml": "where-used.CL_GUI_FRONTEND_SERVICES.xml",
     "where-used.empty.raw.xml": "where-used.empty.xml",

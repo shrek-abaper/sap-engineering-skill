@@ -480,6 +480,65 @@ def credentials_doctor(coverage):
     click.echo(credentials_reports.doctor_text())
 
 
+@cli.command("run-unit-test")
+@click.argument("object_name")
+@click.option("--type", "object_type", default="class",
+              type=click.Choice(["program", "class", "interface", "include", "function"]),
+              help="Object type containing the tests (default: class)")
+@click.option("--group", default=None, help="Function group (required for --type function)")
+@click.option("--risk-level", default="harmless",
+              type=click.Choice(["harmless", "dangerous", "critical"]),
+              help="harmless is default and read-only; dangerous/critical may modify data and require allow_write")
+@click.option("--duration", default="short",
+              type=click.Choice(["short", "medium", "long"]))
+@click.option("--yes", is_flag=True, default=False,
+              help="Skip confirmation for dangerous/critical (trusted automation only)")
+@click.option("--fail-on", default="error",
+              type=click.Choice(["error", "warning", "info", "never"]))
+def run_unit_test_cmd(object_name, object_type, group, risk_level, duration, yes, fail_on):
+    """Run ABAP Unit tests for a class/program/include (read-only at harmless)."""
+    config = _load_config()
+    _require_config(config)
+    if risk_level in ("dangerous", "critical"):
+        # Executing code at these levels may modify business data: treat as
+        # a write operation, gated by allow_write and a risk-specific prompt.
+        _require_write(config)
+        profile = (config.profile_name or "").lower()
+        if "prd" in profile or "prod" in profile:
+            _gate(
+                errors.WRITE_DISABLED,
+                f"Refusing to run {risk_level}-level tests against production-like "
+                f"profile '{config.profile_name}'.",
+            )
+        preview = [
+            f"Action   : Run ABAP Unit tests ({risk_level} risk, {duration} duration)",
+            f"Object   : {object_type.upper()} {object_name.upper()}",
+            f"WARNING  : {risk_level}-level tests may MODIFY BUSINESS DATA on this system.",
+        ]
+        _confirm_change(preview, yes=yes)
+
+    result = handlers.run_unit_test(
+        object_type, object_name, group=group,
+        risk_level=risk_level, duration=duration,
+    )
+    if result.is_error:
+        _abort_on_error(result)
+    click.echo(output.render(result, output.get_format(),
+                             command="run-unit-test", profile=_profile_name()))
+    _fail_on_findings(result, fail_on)
+
+
+def _fail_on_findings(result, threshold: str) -> None:
+    if threshold == "never":
+        return
+    levels = {"error": {"error"}, "warning": {"error", "warning"},
+              "info": {"error", "warning", "info"}}
+    found = [f for f in (result.data or {}).get("findings", [])
+             if f.get("severity") in levels[threshold]]
+    if found:
+        sys.exit(1)
+
+
 @cli.command("discovery")
 @click.option("--emit-markdown", "emit_markdown", default=None,
               type=click.Path(writable=True, dir_okay=False),

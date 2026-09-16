@@ -248,6 +248,106 @@ def coverage() -> AdtResult:
     )
 
 
+AUNIT_VERSIONS = ("v4", "v3", "v2", "v1")
+
+
+def _unit_uri(object_type: str, object_name: str, group: Optional[str]) -> str:
+    """Semantic, lower-case object URI for AUnit (class tested directly)."""
+    t = object_type.lower()
+    name = (object_name or "").lower()
+    if t == "class":
+        return f"/sap/bc/adt/oo/classes/{_enc(name)}"
+    if t == "interface":
+        return f"/sap/bc/adt/oo/interfaces/{_enc(name)}"
+    if t == "include":
+        return f"/sap/bc/adt/programs/includes/{_enc(name)}"
+    if t == "program":
+        return f"/sap/bc/adt/programs/programs/{_enc(name)}"
+    if t == "function":
+        if not group:
+            raise ValueError("--group is required when OBJECT_TYPE is 'function'")
+        return f"/sap/bc/adt/functions/groups/{_enc(group.lower())}/fmodules/{_enc(name)}"
+    raise ValueError(
+        f"Unsupported type: {object_type!r}. "
+        "program / class / interface / include / function"
+    )
+
+
+def _unit_body(uri: str, *, harmless: bool, dangerous: bool, critical: bool,
+               duration: str) -> bytes:
+    return f'''<?xml version="1.0" encoding="UTF-8"?>
+<aunit:runConfiguration xmlns:aunit="http://www.sap.com/adt/aunit">
+<options>
+<uriType value="semantic"/>
+<testDeterminationStrategy sameProgram="true" assignedTests="false"/>
+<testRiskLevels harmless="{str(harmless).lower()}" dangerous="{str(dangerous).lower()}" critical="{str(critical).lower()}"/>
+<testDurations short="{str(duration=='short').lower()}" medium="{str(duration=='medium').lower()}" long="{str(duration=='long').lower()}"/>
+<withNavigationUri enabled="true"/>
+</options>
+<adtcore:objectSets xmlns:adtcore="http://www.sap.com/adt/core">
+<objectSet kind="inclusive"><adtcore:objectReferences>
+<adtcore:objectReference adtcore:uri="{uri}"/>
+</adtcore:objectReferences></objectSet>
+</adtcore:objectSets>
+</aunit:runConfiguration>'''.encode("utf-8")
+
+
+AUNIT_CONFIG_V4 = "application/vnd.sap.adt.abapunit.testruns.config.v4+xml"
+AUNIT_ACCEPT = (
+    "application/vnd.sap.adt.abapunit.testruns.result.v2+xml, application/*"
+)
+
+
+def run_unit_test(object_type: str, object_name: str, group: Optional[str] = None,
+                  risk_level: str = "harmless", duration: str = "short") -> AdtResult:
+    if risk_level not in ("harmless", "dangerous", "critical"):
+        return _err(ValueError(
+            "risk-level must be harmless, dangerous or critical"
+        ))
+    if duration not in ("short", "medium", "long"):
+        return _err(ValueError("duration must be short, medium or long"))
+    try:
+        uri = _unit_uri(object_type, object_name, group)
+        risks = {
+            "harmless": (True, False, False),
+            "dangerous": (False, True, False),
+            "critical": (False, False, True),
+        }[risk_level]
+        body = _unit_body(uri, harmless=risks[0], dangerous=risks[1],
+                          critical=risks[2], duration=duration)
+        url = f"{_base()}/sap/bc/adt/abapunit/testruns"
+        config_version = "v4"
+        fallback = False
+        try:
+            resp = make_adt_request(
+                url, method="POST", data=body, timeout=300,
+                extra_headers={"Content-Type": AUNIT_CONFIG_V4,
+                               "Accept": AUNIT_ACCEPT},
+            )
+        except AdtHttpError as e:
+            if e.status not in (400, 406, 415):
+                raise
+            resp = make_adt_request(
+                url, method="POST", data=body, timeout=300,
+                extra_headers={"Content-Type": "application/*",
+                               "Accept": "application/*"},
+            )
+            config_version = "application/*"
+            fallback = True
+        parsed = parse_findings.parse_unit(resp.content)
+        meta = parsed.pop("_meta")
+        meta["risk_level"] = risk_level
+        meta["config_version"] = config_version
+        if fallback:
+            meta["config_version_fallback"] = True
+        return _structured("findings", parsed, _obj(object_type, object_name),
+                           raw=resp.text, meta=meta)
+    except ValueError as e:
+        return _err(e)
+    except Exception as e:
+        return _err(e)
+
+
 def get_object_uri(object_type: str, object_name: str, group: Optional[str] = None) -> str:
     t = object_type.lower()
     if t == "program":
