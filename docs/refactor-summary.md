@@ -24,7 +24,7 @@ DEV system with read-only calls and an offline golden test suite.
 Tests: 232 at batch 5 (148 legacy + new). CI also runs
 `python tests/check_contract.py`.
 
-## Six verified ADT protocol facts (not in SAP's public documentation)
+## Eleven verified ADT protocol facts (not in SAP's public documentation)
 
 Capture system: S/4HANA 2021 / SAP_BASIS 7.56, client 400.
 Canonical copy: `skills/sap-adt-cli/references/adt_api.md` (with dated
@@ -83,6 +83,53 @@ old→new table). These could only be learned by probing a live system.
    dominated by the fixed 2 s interval, not the server.** Requests with a
    pre-release ATC check or populated objects can take far longer, hence
    the 120 s timeout (60 polls); that long path is not live-verified.
+8. **Object lock (enqueue)** — the documented `?method=lock` form is
+   rejected: no content type → 400 `contentTypeMissing`, `application/xml`
+   → 415; the correct call is `POST {object}?_action=LOCK&accessMode=MODIFY`
+   with `X-sap-adt-sessiontype: stateful` and
+   `Accept: application/*,application/vnd.sap.as+xml;charset=UTF-8;dataname=com.sap.adt.lock.result`,
+   no body; handle in ASX `DATA/LOCK_HANDLE`. Already-held locks return 403
+   `ExceptionResourceNoAccess` "… currently editing …" (classify as
+   LOCKED_BY_OTHER, not AUTH_FAILED). 2026-09-16.
+9. **Source PUT** — the handle is a **query** parameter
+   (`?lockHandle=<handle>`, transport `?corrNr=`), not the
+   `X-sap-adt-lock-handle` header / `sap-cts-request` pair the old code
+   sent. 2026-09-16.
+10. **Unlock / cross-process semantics** — `POST {object}?_action=UNLOCK`
+    with `lockHandle` query. A 200 empty body from a foreign stateful
+    context is a **silent no-op** (next LOCK still 403); release is real
+    only inside the owning stateful session (same-process `finally` path
+    confirmed by independent fresh-process re-lock 200, 2026-09-17) or when
+    a new process replays the original cookie jar. Observed Basic-auth
+    cookies: `SAP_SESSIONID_ECD_400`, `sap-contextid`, `sap-usercontext`
+    (no MYSAPSSO2); orphaned enqueues also vanish on server context
+    timeout. 2026-09-16.
+11. **Activation** — bare `POST /activation` → 400 "Parameter method could
+    not be found"; it requires `?method=activate&preauditRequested=true`.
+    No lock/shared session is needed: a separate process after unlock
+    activates fine. 200 empty is accepted-not-completed; confirm via
+    inactiveobjects / `adtcore:version` readback. 2026-09-16.
+
+## Methodology lesson: 287 offline tests green, write path 4-for-4 wrong
+
+On 2026-09-16 the first ever real write-source/activate verification
+showed all four write-side protocol calls wrong (facts 8–11), while all
+287 offline tests stayed green. Reason: the tests mock at the
+`make_adt_request` seam, and the protocol mistakes live **below** that
+seam — the mock accepts whatever URL/headers/params the handler invents.
+Offline tests structurally cannot detect this class of error.
+
+This is the same blind-spot class as `doctor --coverage`: "covered"
+(resource root present / unit tests pass) is not "works". Rules taken
+from this:
+
+- write-side command correctness can only be established on a real system,
+  like the read-side DEV fixtures;
+- never treat a write-side 2xx as completion — always add the independent
+  readback (release/activate/unlock, see the top rule in
+  `skills/sap-adt-cli/references/adt_api.md`);
+- when a write path has never been live-verified, say so explicitly
+  rather than implying it works.
 
 ## Coverage matrix limitations (doctor --coverage)
 

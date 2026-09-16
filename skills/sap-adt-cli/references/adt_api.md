@@ -3,6 +3,24 @@
 SAP ABAP Development Tools (ADT) exposes a REST API under `/sap/bc/adt/`.
 Authentication is HTTP Basic Auth with the `X-SAP-Client` header for client selection.
 
+## Write-side rule: 2xx means "accepted", never "completed"
+
+> ADT write-side endpoints generally confirm only that the **request was
+> accepted**. An HTTP 2xx response is never, by itself, evidence that the
+> operation finished — an independent readback is required. Three measured
+> cases (S/4HANA 2021 / Basis 7.56):
+>
+> 1. **release** — `newreleasejobs` 200/2xx must be followed by `tm:status`
+>    readback (D vs R);
+> 2. **activate** — POST 200 with an empty body must be followed by checking
+>    `/activation/inactiveobjects` / `adtcore:version="active"`; a 200 with
+>    failure messages in the body means the activation failed;
+> 3. **unlock** — `?_action=UNLOCK` returns **200 with an empty body even when
+>    it released nothing** (silent no-op from a foreign stateful context);
+>    only a subsequent independent `_action=LOCK` (200 vs 403) proves the
+>    enqueue is gone. The object resource's `program:lockedByEditor="false"`
+>    is per-session state, NOT proof that SM12 is empty.
+
 ## Authentication
 
 Every request requires:
@@ -36,6 +54,11 @@ real DEV system (old value → new value; fixtures under `tests/fixtures/`):
 | 4 | Data preview (run-sql) | GET `freestyle?sqlCommand=…` → 405 | POST `freestyle?rowNumber=N`, `Content-Type: text/plain; charset=utf-8`, raw SQL body. **Accept must be `vnd.sap.adt.datapreview.table.v1+xml` — `application/xml` returns 406.** GET kept only as a 405 fallback. The `rowNumber` parameter is the hard row cap and overrides an SQL `UP TO N ROWS` clause (verified 2026-09-16) | 2026-09-16 |
 | 5 | Where-used | GET `/informationsystem/whereused?uri=<full URL>` → 405 | POST `/informationsystem/usageReferences?uri=<RELATIVE lower-case object URI>`; CT and Accept both `application/*`; body `usageReferenceRequest` with empty `<affectedObjects/>`; response `…usagereferences.result.v1+xml` (`referencedObject/adtObject`, optional `#start=` fragment). Discovery declares no `app:accept` for this collection, so `application/*` is the only workable value today — re-probe after a Basis upgrade before narrowing | 2026-09-16 |
 | 6 | Package contents | Parser qualified elements as `{http://www.sap.com/abapxml}…` → always `[]` on 7.56 | Response declares the namespace only on the `asx:` prefix; payload elements (`SEU_ADT_REPOSITORY_OBJ_NODE/OBJECT_*`) have **no** namespace — match by local name | 2026-09-15 |
+| 7 | Transport release | Legacy `POST /cts/transports/{TR}?action=release` (no readback) | `POST /cts/transportrequests/{TR}/newreleasejobs` (Accept `application/*`) **+ readback** `GET /cts/transportrequests/{TR}` (`tm:status` D/R); 2xx is not completion | 2026-09-16 |
+| 8 | Lock (enqueue) | `POST {object}?method=lock` with only `X-sap-adt-sessiontype: stateful` → **400** `contentTypeMissing`; adding `Content-Type: application/xml` → **415** (only `…programs.programs.v2+xml` accepted); vendor type + XML body → **400** `Enter a title` (treated as create) | `POST {object}?_action=LOCK&accessMode=MODIFY`, stateful header, `Accept: application/*,application/vnd.sap.as+xml;charset=UTF-8;dataname=com.sap.adt.lock.result`, **no body**; 200 ASX with handle at `asx:values/DATA/LOCK_HANDLE` | 2026-09-16 |
+| 9 | Source PUT | Handle in `X-sap-adt-lock-handle` **header**; chosen transport as `?sap-cts-request=` (this shape never worked live) | `PUT {object}/source/main?lockHandle=<handle>` plus, for a chosen request, `&corrNr=<TRKORR>`; `Content-Type: text/plain; charset=utf-8`; 200 empty | 2026-09-16 |
+| 10 | Unlock (dequeue) | `POST {object}?method=unlock` with the handle header (never worked live) | `POST {object}?_action=UNLOCK&lockHandle=<urlencoded handle>`. **200 empty is not proof of release** (see write-side rule): cross-process without the original stateful cookie = silent no-op (next LOCK still 403); measured real only inside the owning stateful session (same-process `finally` path confirmed by an independent fresh-process re-lock 200) or cross-process replaying the original cookie jar | 2026-09-16/17 |
+| 11 | Activation | Bare `POST /activation` (no parameters) → **400** `ExceptionParameterNotFound` "Parameter method could not be found" | `POST /sap/bc/adt/activation?method=activate&preauditRequested=true` with the same `objectReferences` body; success verified by readback (`/activation/inactiveobjects`, `adtcore:version`), not by 200 alone | 2026-09-16 |
 
 Also verified: `/ddic/tables/{n}/source/main` and
 `/ddic/structures/{n}/source/main` return CDS-style DDL
@@ -61,52 +84,103 @@ Also verified: `/ddic/tables/{n}/source/main` and
 
 Object names must be URL-encoded. Responses are plain text (ABAP source) or XML.
 
-## Write Source — Lock / PUT / Unlock
+## Write Source — Lock / PUT / Unlock (verified 2026-09-16, Basis 7.56)
 
-Three-step flow; unlock must always run (use `finally`).
+Stateful three-step flow inside ONE stateful session; unlock must always run
+(use `finally`). The stateful context is selected by
+`X-sap-adt-sessiontype: stateful`; the cookies set by the server then
+accompany every request of the session. Observed under HTTP Basic auth on
+the capture system: `SAP_SESSIONID_ECD_400`, `sap-contextid`,
+`sap-usercontext` — **no `MYSAPSSO2`**.
 
 ### 1. Lock
 
 ```http
-POST /sap/bc/adt/{object_uri}?method=lock
+POST /sap/bc/adt/{object_uri}?_action=LOCK&accessMode=MODIFY
 X-sap-adt-sessiontype: stateful
-→ Response header: com.sap.adt.lock.handle: <handle>
+Accept: application/*,application/vnd.sap.as+xml;charset=UTF-8;dataname=com.sap.adt.lock.result
 ```
 
-If the header is absent, fall back to parsing `<handle>` or `<lockHandle>` from the XML response body.
+No request body. Response 200 is ABAP-serialized XML; the lock handle is the
+text of `asx:abap/asx:values/DATA/LOCK_HANDLE` (sibling fields `CORRNR`,
+`CORRUSER`, `CORRTEXT`, `IS_LOCAL`, `SCOPE_MESSAGES`). An existing enqueue
+comes back as **403 `ExceptionResourceNoAccess`** "User … is currently
+editing …".
 
 ### 2. Write (PUT)
 
 ```http
-PUT /sap/bc/adt/{object_uri}/source/main
+PUT /sap/bc/adt/{object_uri}/source/main?lockHandle=<handle>
 Content-Type: text/plain; charset=utf-8
-X-sap-adt-lock-handle: <handle>
+X-sap-adt-sessiontype: stateful
 
-[optional] ?sap-cts-request=<TRKORR>    ← assign to specific transport
+# optional transport assignment: append &corrNr=<TRKORR>
 ```
 
-Body: plain text ABAP source.
+Body: plain text ABAP source. 200 with empty body. The handle goes in the
+**query string**, not a header.
 
 ### 3. Unlock
 
 ```http
-POST /sap/bc/adt/{object_uri}?method=unlock
-X-sap-adt-lock-handle: <handle>
+POST /sap/bc/adt/{object_uri}?_action=UNLOCK&lockHandle=<urlencoded handle>
+X-sap-adt-sessiontype: stateful
 ```
 
-## Activation
+200 with empty body. Per the write-side rule, the 200 alone proves nothing;
+release was confirmed by an independent `_action=LOCK` in a fresh process
+returning 200 (measured 2026-09-17).
+
+### Cross-process / crash semantics (measured 2026-09-16)
+
+- Lock and unlock belong to the **stateful server context** identified by the
+  session cookie. An `_action=UNLOCK` from a different process **without**
+  the original cookie jar returns 200 empty but is a **silent no-op** — the
+  next LOCK still gets 403.
+- A different process replaying the **original cookie jar + handle** does
+  release the enqueue (verified by a crash-lock → cookie-restore → unlock →
+  fresh LOCK 200 cycle).
+- An orphaned enqueue whose owning process died also disappears when the
+  server stateful context times out (the SM12 entry was gone the next
+  morning). There is no cheap synchronous "is it locked" probe:
+  `lockedByEditor="false"` on the object resource is per-session state.
+
+### Legacy forms (rejected by 7.56 — do not reintroduce)
+
+- `POST {object}?method=lock` + only the stateful header → 400
+  `contentTypeMissing`; with `application/xml` → 415.
+- `X-sap-adt-lock-handle: <handle>` request header and `?sap-cts-request=`
+  transport parameter — not honored on 7.56 (use `?lockHandle=` / `?corrNr=`).
+- `POST {object}?method=unlock` with the handle header.
+
+## Activation (verified 2026-09-16, Basis 7.56)
 
 ```xml
-POST /sap/bc/adt/activation
+POST /sap/bc/adt/activation?method=activate&preauditRequested=true
 Content-Type: application/vnd.sap.adt.activation.request+xml; charset=utf-8
 
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <adtcore:objectReferences xmlns:adtcore="http://www.sap.com/adt/core">
   <adtcore:objectReference adtcore:uri="{object_uri}" adtcore:name="{OBJECT_NAME}"/>
 </adtcore:objectReferences>
 ```
 
-Response: empty (200) = success. Non-empty XML body = activation errors — parse `severity`, `text` attributes.
+The `?method=activate` parameter is mandatory — a bare POST returns 400
+`ExceptionParameterNotFound`. GET on the same URL returns 405 (but still
+serves as a CSRF-token fetch). Activation needs **no lock handle and no
+shared stateful session**: it succeeds from a separate process after
+write-source has unlocked (measured lock→write→unlock in process A, activate
+in process B).
+
+200 with an empty body = accepted and (for an empty object) activated;
+**read back to confirm**: `GET /sap/bc/adt/activation/inactiveobjects`
+(Accept `application/vnd.sap.adt.inactivectsobjects.v1+xml`) must not list
+the object, and the object resource must carry
+`adtcore:version="active"` (inactive → `"inactive"`). Non-empty failure
+bodies use `chkl:messages/msg` (`type` E/A/X) and `ioc:inactiveObjects` per
+the reference implementation — see `docs/known-issues.md` for the parser
+gap. (The older `error/message/checkResult` shape is what the current parser
+looks for; a real failed activation fixture is still needed.)
 
 ## Syntax Check (legacy — see verified facts #2)
 
@@ -257,8 +331,10 @@ Activate in transaction `SICF` before use:
 |------|---------|
 | 200 | Success |
 | 401 | Wrong credentials |
-| 403 | Missing authorization OR expired CSRF token |
+| 403 | Missing authorization; expired CSRF token (body mentions `csrf`); **or object already enqueued** (`ExceptionResourceNoAccess` "is currently editing") on `_action=LOCK` |
 | 404 | Object not found |
+| 405 | Method not supported (e.g. GET on `/activation`) — response headers can still carry a fresh CSRF token |
+| 415 | Unsupported media type — the error body names the accepted vendor type (e.g. `…programs.programs.v2+xml`) |
 | 503 | ADT service not activated in SICF |
 
 ## Required Authorizations

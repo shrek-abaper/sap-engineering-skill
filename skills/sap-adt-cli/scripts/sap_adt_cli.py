@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import importlib.util
 import json
 import os
@@ -919,7 +920,7 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
         click.echo("  FAILED", err=True)
         _abort_on_error(lock_result, "lock")
     lock_handle = lock_result.text
-    click.echo(f"  OK  (handle: {lock_handle})", err=True)
+    click.echo(f"  OK  (handle: {hashlib.sha256(lock_handle.encode()).hexdigest()[:8]})", err=True)
 
     try:
         click.echo(f"[2/{n}] Writing source ({byte_count} bytes) ...", err=True, nl=False)

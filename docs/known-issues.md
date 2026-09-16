@@ -123,6 +123,56 @@ than `""`/`"A"`, verify the mapping and update the fixture/parser to
 match the real payload. Unknown priority values already map to info and
 surface in `meta.unparsed_nodes`.
 
+## configure silently resets unspecified fields (queued fix; high)
+
+Logged 2026-09-16 during batch 10 (session layer) design. The non-interactive
+`configure` path rebuilds the profile section from Click defaults, so any
+flag left at its default is indistinguishable from an explicitly supplied
+value and overwrites the stored field. Concrete cases:
+
+- omitting `--no-verify-ssl` resets `verify_ssl` to `true` — a self-signed
+  system becomes unreachable after an unrelated flag change;
+- passing `--no-verify-ssl` once keeps certificate verification disabled
+  until explicitly reverted — a security downgrade that survives future
+  invocations the user did not associate with TLS settings.
+
+Correct behavior: `configure` updates ONLY fields passed explicitly on that
+invocation; every other field keeps its stored value (distinguish "flag
+absent" from default `False`, e.g. via `required=False, default=None`).
+
+Priority **high** (security-relevant, both flip directions); queued as the
+first fix after the three remaining real-machine verifications listed in
+`refactor-handoff.md` §4. Not changed in batch 10.
+
+## activate: failure-response parser shape unverified (potential false success)
+
+Logged 2026-09-16 during the real-machine write-path verification (batch 10).
+The happy path is live-verified: `POST /sap/bc/adt/activation?method=activate`
+200 empty body, followed by readback showing the object gone from
+`/activation/inactiveobjects` and `adtcore:version="active"`.
+
+NOT verified: a real **failed** activation. Per the reference implementation
+(abap-adt-api `src/api/activate.ts`) the failure body is
+`chkl:messages/msg` with `type` E/A/X plus an `ioc:inactiveObjects` list;
+the product parser `_parse_activation_errors` instead looks for
+`error`/`message`/`checkResult` elements. A real failure could therefore be
+reported as success if the body is non-empty but uses the `chkl:msg` shape.
+
+The parser is intentionally NOT changed without a real failed response.
+Trigger: capture the first genuine failed activation on the DEV system
+(e.g. an object with a syntax error), verify the element paths, then align
+parser + add a sanitized fixture. Until then treat an activation as complete
+only with an independent readback (inactiveobjects list / `version`).
+
+## CSRF prefetch GET /activation returns 405 (harmless)
+
+For the first POST/PUT of a process, `client._fetch_csrf_token` issues GET
+against the request URL. On `/sap/bc/adt/activation` the GET returns 405
+`ExceptionMethodNotSupported`, but the response still carries a valid
+`x-csrf-token` header, so the following POST succeeds (measured
+2026-09-16). Functional impact: none. Recorded in case the client is later
+changed to prefetch tokens from a fixed URL instead.
+
 ## Other open items
 
 - Non-empty `list-transports` tree: only an empty-tree fixture exists (the

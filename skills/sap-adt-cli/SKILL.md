@@ -106,8 +106,8 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 > test class) also has `no_tests_found:true` with warning findings.
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
-| `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | lock→PUT→unlock | gated |
-| `activate <TYPE> <N> [--group G] [--yes]` | activate objects | gated |
+| `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | stateful `_action=LOCK`→PUT→`_action=UNLOCK` in `finally` (real-verified Basis 7.56, 2026-09-16) | gated |
+| `activate <TYPE> <N> [--group G] [--yes]` | `?method=activate`; no lock/shared session needed, succeeds in a separate process (real-verified Basis 7.56) | gated |
 | `create-transport --description D [--category C] [--yes]` | create workbench/customizing request | gated |
 | `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
 
@@ -130,7 +130,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 - **Env/.env writes**: `SAP_ALLOW_WRITE/TRANSPORT=true` requires `SAP_ENVIRONMENT`
   explicitly (nothing to infer from), else `CONFIG_MISSING` exit 3; `…=prd` refuses.
 - `run-sql` blocks non-SELECT DML before sending (`DML_REJECTED`, exit 3).
-- write-source always unlocks in `finally`; release-transport cannot be undone.
+- write-source always unlocks (`_action=UNLOCK`, handle via query) in `finally`; release-transport cannot be undone. **Write-side 2xx = "accepted" only** — release/activate/unlock need independent readback (**references/adt_api.md** top rule); foreign-context unlock is a silent 200 no-op.
 
 ## References (load on demand)
 

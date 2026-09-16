@@ -103,6 +103,18 @@ class HttpClassifyTests(unittest.TestCase):
         self.assertEqual(d2.code, errors.AUTH_FAILED)
         self.assertEqual(d2.exit_code, 2)
 
+    def test_403_enqueue_conflict_is_locked_by_other_not_auth(self):
+        # Measured 2026-09-16 on _action=LOCK: 403 ExceptionResourceNoAccess
+        # "User ... is currently editing ..." is a retryable lock conflict.
+        body = self._fixture("error.403-lock.txt")
+        d = errors.classify(AdtHttpError(f"HTTP 403 for POST url: {body[:300]}",
+                                         status=403))
+        self.assertEqual(d.code, errors.LOCKED_BY_OTHER)
+        self.assertEqual(d.exit_code, 1)
+        # Plain 403 without the enqueue wording stays AUTH_FAILED.
+        d2 = errors.classify(AdtHttpError("HTTP 403: forbidden", status=403))
+        self.assertEqual(d2.code, errors.AUTH_FAILED)
+
     def test_401_is_auth_failed_tier_2(self):
         self.assertEqual(errors.classify(http_status=401).code, errors.AUTH_FAILED)
 

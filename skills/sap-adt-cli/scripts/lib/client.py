@@ -13,7 +13,8 @@ _csrf_token: Optional[str] = None
 _session_cookies: Optional[dict] = None
 
 # Query parameters whose values must never appear in error messages.
-_SENSITIVE_QUERY_RE = ("token", "password", "passwd", "secret", "codepage")
+_SENSITIVE_QUERY_RE = ("token", "password", "passwd", "secret", "codepage",
+                       "lockhandle")
 _MAX_BODY_CHARS = 500
 
 

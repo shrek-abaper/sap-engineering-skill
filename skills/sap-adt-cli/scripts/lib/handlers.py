@@ -436,6 +436,19 @@ def _tag_local(elem) -> str:
 
 
 def _extract_lock_handle(resp: requests.Response) -> str:
+    # Modern protocol (verified S/4HANA 2021 / Basis 7.56, 2026-09-16):
+    # POST ?_action=LOCK returns an ABAP-serialized payload
+    # (application/vnd.sap.as+xml; dataname=com.sap.adt.lock.result):
+    # asx:abap/asx:values/DATA/LOCK_HANDLE.
+    if resp.text:
+        try:
+            root = ET.fromstring(resp.text)
+            for elem in root.iter():
+                if _tag_local(elem) == "LOCK_HANDLE" and elem.text:
+                    return elem.text.strip()
+        except ET.ParseError:
+            pass
+    # Legacy shape: handle in response header, or <handle>/<lockHandle> XML.
     handle = resp.headers.get("com.sap.adt.lock.handle", "")
     if handle:
         return handle
@@ -650,11 +663,23 @@ def list_transports(user: str = "", status: str = "D") -> AdtResult:
 
 
 def lock_object(object_uri: str) -> AdtResult:
+    # Verified 2026-09-16 on S/4HANA 2021 / Basis 7.56: enqueue is
+    # POST <object>?_action=LOCK&accessMode=MODIFY with the stateful session
+    # header and the lock.result ASX accept type; the handle comes back as
+    # LOCK_HANDLE in the ASX body (the legacy ?method=lock form is rejected
+    # with 400 "Content type missing" / 415 on this release).
     try:
         resp = make_adt_request(
-            f"{_base()}{object_uri}?method=lock",
+            f"{_base()}{object_uri}",
             method="POST",
-            extra_headers={"X-sap-adt-sessiontype": "stateful"},
+            params={"_action": "LOCK", "accessMode": "MODIFY"},
+            extra_headers={
+                "X-sap-adt-sessiontype": "stateful",
+                "Accept": (
+                    "application/*,application/vnd.sap.as+xml;charset=UTF-8;"
+                    "dataname=com.sap.adt.lock.result"
+                ),
+            },
         )
         handle = _extract_lock_handle(resp)
         if not handle:
@@ -670,20 +695,23 @@ def put_source(
     lock_handle: str,
     transport: Optional[str] = None,
 ) -> AdtResult:
+    # Verified 2026-09-16 on Basis 7.56: the lock handle travels as the
+    # ?lockHandle= QUERY parameter (not the X-sap-adt-lock-handle header),
+    # and a chosen transport is ?corrNr= (legacy name sap-cts-request is
+    # ignored). The PUT is part of the stateful session that owns the lock.
     try:
-        extra: dict = {
-            "Content-Type": "text/plain; charset=utf-8",
-            "X-sap-adt-lock-handle": lock_handle,
-        }
-        params: Optional[dict] = None
+        params: dict = {"lockHandle": lock_handle}
         if transport:
-            params = {"sap-cts-request": transport}
+            params["corrNr"] = transport
         make_adt_request(
             f"{_base()}{object_uri}/source/main",
             method="PUT",
             data=content.encode("utf-8"),
             params=params,
-            extra_headers=extra,
+            extra_headers={
+                "Content-Type": "text/plain; charset=utf-8",
+                "X-sap-adt-sessiontype": "stateful",
+            },
         )
         return AdtResult(text="OK")
     except Exception as e:
@@ -691,11 +719,18 @@ def put_source(
 
 
 def unlock_object(object_uri: str, lock_handle: str) -> AdtResult:
+    # Verified 2026-09-16/17 on Basis 7.56: dequeue is
+    # POST <object>?_action=UNLOCK&lockHandle=<handle>. A 200 empty body is
+    # NOT proof of release: from a foreign stateful context (no original
+    # cookie) it is a measured silent no-op. The normal write-source flow
+    # calls this in `finally` within the owning session, and real release
+    # was confirmed by an independent fresh-process re-lock 200.
     try:
         make_adt_request(
-            f"{_base()}{object_uri}?method=unlock",
+            f"{_base()}{object_uri}",
             method="POST",
-            extra_headers={"X-sap-adt-lock-handle": lock_handle},
+            params={"_action": "UNLOCK", "lockHandle": lock_handle},
+            extra_headers={"X-sap-adt-sessiontype": "stateful"},
         )
         return AdtResult(text="OK")
     except Exception:
@@ -715,9 +750,13 @@ def activate_object(
             f'<adtcore:objectReference adtcore:uri="{_xattr(uri)}" adtcore:name="{_xattr(object_name.upper())}"/>'
             '</adtcore:objectReferences>'
         ).encode("utf-8")
+        # Verified 2026-09-16 on Basis 7.56: activation REQUIRES the
+        # ?method=activate query parameter (bare POST /activation -> 400
+        # ExceptionParameterNotFound "Parameter method could not be found").
         resp = make_adt_request(
             f"{_base()}/sap/bc/adt/activation",
             method="POST",
+            params={"method": "activate", "preauditRequested": "true"},
             data=body,
             extra_headers={
                 "Content-Type": (

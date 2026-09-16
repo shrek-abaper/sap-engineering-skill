@@ -106,7 +106,11 @@ DEFAULT_HINTS = {
     SERVICE_NOT_ACTIVE: "Ask SAP Basis to activate the ADT service in transaction SICF.",
     BAD_REQUEST: "The request was rejected by SAP; check object type, parameters and ADT API version.",
     SERVER_ERROR: "The SAP server returned an unexpected error; retry later or check ST22.",
-    LOCKED_BY_OTHER: "The object is locked in the transport organizer; release the foreign lock first.",
+    LOCKED_BY_OTHER: (
+        "The object is enqueued by another user/session ('currently editing'). "
+        "Wait for the editor to finish; an orphaned lock can be removed in SM12. "
+        "A 200 unlock response alone is not proof of release (see adt_api.md)."
+    ),
     NETWORK_ERROR: "The SAP server was unreachable or timed out; check connectivity and retry.",
     PARSE_FAILED: "The response could not be parsed; use --format xml for the raw payload.",
     WRITE_DISABLED: "Re-run 'configure' and enable write mode; the operation was not performed.",
@@ -180,7 +184,15 @@ def _classify_http(status: Optional[int], body: str) -> str:
     if status == 401:
         return AUTH_FAILED
     if status == 403:
-        return CSRF_EXPIRED if "csrf" in body.lower() else AUTH_FAILED
+        low = body.lower()
+        if "csrf" in low:
+            return CSRF_EXPIRED
+        # Object enqueue conflict on _action=LOCK (measured 2026-09-16):
+        # 403 ExceptionResourceNoAccess "User ... is currently editing ..."
+        # is a retryable lock, not an authorization failure.
+        if "currently editing" in low or "enqueue lock" in low:
+            return LOCKED_BY_OTHER
+        return AUTH_FAILED
     if status == 404:
         # Object lookup vs. unsupported endpoint differ in the error body:
         # a missing object carries ExceptionResourceNotFound / "does not
