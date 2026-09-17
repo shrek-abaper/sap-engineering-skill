@@ -1,8 +1,6 @@
 name: tests
 
 on:
-  push:
-    branches: [main]
   pull_request:
 
 jobs:
@@ -51,4 +49,3 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Scan repository history
         run: gitleaks detect --config .gitleaks.toml --exit-code 1 --verbose
-
