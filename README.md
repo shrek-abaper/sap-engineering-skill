@@ -20,9 +20,9 @@
 
 **English** · **[中文](README.zh-CN.md)**
 
-</div>
-
 **[Skills](#skills)** · **[Quick Start](#quick-start)** · **[Repository Structure](#repository-structure)** · **[Compatible Agents](#compatible-ai-agents)** · **[License](#license)**
+
+</div>
 
 ---
 
