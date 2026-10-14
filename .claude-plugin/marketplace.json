@@ -1,0 +1,15 @@
+{
+  "name": "sap-engineering",
+  "owner": {
+    "name": "shrek-abaper",
+    "url": "https://github.com/shrek-abaper"
+  },
+  "description": "SAP ABAP engineering skills for AI coding agents.",
+  "plugins": [
+    {
+      "name": "sap-engineering-skills",
+      "source": "./",
+      "description": "ADT CLI, ABAP code review, Transport Request release gate, and SAP integration wiki."
+    }
+  ]
+}

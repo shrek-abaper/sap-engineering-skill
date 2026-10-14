@@ -144,18 +144,33 @@ The three skills above were historically tracked as git subtrees from standalone
 
 ## Quick Start
 
-### Windows — sap-adt-cli one-click installer
+### Claude Code — install as a plugin (recommended)
+
+This repository is a self-hosted Claude Code plugin marketplace. Inside Claude Code:
+
+```text
+/plugin marketplace add shrek-abaper/sap-engineering-skill
+/plugin install sap-engineering-skills@sap-engineering
+```
+
+All four skills are then available under the `sap-engineering-skills` namespace (e.g. `/sap-engineering-skills:sap-adt-cli`). Update with `/plugin` → Manage, or `claude plugin update sap-engineering-skills@sap-engineering`.
+
+> Prerequisite: Python 3 must be on `PATH`; the CLIs auto-install `click`/`requests`/`urllib3` on first run. Maintainer note: the plugin ships a pinned `version` in `.claude-plugin/plugin.json` — it **must be bumped on every release** or existing installations will not receive updates.
+
+### Windows — sap-adt-cli one-click installer (opencode)
 
 Download [`setup-opencode-abap-cli.bat`](setup-opencode-abap-cli.bat) and double-click. The script installs opencode, clones this repo, and wires up the skill automatically.
 
-### Manual install (any OS)
+### Other AI agents — manual symlink install (any OS)
+
+opencode, Cursor, Codex, Gemini CLI, Windsurf/Devin, Roo Code, Zed, and GitHub Copilot all discover skills under `~/.agents/skills/` (some also read `~/.claude/skills/`). Note that Claude Code itself does **not** read `~/.agents/skills/` — use the plugin install above for Claude Code.
 
 ```bash
 # Clone the repository
 git clone https://github.com/shrek-abaper/sap-engineering-skill
 cd sap-engineering-skill
 
-# Link skills into your agent's skill directory
+# Link skills into the cross-agent skill directory
 ln -s "$(pwd)/skills/sap-adt-cli"         ~/.agents/skills/sap-adt-cli
 ln -s "$(pwd)/skills/abap-code-review"    ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"  ~/.agents/skills/sap-transport-gate
@@ -167,13 +182,15 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
 ```
 
+Exceptions: Amazon Kiro only reads `~/.kiro/skills/` (use its "Import a skill" UI), Cline only reads `~/.cline/skills/`, and Trae requires UI import.
+
 ### Compatible AI agents
 
 | Agent                                                         | Notes                                                                        |
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [opencode](https://opencode.ai)                               | Free, open-source. Supports 30+ model providers. Windows installer included. |
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Anthropic's official CLI agent — natively supports `SKILL.md`                |
-| [Cursor](https://cursor.sh)                                   | AI-powered code editor; install via MCP tool adapter                         |
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | One-click install via the bundled plugin marketplace above                   |
+| [opencode](https://opencode.ai)                               | Free, open-source. Reads `~/.agents/skills/` and `~/.claude/skills/`         |
+| [Cursor](https://cursor.com)                                  | Native Agent Skills support; discovers `~/.agents/skills/`                   |
 
 > ⚠️ **Data compliance**: ABAP source code may contain core business logic and sensitive data. Before sending code to cloud-based AI services, confirm compliance with your organization's data security policy.
 

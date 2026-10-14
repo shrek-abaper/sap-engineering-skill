@@ -1,0 +1,21 @@
+{
+  "name": "sap-engineering-skills",
+  "displayName": "SAP ABAP Engineering Skills",
+  "version": "1.0.0",
+  "description": "SAP ABAP engineering skill suite: ADT CLI for read/write ABAP source, pre-release ABAP code review, Transport Request release gate, and SAP integration knowledge base (OData, RFC/JCo, IDoc, BAPI, BTP).",
+  "author": {
+    "name": "shrek-abaper",
+    "url": "https://github.com/shrek-abaper"
+  },
+  "homepage": "https://github.com/shrek-abaper/sap-engineering-skill",
+  "repository": "https://github.com/shrek-abaper/sap-engineering-skill",
+  "license": "MIT",
+  "keywords": [
+    "sap",
+    "abap",
+    "adt",
+    "s4hana",
+    "transport",
+    "code-review"
+  ]
+}

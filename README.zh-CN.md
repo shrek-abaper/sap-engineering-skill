@@ -144,18 +144,33 @@ sap-engineering-skill/
 
 ## 快速开始
 
-### Windows——sap-adt-cli 一键安装
+### Claude Code——以 Plugin 方式安装（推荐）
+
+本仓库本身就是一个自托管的 Claude Code 插件市场（plugin marketplace）。在 Claude Code 中执行：
+
+```text
+/plugin marketplace add shrek-abaper/sap-engineering-skill
+/plugin install sap-engineering-skills@sap-engineering
+```
+
+安装后四个 Skill 统一位于 `sap-engineering-skills` 命名空间下（如 `/sap-engineering-skills:sap-adt-cli`）。更新可在 `/plugin` 面板操作，或执行 `claude plugin update sap-engineering-skills@sap-engineering`。
+
+> 前置条件：`PATH` 中需有 Python 3；CLI 首次运行时会自动安装 `click`/`requests`/`urllib3`。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
+
+### Windows——sap-adt-cli 一键安装（opencode）
 
 下载 [`setup-opencode-abap-cli.bat`](setup-opencode-abap-cli.bat) 并双击运行。脚本自动安装 opencode、克隆本仓库并配置 Skill。
 
-### 手动安装（任意操作系统）
+### 其他 AI Agent——手动软链安装（任意操作系统）
+
+opencode、Cursor、Codex、Gemini CLI、Windsurf/Devin、Roo Code、Zed、GitHub Copilot 均会发现 `~/.agents/skills/` 下的 Skill（部分还读取 `~/.claude/skills/`）。注意 Claude Code 本身**不读取** `~/.agents/skills/`，请使用上方的 Plugin 方式安装。
 
 ```bash
 # 克隆仓库
 git clone https://github.com/shrek-abaper/sap-engineering-skill
 cd sap-engineering-skill
 
-# 将 Skill 链接到 Agent 的 Skill 目录
+# 将 Skill 软链到跨 Agent 共享目录
 ln -s "$(pwd)/skills/sap-adt-cli"          ~/.agents/skills/sap-adt-cli
 ln -s "$(pwd)/skills/abap-code-review"     ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"   ~/.agents/skills/sap-transport-gate
@@ -167,13 +182,15 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
 ```
 
+例外：Amazon Kiro 只读取 `~/.kiro/skills/`（用其 "Import a skill" UI 导入），Cline 只读取 `~/.cline/skills/`，Trae 仅支持 UI 导入。
+
 ### 兼容的 AI Agent
 
-| Agent                                                         | 说明                                               |
-| ------------------------------------------------------------- | -------------------------------------------------- |
-| [opencode](https://opencode.ai)                               | 免费开源，支持 30+ 模型提供商，附 Windows 安装脚本 |
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Anthropic 官方 CLI Agent，原生支持 `SKILL.md`      |
-| [Cursor](https://cursor.sh)                                   | AI 代码编辑器，通过 MCP Tool Adapter 安装          |
+| Agent                                                         | 说明                                                          |
+| ------------------------------------------------------------- | ------------------------------------------------------------- |
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | 通过上方内置插件市场一键安装                                  |
+| [opencode](https://opencode.ai)                               | 免费开源，读取 `~/.agents/skills/` 和 `~/.claude/skills/`     |
+| [Cursor](https://cursor.com)                                  | 原生支持 Agent Skills，自动发现 `~/.agents/skills/`           |
 
 > ⚠️ **数据合规提示**：ABAP 源代码可能包含核心业务逻辑和敏感数据。在将代码发送至云端 AI 服务前，请确认符合组织数据安全策略。
 

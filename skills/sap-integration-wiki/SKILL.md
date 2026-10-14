@@ -1,31 +1,19 @@
 ---
 name: sap-integration-wiki
 description: >
-  Comprehensive integration guide for connecting external systems (Java, Python, .NET,
-  Node.js, low-code platforms, etc.) to SAP (ECC, S/4HANA On-Premise, S/4HANA Cloud).
-  Covers OData V2/V4, RFC/JCo, SOAP over HTTP RFC (no-JCo RFC calls via standard HTTPS),
-  IDoc/PI-PO, BAPI, RAP REST APIs, BTP Integration Suite, SAP Event Mesh, FI-AA asset
-  accounting, AR/AP open items, and Financial Shared Service Center (FSSC) integration
-  patterns (Kingdee/金蝶 ↔ SAP, SAP Central Finance CFIN) with scenario-driven
-  recommendations, working code examples, payload samples, and error troubleshooting.
-  Activate this skill whenever someone asks how to integrate with SAP, call a SAP API,
-  create or read SAP data (purchase orders, inventory, sales orders, financial documents,
-  AR/AP open items, asset accounting, material master, business partner, production orders)
-  from outside SAP, configure JCo or RFC, call SAP BAPI without JCo, use SOAP to call SAP
-  RFC, call SAP from Python/Node.js/Go without installing SAP libraries, handle SAP IDoc
-  messages, use BTP Cloud Integration or iFlow, set up Communication Arrangements for
-  S/4HANA Cloud, troubleshoot SAP HTTP 400/401/403 errors, implement retry or idempotency
-  for SAP calls, build a financial shared service center on SAP, connect Kingdee/金蝶/用友
-  to SAP, replicate financial documents into SAP Central Finance (CFIN), or says things
-  like "connect to SAP", "get data from SAP", "SAP keeps returning 401", "how do I call
-  BAPI from Java", "how do I call SAP RFC from Python", "call SAP without JCo",
-  "SAP SOAP endpoint", "/sap/bc/soap/rfc", "SAP OData not working",
-  "CSRF token validation failed", "IDoc status 51", "BAPI_PO_CREATE1",
-  "API_PURCHASEORDER_PROCESS_SRV", "JCo connection", "RFC destination", "BTP iFlow",
-  "Cloud Connector", "SAP Event Mesh", "Communication Arrangement",
-  "BAPI_FIXEDASSET_GETLIST", "BAPI_ASSET_ACQUISITION_POST", "CFIN OData V4",
-  "API_CFinRpldSupplierInvoice", "财务共享中心" — even when the user does not say "SAP"
-  and just describes the problem symptomatically.
+  Guide for integrating external systems (Java, Python, .NET, Node.js,
+  low-code) with SAP (ECC 6.0, S/4HANA On-Premise/Cloud): OData V2/V4, RFC/JCo,
+  SOAP-over-HTTP RFC without JCo, IDoc/PI-PO, BAPI, RAP, BTP Integration Suite/iFlow,
+  Event Mesh, Cloud Connector, Communication Arrangements, FI-AA, AR/AP, Central Finance
+  (CFIN), Financial Shared Service Center / 财务共享中心 (Kingdee/金蝶, 用友 to SAP).
+  Activate whenever the user asks to connect to SAP, call a SAP API/BAPI/RFC, read or
+  create SAP data from outside (purchase/sales/production orders, inventory, financial
+  documents, AR/AP, assets, material master, business partner), configure JCo
+  destinations, call RFC/BAPI from Python/Java/Node/Go without SAP libraries, handle
+  IDocs, set up S/4HANA Cloud Communication Arrangements, implement retry/idempotency,
+  or troubleshoot SAP HTTP 400/401/403, "CSRF token validation failed", "IDoc status 51",
+  "/sap/bc/soap/rfc", JCo/RFC destination errors — even when the user never says "SAP"
+  and only describes symptoms.
 ---
 
 # SAP Integration Wiki
@@ -33,6 +21,19 @@ description: >
 This skill routes integration questions to the right reference based on your context.
 Before loading any reference file, ask the following if not already clear from the
 user's message:
+
+## Trigger examples
+
+User phrases that should activate this skill (non-exhaustive): "connect to SAP",
+"get data from SAP", "SAP keeps returning 401", "how do I call BAPI from Java",
+"how do I call SAP RFC from Python", "call SAP without JCo", "SAP SOAP endpoint",
+"SAP OData not working".
+
+Object/endpoint names that signal this skill: `BAPI_PO_CREATE1`,
+`API_PURCHASEORDER_PROCESS_SRV`, `BAPI_FIXEDASSET_GETLIST`,
+`BAPI_ASSET_ACQUISITION_POST`, `CFIN OData V4`, `API_CFinRpldSupplierInvoice`,
+`JCo connection`, `RFC destination`, `BTP iFlow`, `Cloud Connector`,
+`SAP Event Mesh`, `Communication Arrangement`.
 
 ## Clarifying questions (ask only what is unknown)
 
