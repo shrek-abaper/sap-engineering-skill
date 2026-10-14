@@ -22,12 +22,15 @@ def _auth_headers(config: SapConfig) -> dict:
     return {"X-SAP-Client": config.client}
 
 
-def _fetch_csrf_token(url: str, config: SapConfig) -> str:
+def _fetch_csrf_token(
+    url: str, config: SapConfig, params: Optional[dict] = None
+) -> str:
     global _session_cookies
     resp = _get_session().get(
         url,
         auth=HTTPBasicAuth(config.username, config.password),
         headers={**_auth_headers(config), "x-csrf-token": "fetch"},
+        params=params,
         verify=config.verify_ssl,
         timeout=30,
     )
@@ -54,11 +57,18 @@ def make_adt_request(
     if extra_headers:
         headers.update(extra_headers)
 
+    # Some gateways select/mandate the SAP client via the sap-client query
+    # parameter during Basic Auth login, so send it on every request -- the
+    # CSRF pre-flight, the business call, and the CSRF retry included. Copy
+    # the caller's dict (never mutate it) and let an explicit sap-client win.
+    request_params = dict(params or {})
+    request_params.setdefault("sap-client", config.client)
+
     if not config.verify_ssl:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     if method in ("POST", "PUT") and not _csrf_token:
-        _csrf_token = _fetch_csrf_token(url, config)
+        _csrf_token = _fetch_csrf_token(url, config, request_params)
 
     if method in ("POST", "PUT") and _csrf_token:
         headers["x-csrf-token"] = _csrf_token
@@ -72,14 +82,14 @@ def make_adt_request(
             verify=config.verify_ssl,
             timeout=timeout,
             data=data,
-            params=params,
+            params=request_params,
             cookies=_session_cookies or {},
         )
 
     resp = _do()
 
     if resp.status_code == 403 and "CSRF" in (resp.text or ""):
-        _csrf_token = _fetch_csrf_token(url, config)
+        _csrf_token = _fetch_csrf_token(url, config, request_params)
         headers["x-csrf-token"] = _csrf_token
         resp = _do()
 
