@@ -85,9 +85,10 @@ The user provides a TR ID and has access to live system data via internal tools,
 **Mode flow:**
 1. Identify the TR ID from user input.
 2. **Proactively attempt auto-collection before asking the user for anything**:
-   - Check for credentials (`.env`, `~/.sap-transport-gate/config.json`, env vars).
-   - If credentials found: run `python3 scripts/tr_collector.py collect {TR_ID} --output-dir reports/{TR_ID}_package/ --verbose` using available shell tools.
+   - Check the CLI (`sap-adt --version`) and configuration state (`sap-adt status` — local, non-secret). Never read `.env`, `config.json`, or credential stores yourself.
+   - CLI ready and configured: run `sap-adt transport collect {TR_ID} --output-dir reports/{TR_ID}_package/ --verbose` using available shell tools.
    - If collection succeeds: treat as Offline Package Mode with the collected package.
+   - CLI missing/incompatible: follow `references/setup.md`, ask before installing, else fall back to Offline Local Mode.
    - If collection fails or credentials absent: fall back to Offline Local Mode. Inform the user of the reason and declare mode degradation in the report.
    - If shell execution is unavailable: ask the user to run the command and provide the output. Do NOT proceed with partial review until the user responds.
 3. Never ask for SAP login credentials, passwords, or connection strings.

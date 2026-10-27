@@ -213,8 +213,8 @@ Report language: **English** throughout.
 > **SKILL BOUNDARY — human-only items only.**
 >
 > Required Actions must list ONLY tasks that require **human intervention**. The SKILL handles the following automatically and they must NOT appear here:
-> - Object list retrieval (fetched via `tr_collector.py collect` in Online Transport Mode)
-> - Source code fetching (fetched via `tr_collector.py` for all supported object types)
+> - Object list retrieval (fetched via `sap-adt transport collect` in Online Transport Mode)
+> - Source code fetching (fetched via `sap-adt transport collect` for all supported object types)
 > - Syntax rule checks applied by the SKILL during dimensional review
 >
 > What belongs here: code fixes by the developer, manual test execution, UAT sign-off, FI/business consultant confirmation, security owner approval, Transport prerequisite deployment, and other tasks only a human can perform.
@@ -425,14 +425,14 @@ Same naming convention with `.json` extension:
 
 | Mode | Save path |
 |---|---|
-| **Online Transport Mode** | `tr_collector.py collect --output-dir reports/{TR_ID}_package/` creates the directory. Save reports inside it alongside `manifest.json` and `sources/`. |
+| **Online Transport Mode** | `sap-adt transport collect --output-dir reports/{TR_ID}_package/` creates the directory. Save reports inside it alongside `manifest.json` and `sources/`. |
 | **Offline Package Mode** | Save to the user-provided package path. If no path was specified, create `reports/{TR_ID}_package/` and save there. |
 | **Offline Local Mode** | Create `reports/{TR_ID}_package/` even if no manifest exists. Save all reports and any user-provided evidence files there. |
 
 Example resulting layout (all modes):
 ```
 reports/DEVK900123_package/
-├── manifest.json              ← present if tr_collector.py was run
+├── manifest.json              ← present if `sap-adt transport collect` was run
 ├── sources/
 │   └── CLAS_ZCL_MY_CLASS.abap
 ├── TR_REVIEW_DEVK900123_20260526.md     ← always saved here

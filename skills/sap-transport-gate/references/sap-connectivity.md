@@ -2,19 +2,13 @@
 
 > `sap-transport-gate` v1.1.0 — Online Transport Mode: credential setup, authentication, TR extraction
 
-This file enables the **Online Transport Mode** of the SKILL. The `tr_collector.py` script (in `scripts/`) implements everything described here.
+This file enables the **Online Transport Mode** of the SKILL. The `sap-adt` CLI (`transport collect`) implements everything described here; install/readiness steps live in `setup.md`.
 
 ---
 
 ## 1. Prerequisites
 
-Python 3.8+ and the following packages (auto-installed on first run):
-
-```
-requests>=2.31.0
-click>=8.1.0
-urllib3>=2.0.0
-```
+The `sap-adt` CLI only — self-contained binary (no Python) or the Python package. No dependencies are installed automatically at runtime. See `setup.md` for channels and the diagnostics matrix.
 
 ---
 
@@ -25,20 +19,21 @@ Credentials are resolved in priority order (highest first):
 | Priority | Source | When to Use |
 |---|---|---|
 | 1 | Process environment variables | CI pipelines, one-off runs, secrets managers |
-| 2 | `.env` file in the SKILL directory | Per-skill isolated config; works from any CWD |
-| 3 | `~/.sap-transport-gate/config.json` | Shared local config; set once via `configure` command |
+| 2 | Explicit dotenv file declared via `SAP_ADT_DOTENV` | One-off single-environment override; never scanned from the CWD |
+| 3 | ADT profile in `~/.sap-adt-cli/config.json` + OS keystore | Normal use; create once with `sap-adt configure` |
 
-### Option A — SKILL-local `.env` file (recommended for reuse)
+The old standalone collector's plaintext `~/.sap-transport-gate/config.json` is **deprecated**: it is only read on the explicit `--legacy-config` path (or through the `tr_collector.py` shim during the compat window), never as an implicit fallback. Migrate with `sap-adt configure`.
 
-Copy `.env.example` to `.env` inside the skill root and fill in your values:
+### Option A — dotenv file (explicit path)
+
+Copy `.env.example`, fill it in, and declare its path:
 
 ```bash
 cp .env.example .env
-# edit .env
+export SAP_ADT_DOTENV="$PWD/.env"
 ```
 
 ```ini
-# <skill-dir>/.env
 SAP_URL=https://your-sap-system.example.com:8000
 SAP_USERNAME=YOUR_USERNAME
 SAP_PASSWORD=YOUR_PASSWORD
@@ -47,7 +42,7 @@ SAP_LANGUAGE=EN          # optional, default: EN
 SAP_VERIFY_SSL=1         # optional: 0 to disable SSL verification
 ```
 
-The script resolves `.env` relative to its own location (`scripts/lib/config.py` → 3 levels up → skill root), so it is found correctly regardless of the working directory when the script is invoked.
+The CLI never scans the current directory or guesses a skill root; the path must be declared. The legacy `tr_collector.py` shim sets `SAP_ADT_DOTENV` to the skill-local `.env` automatically during the compat window.
 
 ### Option B — Environment Variables (CI / headless use)
 
@@ -60,23 +55,28 @@ export SAP_LANGUAGE="EN"          # optional, default: EN
 export SAP_VERIFY_SSL="1"         # optional, set to 0 to disable SSL verification
 ```
 
-### Option C — Interactive Setup (persistent config file)
+### Option C — Interactive Setup (profile + OS keystore)
 
 ```bash
-python3 scripts/tr_collector.py configure
+sap-adt configure
 ```
 
-Stores credentials in `~/.sap-transport-gate/config.json` (mode 600, never committed).
+Stores non-secret fields in `~/.sap-adt-cli/config.json` (mode 600) and the
+password in the OS keystore (env → keyring → Windows DPAPI → pass →
+encrypted file). Never stores the password in plaintext when a writable
+keystore exists.
 
 ### Credential Priority
 
-Process environment variables override `.env`, which overrides `config.json`. A value present in a lower-priority source is only used when all higher-priority sources are absent or incomplete.
+Process environment variables override the declared dotenv file, which
+overrides the profile. The four required `SAP_*` keys must all resolve from
+the two env layers for that layer to apply at all; otherwise the profile wins.
 
 ---
 
 ## 3. SAP ADT Authentication Flow
 
-The `tr_collector.py` script uses SAP's standard ADT Basic Auth + CSRF token protocol:
+The `sap-adt` transport client uses SAP's standard ADT Basic Auth + CSRF token protocol:
 
 ```
 1. GET /sap/bc/adt/
@@ -198,26 +198,26 @@ The `collect` command produces a structured output directory:
 ### Configure credentials
 
 ```bash
-python3 scripts/tr_collector.py configure
+sap-adt configure
 ```
 
 ### Collect TR objects and source code
 
 ```bash
 # Minimal usage — outputs to ./review_package/
-python3 scripts/tr_collector.py collect DEVK900123
+sap-adt transport collect DEVK900123
 
 # With explicit output directory
-python3 scripts/tr_collector.py collect DEVK900123 --output-dir ./reports/DEVK900123_package/
+sap-adt transport collect DEVK900123 --output-dir ./reports/DEVK900123_package/
 
 # Verbose mode (shows each object fetch)
-python3 scripts/tr_collector.py collect DEVK900123 --verbose
+sap-adt transport collect DEVK900123 --verbose
 ```
 
 ### Check connection
 
 ```bash
-python3 scripts/tr_collector.py ping
+sap-adt transport ping
 ```
 
 ---

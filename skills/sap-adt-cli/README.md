@@ -1,5 +1,12 @@
 # sap-adt-cli
 
+<!-- BEGIN GENERATED cli-setup -->
+<!-- GENERATED from docs/installation/runtime-setup.md + compatibility.json by tools/sync_skill_runtime_docs.py — do not edit; run the tool to refresh -->
+
+Online operations need the `sap-adt` CLI. Compatible CLI range: `>=1.4.0,<2.0.0`.
+Install/readiness guide: [`references/setup.md`](references/setup.md).
+<!-- END GENERATED cli-setup -->
+
 [English](README.md) | [中文](README.zh-CN.md)
 
 A command-line tool and AI agent skill for reading **and writing** ABAP source code, metadata,
@@ -52,7 +59,7 @@ Install these before running the script:
 
 ### Run the installer
 
-Download [`setup-opencode-abap-cli.bat`](../../setup-opencode-abap-cli.bat) and **double-click** it.  
+Download [`setup-opencode-abap-cli.bat`](https://github.com/shrek-abaper/sap-engineering-skill/raw/main/setup-opencode-abap-cli.bat) and **double-click** it.  
 The script prints colored status messages and will stop with instructions if any prerequisite is missing.
 
 ### Start analyzing SAP code with opencode
@@ -537,4 +544,4 @@ all 16 error codes.
 
 ## License
 
-[MIT](../../LICENSE)
+[MIT](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)

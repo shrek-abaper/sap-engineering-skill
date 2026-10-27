@@ -47,7 +47,7 @@
 
 ### 运行安装脚本
 
-下载 [`setup-opencode-abap-cli.bat`](../../setup-opencode-abap-cli.bat)，**双击运行**即可。  
+下载 [`setup-opencode-abap-cli.bat`](https://github.com/shrek-abaper/sap-engineering-skill/raw/main/setup-opencode-abap-cli.bat)，**双击运行**即可。  
 脚本将以彩色状态信息引导安装过程；如有前置软件缺失，会自动停止并给出安装提示。
 
 ### 使用 opencode 分析 SAP 代码
@@ -482,4 +482,4 @@ python3 $CLI release-transport DEVK900001                           # 需 allow_
 
 ## 许可证
 
-[MIT](../../LICENSE)
+[MIT](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)
