@@ -175,8 +175,10 @@ ln -s "$(pwd)/skills/abap-code-review"    ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"  ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
-# Install the CLI once (from this checkout; npm/installer/portable also available)
-python3 -m pip install -e .
+# Install the CLI once (pick one channel; see docs/installation/runtime-setup.md)
+pip install sap-adt==1.4.0            # Python ≥ 3.10 (published)
+# or: npx sap-adt-cli@1.4.0 install   # Node ≥ 18, self-contained runtime
+# or (developers, from this checkout): python3 -m pip install -e .
 
 # Configure a SAP connection profile (interactive wizard; password goes to the OS keystore)
 sap-adt configure

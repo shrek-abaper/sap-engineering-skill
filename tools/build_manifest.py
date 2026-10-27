@@ -127,7 +127,7 @@ def main() -> int:
         ).stdout.strip().splitlines()[-1]
         npm_tarball = rel / Path(packed).name
     else:
-        npm_tarball = next(iter(sorted(rel.glob("shrek-abaper-sap-adt-cli-*.tgz"))), None)
+        npm_tarball = next(iter(sorted(rel.glob("sap-adt-cli-*.tgz"))), None)
     if npm_tarball is None or not npm_tarball.is_file():
         print("[build_manifest] npm tarball missing", file=sys.stderr)
         return 1

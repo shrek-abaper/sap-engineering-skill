@@ -1,5 +1,16 @@
 # Changelog
 
+## Plugin/docs 1.1.3 — 2026-10-28
+
+- All distribution channels are now live: npm `sap-adt-cli@1.4.0`, PyPI
+  `sap-adt==1.4.0`, the GitHub Release `sap-adt-v1.4.0` (Linux portable
+  runtime, plugin/skill zips, `SHA256SUMS`), and the marketplace `archive`
+  source.
+- Installation docs, README quick start and the releasing/agent guides now
+  describe the published channels; the Windows installer and macOS runtime
+  remain unbuilt and unverified.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.2 — 2026-10-28
 
 - npm package is the unscoped **`sap-adt-cli`** (install:

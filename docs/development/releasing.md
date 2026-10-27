@@ -20,12 +20,13 @@ authorization.** Remote publishing is a separate, human-approved step.
 3. `npm publish` the staged package (`dist/npm/`), then verify
    `npx <pkg>@<version> install` on a clean machine (Node-only).
 4. Upload `PyPI` wheel/sdist, then verify a clean-venv install.
-5. Only after the artifacts exist and are verified: update the live
-   marketplace entry to the archive source from
-   `release-manifest.json.marketplace_candidate`
-   (`source: archive`, real URL + sha256). Until then the live
-   `.claude-plugin/marketplace.json` stays on `source: "./"` — never commit
-   placeholder URLs or digests.
+5. Only after the artifacts exist and are verified: point the live
+   `.claude-plugin/marketplace.json` at the new archive
+   (`source: archive`, real URL + sha256 from
+   `release-manifest.json.marketplace_candidate`), bump the plugin version
+   when the payload changed, and commit. Never commit placeholder URLs or
+   digests, and never point the marketplace at a file that is not yet
+   uploaded.
 6. Announce the minimum Claude Code version for archive sources
    (≥ 2.1.224, verified against the official marketplace reference).
 

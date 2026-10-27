@@ -175,8 +175,10 @@ ln -s "$(pwd)/skills/abap-code-review"     ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"   ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
-# 安装 CLI（本仓库检出目录；也支持 npm/安装器/便携包）
-python3 -m pip install -e .
+# 安装 CLI（任选一种渠道；详见 docs/installation/runtime-setup.md）
+pip install sap-adt==1.4.0            # Python ≥ 3.10（已发布）
+# 或: npx sap-adt-cli@1.4.0 install   # Node ≥ 18，自包含运行时
+# 或（开发者，本仓库检出目录）: python3 -m pip install -e .
 
 # 配置 SAP 连接 Profile（交互式向导；密码进入操作系统密钥库）
 sap-adt configure
