@@ -35,6 +35,11 @@ secrets.enc
 *~
 Thumbs.db
 
+# Local agent tooling — machine-specific links/config (skills live in skills/)
+.agents/
+.claude/skills/
+.claude/settings.local.json
+
 # opencode auto-generated — do not commit
 AGENTS.md
 
