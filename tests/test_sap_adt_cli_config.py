@@ -10,8 +10,8 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 
-CONFIG_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts" / "lib" / "config.py"
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+CONFIG_PATH = Path(__file__).resolve().parents[1] / "src" / "sap_adt" / "config.py"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 
 
 def load_config_module():
@@ -20,15 +20,15 @@ def load_config_module():
     import types
     import uuid
 
-    lib_path = SCRIPTS_PATH / "lib"
+    pkg_path = SCRIPTS_PATH / "sap_adt"
     pkg_base = f"cfgpkg_{uuid.uuid4().hex}"
     top = types.ModuleType(pkg_base)
     top.__path__ = []
-    lib = types.ModuleType(f"{pkg_base}.lib")
-    lib.__path__ = [str(lib_path)]
+    lib = types.ModuleType(f"{pkg_base}.sap_adt")
+    lib.__path__ = [str(pkg_path)]
     sys.modules[pkg_base] = top
-    sys.modules[f"{pkg_base}.lib"] = lib
-    spec = importlib.util.spec_from_file_location(f"{pkg_base}.lib.config", CONFIG_PATH)
+    sys.modules[f"{pkg_base}.sap_adt"] = lib
+    spec = importlib.util.spec_from_file_location(f"{pkg_base}.sap_adt.config", CONFIG_PATH)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
@@ -58,16 +58,16 @@ class MemoryKeystore:
 
 def load_cli_module():
     sys.path.insert(0, str(SCRIPTS_PATH))
-    # Drop the whole lib package tree so each test gets fresh modules
+    # Drop the whole sap_adt package tree so each test gets fresh modules
     # (reports bind to config, stores bind to module-level paths).
-    sys.modules.pop("sap_adt_cli", None)
-    for name in [n for n in sys.modules if n == "lib" or n.startswith("lib.")]:
+    sys.modules.pop("sap_adt_cli_under_test", None)
+    for name in [n for n in sys.modules if n == "sap_adt" or n.startswith("sap_adt.")]:
         sys.modules.pop(name, None)
-    spec = importlib.util.spec_from_file_location("sap_adt_cli_under_test", SCRIPTS_PATH / "sap_adt_cli.py")
+    spec = importlib.util.spec_from_file_location("sap_adt_cli_under_test", SCRIPTS_PATH / "sap_adt" / "cli.py")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
-    return module, sys.modules["lib.config"]
+    return module, sys.modules["sap_adt.config"]
 
 
 class SapAdtCliConfigTests(unittest.TestCase):
@@ -83,7 +83,7 @@ class SapAdtCliConfigTests(unittest.TestCase):
         self.env_path.parent.mkdir(parents=True)
         self.config_file.parent.mkdir(parents=True)
         self.old_config_file.parent.mkdir(parents=True)
-        self.module._SKILL_DOTENV = self.env_path
+        self.module._DOTENV_OVERRIDE = self.env_path
         self.module.CONFIG_DIR = self.config_file.parent
         self.module.CONFIG_FILE = self.config_file
         self.module._OLD_CONFIG_DIR = self.old_config_file.parent
@@ -269,7 +269,7 @@ class SapAdtCliConfigTests(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        config_module._SKILL_DOTENV = env_path
+        config_module._DOTENV_OVERRIDE = env_path
         config_module.CONFIG_DIR = config_file.parent
         config_module.CONFIG_FILE = config_file
         config_module._OLD_CONFIG_DIR = self.tmp_path / "cli-home" / ".sap-abap-cli"

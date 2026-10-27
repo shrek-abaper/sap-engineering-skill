@@ -8,11 +8,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SCRIPTS_PATH))
 
-from lib.keystore import file_store  # noqa: E402
-from lib.keystore.base import KeyStoreError  # noqa: E402
+from sap_adt.keystore import file_store  # noqa: E402
+from sap_adt.keystore.base import KeyStoreError  # noqa: E402
 
 PASSPHRASE_ENV = "SAP_ADT_MASTER_PASSPHRASE"
 

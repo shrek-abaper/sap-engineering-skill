@@ -8,9 +8,9 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "skills" / "sap-adt-cli" / "scripts"))
+sys.path.insert(0, str(ROOT / "src"))
 
-from lib import errors  # noqa: E402
+from sap_adt import errors  # noqa: E402
 from test_sap_adt_cli_config import load_cli_module  # noqa: E402
 
 
@@ -57,7 +57,7 @@ class ErrorCodeTests(unittest.TestCase):
 class ReleaseHandlerTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
 
         class FakeConfig:
             profile_name = "dev"
@@ -113,7 +113,7 @@ class ReleaseHandlerTests(unittest.TestCase):
         path = ROOT / "skills/sap-adt-cli/tests/fixtures/transport.released.xml"
         if not path.exists():
             self.skipTest("transport.released.xml not present")
-        from lib.parsers import records
+        from sap_adt.adt.parsers import records
         d = records.parse_single_request(path.read_bytes())["transport"]
         self.assertEqual(d["trkorr"], "ECDK944391")
         self.assertEqual(d["status"], "R")
@@ -125,7 +125,7 @@ class ReleaseHandlerTests(unittest.TestCase):
                 / "transport.release-report.synthetic.xml")
         if not path.exists():
             self.skipTest("synthetic release report absent")
-        from lib.parsers import records
+        from sap_adt.adt.parsers import records
         reports = records.parse_release_report(path.read_bytes())["release_reports"]
         self.assertEqual(len(reports), 1)
         self.assertEqual(reports[0]["status"], "released")
@@ -137,7 +137,7 @@ class ReleaseHandlerTests(unittest.TestCase):
         ).read_bytes() if (ROOT / "skills/sap-adt-cli/tests/fixtures/transport.single.xml").exists() else None
         if payload is None:
             self.skipTest("transport.single.xml not present")
-        from lib.parsers import records
+        from sap_adt.adt.parsers import records
         d = records.parse_single_request(payload)["transport"]
         self.assertEqual(d["trkorr"], "ECDK944391")
         self.assertEqual(d["status"], "D")
@@ -149,7 +149,7 @@ class ReleaseHandlerTests(unittest.TestCase):
     def test_nonexistent_tr_is_object_not_found(self):
         # Transport organizer reports missing requests as HTTP 400
         # ADT_TM_COMMON_EXCEPTION, not 404.
-        from lib.client import AdtHttpError
+        from sap_adt.adt.client import AdtHttpError
         def fake(url, method="GET", **kw):
             raise AdtHttpError(
                 "HTTP 400: Task/request DEVK999999 does not exist in system ECD",
@@ -233,7 +233,7 @@ class ReleaseHandlerTests(unittest.TestCase):
 class ReleaseCliTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
 
         class Cfg:
             profile_name = "dev"

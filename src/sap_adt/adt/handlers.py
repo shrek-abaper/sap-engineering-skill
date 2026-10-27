@@ -8,9 +8,7 @@ from urllib.parse import quote
 import requests
 
 from . import coverage as coverage_lib
-from . import errors
 from .client import AdtHttpError, make_adt_request
-from .config import get_config
 from .parsers import capabilities as parse_capabilities
 from .parsers import fields as parse_fields
 from .parsers import findings as parse_findings
@@ -20,6 +18,8 @@ from .parsers import rows as parse_rows
 from .parsers import scalar as parse_scalar
 from .parsers import source as parse_source
 from .parsers.common import ParseError
+from .. import errors
+from ..config import get_config
 
 
 @dataclass

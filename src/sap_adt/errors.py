@@ -98,7 +98,7 @@ GATE_CODES = frozenset({
 })
 
 DEFAULT_HINTS = {
-    CONFIG_MISSING: "Run 'sap-adt-cli configure' or provide SAP_* environment variables.",
+    CONFIG_MISSING: "Run 'sap-adt configure' or provide SAP_* environment variables.",
     PROFILE_NOT_FOUND: "List profiles with 'profile list' and create one with 'configure'.",
     AUTH_FAILED: "Check username/password and ADT authorizations (S_ADT, S_DEVELOP).",
     CSRF_EXPIRED: "CSRF token was rejected; retry the request (token is refreshed automatically).",

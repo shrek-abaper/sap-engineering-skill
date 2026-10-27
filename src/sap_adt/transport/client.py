@@ -1,14 +1,37 @@
+"""ADT HTTP client for transport collection.
+
+Ported from the standalone tr_collector lib/client.py. Difference: the
+connection is injected explicitly via :func:`set_config` (the old module
+resolved it from a module-global config file); the wire behavior — sap-client
+query parameter on every request including CSRF, token caching and 403 retry
+— is unchanged.
+"""
 from typing import Optional
 
 import requests
 import urllib3
 from requests.auth import HTTPBasicAuth
 
-from .config import SapConfig, get_config
+from sap_adt.config import SapConfig
 
 _session: Optional[requests.Session] = None
 _csrf_token: Optional[str] = None
 _session_cookies: Optional[dict] = None
+_active_config: Optional[SapConfig] = None
+
+
+def set_config(config: SapConfig) -> None:
+    """Bind the connection for subsequent requests (per command invocation)."""
+    global _active_config
+    _active_config = config
+
+
+def active_config() -> SapConfig:
+    if _active_config is None:
+        raise RuntimeError(
+            "transport client not configured; call set_config() first"
+        )
+    return _active_config
 
 
 def _get_session() -> requests.Session:
@@ -52,7 +75,7 @@ def make_adt_request(
 ) -> requests.Response:
     global _csrf_token, _session_cookies
 
-    config = get_config()
+    config = active_config()
     headers = _auth_headers(config)
     if extra_headers:
         headers.update(extra_headers)

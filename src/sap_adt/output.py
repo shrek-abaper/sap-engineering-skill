@@ -1,4 +1,4 @@
-"""Unified output contract for the sap-adt-cli commands.
+"""Unified output contract for the sap-adt commands.
 
 Single rendering seam between handler results and stdout.
 

@@ -5,8 +5,8 @@ import requests
 import urllib3
 from requests.auth import HTTPBasicAuth
 
-from . import log_redaction
-from .config import SapConfig, get_config
+from .. import log_redaction
+from ..config import SapConfig, get_config
 
 _session: Optional[requests.Session] = None
 _csrf_token: Optional[str] = None

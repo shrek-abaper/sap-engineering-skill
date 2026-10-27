@@ -14,9 +14,9 @@ from click.testing import CliRunner
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "skills" / "sap-adt-cli" / "tests" / "fixtures"
-sys.path.insert(0, str(ROOT / "skills" / "sap-adt-cli" / "scripts"))
+sys.path.insert(0, str(ROOT / "src"))
 
-from lib.parsers import findings  # noqa: E402
+from sap_adt.adt.parsers import findings  # noqa: E402
 from test_sap_adt_cli_config import load_cli_module  # noqa: E402
 
 
@@ -67,7 +67,7 @@ class UnitParserSyntheticTests(unittest.TestCase):
 class UnitCommandTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
 
         class Cfg:
             username = "DEVELOPER"

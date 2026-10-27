@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from test_sap_adt_cli_config import load_cli_module  # noqa: E402
 
@@ -22,10 +22,10 @@ class CredentialsCliTests(unittest.TestCase):
         self._td = tempfile.TemporaryDirectory()
         self.tmp = Path(self._td.name)
         self.cli, self.config_module = load_cli_module()
-        self.credentials = sys.modules["lib.credentials"]
-        self.dpapi_store = sys.modules["lib.keystore.dpapi_store"]
-        self.file_store = sys.modules["lib.keystore.file_store"]
-        self.keystore_pkg = sys.modules["lib.keystore"]
+        self.credentials = sys.modules["sap_adt.credentials"]
+        self.dpapi_store = sys.modules["sap_adt.keystore.dpapi_store"]
+        self.file_store = sys.modules["sap_adt.keystore.file_store"]
+        self.keystore_pkg = sys.modules["sap_adt.keystore"]
 
         self.home = self.tmp / "home"
         self.config_dir = self.home / ".sap-adt-cli"
@@ -141,7 +141,7 @@ class CredentialsCliTests(unittest.TestCase):
         self.assertNotIn(SECRET_PLACEHOLDER, result.output)
 
     def test_doctor_warns_about_drvfs_when_config_dir_on_windows_mount(self):
-        reports = sys.modules["lib.credentials_reports"]
+        reports = sys.modules["sap_adt.credentials_reports"]
         mounts = self.tmp / "mounts"
         mounts.write_text("C:\\134 /mnt/c drvfs rw 0 0\n/dev/sda / ext4 rw 0 0\n")
         fs = reports.mount_fs_for(Path("/mnt/c/home/.sap-adt-cli"), mounts_path=str(mounts))

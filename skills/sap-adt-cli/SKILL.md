@@ -11,8 +11,11 @@ description: "Read/write ABAP source and metadata via SAP ADT REST API: programs
 
 # SAP ADT CLI
 
-CLI: `scripts/sap_adt_cli.py` in this skill directory. First run auto-installs
-`click`/`requests`/`urllib3`. Always run `status` first to check the profile and switches.
+CLI: the `sap-adt` command (installed package; `pip install sap-adt` or
+`pip install -e .` from the repo root). The legacy script
+`scripts/sap_adt_cli.py` remains as a forwarding shim (it also picks up this
+skill's `.env` via SAP_ADT_DOTENV) and no longer auto-installs dependencies.
+Always run `status` first to check the profile and switches.
 
 ```bash
 SKILL_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")"
@@ -103,6 +106,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `activate <TYPE> <N> [--group G] [--yes]` | `?method=activate`; no lock/shared session needed, succeeds in a separate process (real-verified Basis 7.56) | gated |
 | `create-transport --package P --description D --ref URI [--yes]` | CreateCorrectionRequest ASX (`DEVCLASS`+`REF` required, `$TMP`=local); real-verified Basis 7.56, 2026-09-17 | gated |
 | `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
+| `transport ping\|collect` | transport utilities (read-only): ping = ADT connectivity (plain text); collect = TR object list + sources into `review_package/` (manifest schema unchanged from tr_collector; `--legacy-config` explicitly opts into the old plaintext collector config — never implicit) | — |
 
 > **Unit risk levels**: `dangerous`/`critical` tests execute ABAP that may
 > modify business data — require `allow_write`, a risk/object/data-change

@@ -7,7 +7,7 @@ from urllib.parse import quote
 import requests
 
 from .client import make_adt_request
-from .config import get_config
+from .client import active_config
 
 
 @dataclass
@@ -17,7 +17,7 @@ class AdtResult:
 
 
 def _base() -> str:
-    return get_config().base_url()
+    return active_config().base_url()
 
 
 def _enc(name: str) -> str:
@@ -357,7 +357,7 @@ def fetch_source_for_object(pgmid: str, object_type: str, object_name: str) -> A
 
 def ping() -> AdtResult:
     try:
-        config = get_config()
+        config = active_config()
         resp = make_adt_request(f"{_base()}/sap/bc/adt/")
         return AdtResult(text=f"OK — connected to {config.url} (HTTP {resp.status_code})")
     except Exception as e:

@@ -193,5 +193,5 @@ def status_text() -> str:
             state = "not configured"
         lines.append(f"{marker} {name:<16} {p.get('username', ''):<16} {state}")
     if len(lines) == 3:
-        lines.append("No profiles configured. Run: sap-adt-cli configure")
+        lines.append("No profiles configured. Run: sap-adt configure")
     return "\n".join(lines)

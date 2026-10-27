@@ -21,12 +21,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "sap-adt-cli" / "SKILL.md"
-SCRIPTS = ROOT / "skills" / "sap-adt-cli" / "scripts"
+SRC = ROOT / "src"
 
-sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(SRC))
 
-from lib import errors  # noqa: E402
-from lib.parsers import __all__ as parser_modules  # noqa: E402
+from sap_adt import errors  # noqa: E402
+from sap_adt.adt.parsers import __all__ as parser_modules  # noqa: E402
 
 failures: list[str] = []
 
@@ -58,7 +58,7 @@ check("error-codes", skill_codes, errors.ALL_CODES)
 
 import importlib.util  # noqa: E402
 
-spec = importlib.util.spec_from_file_location("sap_adt_cli", SCRIPTS / "sap_adt_cli.py")
+spec = importlib.util.spec_from_file_location("sap_adt_cli", SRC / "sap_adt" / "cli.py")
 cli_mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cli_mod)
 
@@ -124,7 +124,7 @@ check("kinds", skill_kinds, implemented)
 # ------------------ 4. command -> handler kind consistency ------------------
 
 # Parse handlers.py: handler function -> kind literal it emits.
-handler_src = (SCRIPTS / "lib" / "handlers.py").read_text(encoding="utf-8")
+handler_src = (SRC / "sap_adt" / "adt" / "handlers.py").read_text(encoding="utf-8")
 handler_tree = ast.parse(handler_src)
 
 # Any function emitting a kind directly (_structured("kind", ...)).
@@ -144,7 +144,7 @@ for node in ast.walk(handler_tree):
 # being the one returning it; the loop above already captures them.
 
 # Parse sap_adt_cli.py: command -> handler functions it calls.
-cli_src = (SCRIPTS / "sap_adt_cli.py").read_text(encoding="utf-8")
+cli_src = (SRC / "sap_adt" / "cli.py").read_text(encoding="utf-8")
 cli_tree = ast.parse(cli_src)
 command_handler: dict[str, set[str]] = {}
 for node in ast.walk(cli_tree):

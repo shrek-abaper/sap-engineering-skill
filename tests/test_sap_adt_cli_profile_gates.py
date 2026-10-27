@@ -10,9 +10,9 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "skills" / "sap-adt-cli" / "scripts"))
+sys.path.insert(0, str(ROOT / "src"))
 
-from lib import config  # noqa: E402
+from sap_adt import config  # noqa: E402
 from test_sap_adt_cli_config import load_cli_module  # noqa: E402
 
 
@@ -96,7 +96,7 @@ WRITE_COMMANDS = [
 class CommandGateMatrixTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
         self.tmp = tempfile.TemporaryDirectory()
         self.src = Path(self.tmp.name) / "z.abap"
         self.src.write_text("report z.\n")
@@ -200,7 +200,7 @@ class EnvPathGateTests(unittest.TestCase):
         # read command never consults the write gate
         cfg = _fake_config(from_env=True, name=None)
         with patch.object(self.cli, "load_config", return_value=cfg), \
-                patch("lib.handlers.get_config", create=True):
+                patch("sap_adt.adt.handlers.get_config", create=True):
             # just verify config exposes default dev for reads
             self.assertEqual(cfg.environment, "dev")
 

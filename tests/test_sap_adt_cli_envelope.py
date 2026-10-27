@@ -39,9 +39,9 @@ class FakeConfig:
 class EnvelopeCommandTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
-        self.output = sys.modules["lib.output"]
-        self.AdtHttpError = sys.modules["lib.client"].AdtHttpError
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
+        self.output = sys.modules["sap_adt.output"]
+        self.AdtHttpError = sys.modules["sap_adt.adt.client"].AdtHttpError
         self.output.set_format(None)
         class _CliConfig:
             username = "DEVELOPER"

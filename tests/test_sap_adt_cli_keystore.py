@@ -10,10 +10,10 @@ import sys
 import unittest
 from pathlib import Path
 
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SCRIPTS_PATH))
 
-keystore_pkg = importlib.import_module("lib.keystore")
+keystore_pkg = importlib.import_module("sap_adt.keystore")
 
 
 class MemoryStore:

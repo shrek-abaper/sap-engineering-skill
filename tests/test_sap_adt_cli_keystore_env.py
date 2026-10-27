@@ -5,10 +5,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SCRIPTS_PATH))
 
-from lib.keystore import env_store, BackendNotWritableError  # noqa: E402
+from sap_adt.keystore import env_store, BackendNotWritableError  # noqa: E402
 
 
 class EnvStoreTests(unittest.TestCase):

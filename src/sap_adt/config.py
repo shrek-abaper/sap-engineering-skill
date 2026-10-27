@@ -9,10 +9,24 @@ from typing import Optional, Tuple, List, Dict, Any
 from . import credentials
 from .keystore.base import KeyStoreError
 
-# SKILL root = 3 levels up from this file (scripts/lib/config.py -> scripts/lib -> scripts -> skill root)
-# Resolved at import time so it works regardless of the caller's CWD.
-_SKILL_ROOT = Path(__file__).resolve().parent.parent.parent
-_SKILL_DOTENV = _SKILL_ROOT / ".env"
+# Optional dotenv layer. The file location must be declared explicitly via
+# the SAP_ADT_DOTENV environment variable (absolute path); the CLI never
+# scans the current directory or guesses a skill root from its own install
+# path. The legacy skill entrypoint shim
+# (skills/sap-adt-cli/scripts/sap_adt_cli.py) sets this variable to the
+# skill-local .env it resolved before, preserving old-entry behavior.
+_DOTENV_ENV_VAR = "SAP_ADT_DOTENV"
+
+# Test seam: when set, wins over SAP_ADT_DOTENV (fresh modules per test get
+# their own temporary .env; production leaves this None).
+_DOTENV_OVERRIDE: Optional[Path] = None
+
+
+def _skill_dotenv_path() -> Optional[Path]:
+    if _DOTENV_OVERRIDE is not None:
+        return _DOTENV_OVERRIDE
+    declared = os.getenv(_DOTENV_ENV_VAR)
+    return Path(declared) if declared else None
 
 CONFIG_DIR = Path.home() / ".sap-adt-cli"
 CONFIG_FILE = CONFIG_DIR / "config.json"
@@ -32,19 +46,19 @@ SAP credentials not configured.
 
 Credential lookup order (highest priority first):
   1. Process environment variables
-  2. .env file in the SKILL directory ({skill_dotenv})
+  2. Explicit dotenv file (path declared via SAP_ADT_DOTENV)
   3. Selected profile in ~/.sap-adt-cli/config.json, with its password
      in the OS keystore (run `credentials doctor` to see the backend)
 
 To set up your SAP connection, run:
-  python3 sap_adt_cli.py configure
+  sap-adt configure
 
 This saves a profile named '{default_profile}' and activates it. Additional SAP
 environments can be added with `configure --profile NAME`; switch with
 `profile use NAME` or override per command with `--profile NAME` / SAP_PROFILE.
 
-Or create a SKILL-local .env file / set environment variables for a one-off
-single-environment override:
+Or set environment variables for a one-off single-environment override
+(or point SAP_ADT_DOTENV at a .env file holding them):
   SAP_URL        - SAP system URL (e.g. https://my-sap.example.com:8000)
   SAP_USERNAME   - SAP username
   SAP_PASSWORD   - SAP password
@@ -59,7 +73,7 @@ Optional:
 
 Per-profile keystore password (env backend): SAP_ADT_<PROFILE>_PASSWORD
 Encrypted-file backend master passphrase (non-interactive): SAP_ADT_MASTER_PASSPHRASE
-""".format(skill_dotenv=_SKILL_DOTENV, default_profile=DEFAULT_PROFILE_NAME)
+""".format(default_profile=DEFAULT_PROFILE_NAME)
 
 
 @dataclass
@@ -201,10 +215,11 @@ def _fail_profile(message: str):
 # ---------------------------------------------------------------------------
 
 def _load_skill_dotenv() -> dict:
-    if not _SKILL_DOTENV.exists():
+    path = _skill_dotenv_path()
+    if path is None or not path.exists():
         return {}
     result = {}
-    with open(_SKILL_DOTENV) as f:
+    with open(path) as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
@@ -235,11 +250,12 @@ def _env_bool(key: str, dotenv: dict, default: bool = False) -> bool:
 def _env_source(required_keys: list, dotenv: dict) -> str:
     env_keys = [key for key in required_keys if os.getenv(key)]
     dotenv_keys = [key for key in required_keys if not os.getenv(key) and dotenv.get(key)]
+    dotenv_path = _skill_dotenv_path() or "(no dotenv configured)"
     if env_keys and dotenv_keys:
-        return f"process environment + {_SKILL_DOTENV} (overrides config profiles)"
+        return f"process environment + {dotenv_path} (overrides config profiles)"
     if env_keys:
         return "process environment (overrides config profiles)"
-    return f"{_SKILL_DOTENV} (overrides config profiles)"
+    return f"{dotenv_path} (overrides config profiles)"
 
 
 # ---------------------------------------------------------------------------
@@ -289,7 +305,7 @@ def _migrate_old_dir_if_needed() -> None:
     except Exception as e:
         print(
             f"WARNING: Could not migrate config from {_OLD_CONFIG_FILE}: {e}\n"
-            f"Run `sap-adt-cli configure` to set up credentials.",
+            f"Run `sap-adt configure` to set up credentials.",
             file=sys.stderr,
         )
 
@@ -431,7 +447,15 @@ def _config_from_section(
         _fail(f"Profile '{name}' in {CONFIG_FILE} is missing required field {e}. Re-run `configure --profile {name}`.")
 
 
-def load_config_with_source(profile: Optional[str] = None) -> Tuple[Optional[SapConfig], Optional[str]]:
+def load_env_connection(profile: Optional[str] = None) -> Tuple[Optional[SapConfig], Optional[str]]:
+    """Return (config, source) from process env + explicit dotenv only.
+
+    Same all-or-nothing rule as the full resolution: all four required
+    SAP_* keys must resolve from the two env layers or no connection is
+    built — profiles are never consulted here. Used by
+    load_config_with_source and by the transport legacy path, which must
+    not silently fall back to profiles.
+    """
     dotenv = _load_skill_dotenv()
     required_keys = ["SAP_URL", "SAP_USERNAME", "SAP_PASSWORD", "SAP_CLIENT"]
 
@@ -481,6 +505,13 @@ def load_config_with_source(profile: Optional[str] = None) -> Tuple[Optional[Sap
             write_source=wsrc,
             transport_source=tsrc,
         ), _env_source(source_keys, dotenv)
+    return None, None
+
+
+def load_config_with_source(profile: Optional[str] = None) -> Tuple[Optional[SapConfig], Optional[str]]:
+    config, source = load_env_connection(profile)
+    if config is not None:
+        return config, source
 
     raw = _read_raw()
     if raw is None:
@@ -505,7 +536,7 @@ def load_config(profile: Optional[str] = None) -> Optional[SapConfig]:
 def get_config(profile: Optional[str] = None) -> SapConfig:
     config = load_config(profile)
     if config is None:
-        raise ConfigError("Not configured. Run: sap-adt-cli configure")
+        raise ConfigError("Not configured. Run: sap-adt configure")
     return config
 
 

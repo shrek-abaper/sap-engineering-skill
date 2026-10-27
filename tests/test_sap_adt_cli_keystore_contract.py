@@ -14,13 +14,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 sys_path_insert = str(SCRIPTS_PATH)
 import sys  # noqa: E402
 
 sys.path.insert(0, sys_path_insert)
 
-from lib.keystore import (  # noqa: E402
+from sap_adt.keystore import (  # noqa: E402
     dpapi_store,
     env_store,
     file_store,
@@ -28,7 +28,7 @@ from lib.keystore import (  # noqa: E402
     pass_store,
     select,
 )
-from lib.keystore.base import BackendNotWritableError  # noqa: E402
+from sap_adt.keystore.base import BackendNotWritableError  # noqa: E402
 
 SECRET = "Contract-Secret-口令-42"
 PASSPHRASE = "contract-master"

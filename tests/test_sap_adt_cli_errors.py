@@ -4,13 +4,13 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS = ROOT / "src"
 FIXTURES = ROOT / "skills" / "sap-adt-cli" / "tests" / "fixtures"
 sys.path.insert(0, str(SCRIPTS))
 
-from lib import errors  # noqa: E402
-from lib.client import AdtHttpError  # noqa: E402
-from lib.parsers.common import ParseError  # noqa: E402
+from sap_adt import errors  # noqa: E402
+from sap_adt.adt.client import AdtHttpError  # noqa: E402
+from sap_adt.adt.parsers.common import ParseError  # noqa: E402
 
 
 class ClosedSetTests(unittest.TestCase):
