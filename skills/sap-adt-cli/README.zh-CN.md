@@ -10,13 +10,16 @@
 
 ## 环境要求
 
-- Python 3.8+
+- 已安装 `sap-adt` CLI（一次性安装，见 [references/setup.md](references/setup.md)）：
+  - npm/npx：`npx sap-adt-cli@1.4.0 install` — Node.js ≥ 18，自包含运行时，无需 Python
+  - PyPI：`pip install sap-adt==1.4.0` — Python ≥ 3.10
+  - Release 页面的 Linux 便携包（无需 Python/Node）
 - SAP 系统（本地 ECC / S/4HANA 或 BTP ABAP），需已激活 ADT 服务
 - 拥有 `SAP_ADT_BASE` 角色（或等效权限）的 SAP 对话用户
 
-核心依赖（`click`、`requests`、`urllib3`）在首次运行时自动安装。密钥库后端为可选项：
-桌面系统密钥库需 `pip install keyring`，加密文件兜底需 `pip install cryptography`
-（WSL2 两者都不需要——直接使用 Windows DPAPI）。详见[凭据存储（密钥库）](#凭据存储密钥库)。
+**不存在首次运行自动安装依赖**。核心运行时依赖为 `click`、`requests`、`urllib3`；
+密钥库后端可选：桌面系统密钥库需 `keyring` extra，加密文件兜底需 `file` extra
+（cryptography；WSL2 两者都不需要——直接使用 Windows DPAPI）。详见[凭据存储（密钥库）](#凭据存储密钥库)。
 
 ---
 
@@ -35,14 +38,14 @@
 | 2 | 将 Node.js 可执行目录和 npm 全局包路径添加到用户级 `PATH` |
 | 3 | 通过 `npm install -g opencode-ai` 全局安装 opencode |
 | 4 | 将本仓库克隆到 `%USERPROFILE%\.agents\sap-engineering-skill`，并在 `%USERPROFILE%\.agents\skills\sap-adt-cli` 创建目录联接（Junction），指向仓库内的 `skills\sap-adt-cli` 子目录 |
-| 5 | 安装 Python 依赖：`click`、`requests`、`urllib3` |
+| 5 | 从本地克隆安装 `sap-adt` CLI（`python -m pip install "<克隆目录>"`），并执行 `python -m sap_adt --version` 自检 |
 
 ### 前置软件
 
 运行脚本前，请先安装：
 
 - **[Node.js v18 LTS 或更高版本](https://nodejs.org)** — 使用默认安装选项（默认已勾选添加 PATH）
-- **[Python 3.8+](https://www.python.org/downloads)** — 安装时务必勾选 **"Add Python to PATH"**
+- **[Python 3.10+](https://www.python.org/downloads)** — 安装时务必勾选 **"Add Python to PATH"**
 - **[Git for Windows](https://git-scm.com/download/win)** — 使用默认安装选项
 
 ### 运行安装脚本
@@ -79,21 +82,25 @@ opencode
 扫描包 ZMYPAYMENT 下的所有对象，列出潜在的安全风险
 ```
 
-opencode 会自动调用 `sap-adt-cli` 通过 ADT 接口从 SAP 系统获取 ABAP 源代码，再交给 AI 模型分析——无需手动复制粘贴。
+opencode 会调用 `sap-adt` CLI 通过 ADT 接口从 SAP 系统获取 ABAP 源代码，再交给 AI 模型分析——无需手动复制粘贴。
 
 ### SAP 凭据配置（首次使用）
 
-首次执行 ABAP 查询时，opencode 会提示输入 SAP 连接信息：
+首次使用请运行一次交互式向导（当 CLI 报 `CONFIG_MISSING` 时 Agent 也会提示你执行）：
 
-```
-SAP 系统 URL    — 例如 https://my-sap.example.com:8000（含端口号）
-SAP 用户名      — 对话用户，例如 DEVELOPER
-SAP 密码        — SAP 登录密码
-SAP 集团        — 3 位集团编号，例如 100
-跳过 SSL 验证？  — 内网或自签名证书环境选 yes
+```bash
+sap-adt configure
 ```
 
-非密连接信息保存在 `~/.sap-adt-cli/config.json` 的环境 profile 中，**口令只存入操作系统密钥库，不再明文落盘**。支持多套 SAP 系统（DEV/QAS/PRD）命名 profile，详见[凭据存储（密钥库）](#凭据存储密钥库)与[多 SAP 环境（Profile）](#多-sap-环境profile)。
+向导会逐项询问（密码输入不回显）：
+
+```
+SAP System URL    — 例如 https://my-sap.example.com:8000
+SAP Username      — 对话用户（例如 DEVELOPER）
+SAP Password      — SAP 登录密码
+SAP Client        — 3 位客户端编号（例如 100）
+Skip SSL check?   — 自签名/内部证书选择是
+```
 
 ### 支持的 AI 智能体
 
@@ -115,9 +122,9 @@ opencode 仅作为示例。`sap-adt-cli` 实现了标准 Agent Skill 接口（`S
 ## 快速开始
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/shrek-abaper/sap-engineering-skill
-cd sap-engineering-skill
+# 1. 一次性安装 CLI（任选一种渠道，详见 references/setup.md）
+pip install sap-adt==1.4.0            # Python ≥ 3.10
+# 或: npx sap-adt-cli@1.4.0 install   # Node.js ≥ 18，自包含运行时
 
 # 2. 配置凭据（交互式向导 — 密码不回显，并存入操作系统密钥库；
 #    之后可用 configure --profile qas / prd 添加更多环境）
@@ -329,6 +336,8 @@ CI 运行期也可以按 profile 直接提供口令：`SAP_ADT_<PROFILE>_PASSWOR
 | `list-transports [--user U] [--status D\|R]` | 列出传输请求（JSON，只读）；`--status` 默认为 `D`（开发中） |
 | `create-transport --package <DEVCLASS> --description "<DESC>" --ref <object-uri>` | 通过 CreateCorrectionRequest 创建传输请求 *（需 allow_transport + 每次确认）*；必须提供包与对象 REF；`$TMP` 创建本地请求；Basis 7.56 真机验证（2026-09-17） |
 | `release-transport <TRKORR> [--yes]` | 释放传输——不可逆 *（需 allow_transport + 每次确认）* |
+| `transport ping` | 传输采集的 ADT 连通性检查（纯文本输出） |
+| `transport collect <TRKORR> [--output-dir DIR] [--verbose]` | 只读采集 TR 的对象清单与源码到 `review_package/`（`manifest.json` + `sources/`）；`--legacy-config` 显式启用已弃用的明文采集器配置 |
 
 任意命令加 `--help` 查看完整参数说明。
 
@@ -443,6 +452,14 @@ sap-adt release-transport DEVK900001                           # 需 allow_trans
 ---
 
 ## 版本历史
+
+### v1.4.0 — 可独立安装的 CLI 与多渠道分发
+
+- **CLI 与 Skill 文档分离分发**：`src/sap_adt` 包、`sap-adt` 入口、npm（`sap-adt-cli`）、PyPI（`sap-adt`）、Linux 便携运行时
+- **取消运行时自动安装**：依赖需一次性安装；旧的 Skill 内脚本入口已删除
+- **传输采集并入 CLI**：`sap-adt transport collect|ping`（只读）；旧明文采集器配置仅在显式 `--legacy-config` 时读取
+- **dotenv 需显式声明**：`SAP_ADT_DOTENV` 指定文件，CLI 不再扫描当前目录或 Skill 目录
+- 程序名 `sap-adt-cli` → `sap-adt`；命令语义、18 个错误码、退出层级与安全门保持不变
 
 ### v1.3.0 — 密钥库凭据存储
 

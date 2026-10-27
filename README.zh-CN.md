@@ -13,7 +13,7 @@
 <h4>面向 SAP ABAP 上线工作流的 AI Agent Skill 套件</h4>
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white)](skills/sap-adt-cli/scripts)
+[![Python](https://img.shields.io/badge/Python-3-3776AB?style=flat-square&logo=python&logoColor=white)](src/sap_adt)
 [![SAP](https://img.shields.io/badge/SAP-ADT%20REST%20API-0FAAFF?style=flat-square&logo=sap&logoColor=white)](#skill-目录)
 [![Skills](https://img.shields.io/badge/skills-4-2EA043?style=flat-square)](#skill-目录)
 [![Agents](https://img.shields.io/badge/agents-opencode%20%C2%B7%20Claude%20Code%20%C2%B7%20Cursor-orange?style=flat-square)](#兼容的-ai-agent)
@@ -42,14 +42,16 @@
 
 通过 [ADT REST API](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools) 对 SAP 系统进行读写操作的命令行工具与 AI Agent Skill。
 
+CLI(`sap-adt`) 是独立分发的可安装产品：**npm** `npx sap-adt-cli@1.4.0 install`（Node ≥ 18，自包含运行时）、**PyPI** `pip install sap-adt==1.4.0`（Python ≥ 3.10）、**Linux 便携包**（见 [Release 页面](https://github.com/shrek-abaper/sap-engineering-skill/releases)）。Skill 目录本身只含文档，不含执行代码。
+
 **支持对象类型**：程序、类、函数模块（需指定函数组）、函数组、接口、包含程序、CDS 视图、类型组（TYPE POOL）、DDIC 表/结构/域/数据元素、包、事务码、对象搜索（`*` 通配符）、只读 Open SQL 数据预览、where-used 分析、语法检查、传输请求管理（列表/创建/发布）。
 
 **核心特性**：
 - 默认只读；写入和传输操作需显式开启能力标志，且每次操作都展示变更预览并要求 `[y/N]` 确认，确认绝不缓存或复用（`--yes` 仅限可信自动化场景）
 - 多环境 **Profile**（DEV/QAS/PRD…）保存于 `~/.sap-adt-cli/config.json`（0600 权限）——用 `profile use` 持久切换，或用 `--profile` 单次指定
 - 密码仅存于**操作系统密钥库**，绝不落入配置文件；后端优先级为 `env` → `keyring`（凭据管理器 / Keychain / Secret Service）→ `dpapi`（WSL2）→ `pass`（GPG）→ `file`（scrypt + Fernet 兜底）；通过 `credentials set|forget|status|doctor` 管理，旧的明文配置自动迁移，详细日志与 HTTP 异常堆栈全程脱敏
-- 支持环境变量或 Skill 本地 `.env` 覆盖 Profile（适用于 CI/CD）
-- Windows 一键安装脚本（`setup-opencode-abap-cli.bat`），自动完成 opencode + Skill 全流程配置
+- 支持环境变量或由 `SAP_ADT_DOTENV` 声明的 dotenv 文件覆盖 Profile（适用于 CI/CD；CLI 不会扫描当前目录）
+- Windows 一键安装脚本（`setup-opencode-abap-cli.bat`）：安装 opencode、克隆本仓库并从本地安装 `sap-adt` CLI
 
 ---
 
@@ -108,6 +110,9 @@ SAP ABAP 上线前代码审查 AI Agent Skill。对 **9 个维度**进行安全�
 
 | 文档 | 说明 |
 |---|---|
+| [`docs/installation/`](docs/installation/) | CLI 安装渠道（npm、PyPI、便携包、源码）、就绪/诊断矩阵、Windows 与便携包说明 |
+| [`docs/development/`](docs/development/) | 架构、构建/发布工具、迁移说明，以及 `sap-adt-cli` 重构历史归档 |
+| [`docs/agents/`](docs/agents/) | Claude Code 插件用法与通用 `SKILL.md` Agent 指南（含验证状态） |
 | [`docs/authentication/`](docs/authentication/) | SAP↔AI 对接（CLI / MCP / OData）认证参考手册：决策树、各方式优缺点详解与 Basic、SPNEGO、X.509、OIDC/OAuth2、边界网关、客户端模式的逐步落地方案。本目录为同步副本，权威版本在 `sap-functional-skill` 仓库维护 |
 
 ---
@@ -116,20 +121,28 @@ SAP ABAP 上线前代码审查 AI Agent Skill。对 **9 个维度**进行安全�
 
 ```
 sap-engineering-skill/
-├── README.md                         ← 英文版（默认）
-├── README.zh-CN.md                   ← 本文件（中文）
-├── CONTRIBUTING.md                   ← 测试与密钥扫描说明
-├── LICENSE
-├── setup-opencode-abap-cli.bat       ← Windows 一键安装脚本
-├── .gitleaks.toml                    ← 密钥扫描规则（同时作为 pre-commit hook）
-├── tests/                            ← 仓库级 unittest 测试套（密钥库、凭据、安全防护等）
-├── docs/authentication/              ← 认证参考手册（同步自 sap-functional-skill）
-└── skills/
-    ├── sap-adt-cli/             ← ADT CLI 工具与 Skill（源码位于本仓库）
-    ├── abap-code-review/        ← ABAP 代码审查 Skill
-    ├── sap-transport-gate/      ← 传输请求上线门控 Skill（含 evals/ 黄金集）
-    └── sap-integration-wiki/    ← SAP 集成知识库 Skill
+├── src/sap_adt/                      ← 唯一的 CLI 实现（可安装包）
+├── skills/                           ← 仅 Skill 内容（SKILL.md + references，无执行代码）
+│   ├── sap-adt-cli/
+│   ├── abap-code-review/
+│   ├── sap-transport-gate/           ← 含 evals/ 黄金集
+│   └── sap-integration-wiki/         ← 含 scripts/ 内容生成器
+├── packaging/                        ← PyInstaller spec、npm 模板、Windows 安装器、targets.json
+├── tools/                            ← build_runtime / build_npm / build_skills / build_plugin /
+│                                       build_manifest / check_release / sync_skill_runtime_docs
+├── tests/                            ← unittest 测试套 + fixtures/sap_adt_cli/（脱敏 ADT 抓包）
+├── docs/                             ← installation/、development/、agents/、authentication/、
+│                                       development/archive/sap-adt-cli/（重构历史）
+├── .claude-plugin/                   ← marketplace.json + plugin.json（纯文档插件）
+├── compatibility.json                ← 各 Skill 的 CLI 需求与兼容版本范围
+├── pyproject.toml                    ← CLI 版本唯一来源
+├── README.md / README.zh-CN.md
+├── CONTRIBUTING.md / SECURITY.md / CHANGELOG.md
+├── setup-opencode-abap-cli.bat       ← Windows 一键安装（opencode + sap-adt CLI）
+└── .gitleaks.toml                    ← 密钥扫描规则（同时作为 pre-commit hook）
 ```
+
+分发产物（`dist/`）由 `tools/` 生成，不提交。每个 Skill 还带有生成的 `references/setup.md` 与 `references/runtime-compatibility.json` 快照，保证单独复制的 Skill 目录自包含。
 
 上述三个 Skill 历史上以 git subtree 形式关联独立公开仓库，这些独立仓库现已**归档**（只读），后续所有更新仅在本仓库维护：
 
@@ -154,11 +167,11 @@ sap-engineering-skill/
 
 安装后四个 Skill 统一位于 `sap-engineering-skills` 命名空间下（如 `/sap-engineering-skills:sap-adt-cli`）。更新可在 `/plugin` 面板操作，或执行 `claude plugin update sap-engineering-skills@sap-engineering`。
 
-> 插件只分发 **Skill 文档**，不会安装 CLI。`sap-adt` 需单独安装（npm/npx、Windows 安装器、便携包或 Python）——见 [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md)。离线 Skill（`abap-code-review`、`sap-integration-wiki`）无需 CLI。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
+> 插件只分发 **Skill 文档**，不会安装 CLI。`sap-adt` 需单独安装：npm `npx sap-adt-cli@1.4.0 install`、PyPI `pip install sap-adt==1.4.0` 或 Linux 便携包（Windows 安装器与 macOS 运行时尚未构建）——见 [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md)。离线 Skill（`abap-code-review`、`sap-integration-wiki`）无需 CLI。archive 源插件要求 Claude Code ≥ 2.1.224。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
 
 ### Windows——sap-adt-cli 一键安装（opencode）
 
-下载 [`setup-opencode-abap-cli.bat`](setup-opencode-abap-cli.bat) 并双击运行。脚本自动安装 opencode、克隆本仓库并配置 Skill。
+下载 [`setup-opencode-abap-cli.bat`](setup-opencode-abap-cli.bat) 并双击运行。脚本安装 opencode、克隆本仓库、从本地 `pip install` 安装 `sap-adt` CLI 并自检。需要 Node.js、Python 3 与 Git。
 
 ### 其他 AI Agent——手动软链安装（任意操作系统）
 
@@ -214,13 +227,16 @@ sap-adt credentials doctor
 
 ## 开发与测试
 
-- **测试**——使用标准库 `unittest`，测试代码位于仓库根目录 `tests/`（覆盖密钥库各后端、明文配置迁移、日志脱敏、写入/DML 拦截——共 148 个测试）：
+- **测试**——使用标准库 `unittest`，测试代码位于仓库根目录 `tests/`（CLI 契约、密钥库各后端、配置迁移、安全门、分发快照与插件载荷——共 320 个测试）。测试导入 `sap_adt` 包，需先在虚拟环境安装：
 
   ```bash
-  python3 -m unittest discover -s tests -v
+  python3 -m venv .venv && .venv/bin/pip install -e . ".[keystore,file]" build pyinstaller
+  .venv/bin/python -m unittest discover -s tests -v
+  .venv/bin/python tests/check_contract.py          # SKILL.md 与代码契约
+  node --test packaging/npm/test/install.test.js    # npm 安装器错误路径
   ```
 
-  仅依赖 `click` / `requests` / `urllib3`；`keyring` 与 `cryptography` 是原生密钥库后端的可选依赖。
+  核心运行时依赖为 `click` / `requests` / `urllib3`；`keyring` 与 `cryptography` 是原生密钥库后端的可选依赖。
 - **验证在本地完成**——无云端 CI:托管 runner 无法连接真实 SAP 系统。推送前请本地运行测试套与契约检查(`python tests/check_contract.py`)。
 - **密钥扫描**——gitleaks 同时作为 pre-commit hook 运行（`.pre-commit-config.yaml`）。占位符规则与 WSL/DPAPI 手动验证清单见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

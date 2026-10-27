@@ -1,5 +1,16 @@
 # Changelog
 
+## Plugin/docs 1.1.6 — 2026-10-28
+
+- README audit against the post-refactor code: root READMEs now describe the
+  installable CLI (npm/PyPI/portable), the src/sap_adt + tools/ + packaging/
+  layout, the real test baseline (320 tests, local-only) and the updated
+  docs index. Skill READMEs drop the removed requirements.txt/.env-scanning
+  steps, document `sap-adt configure` / `SAP_ADT_DOTENV` and the transport
+  `collect|ping` commands, and list the generated setup/compatibility
+  snapshots in their structure trees.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.5 — 2026-10-28
 
 - Moved development assets out of the skill folder: the four refactor/history

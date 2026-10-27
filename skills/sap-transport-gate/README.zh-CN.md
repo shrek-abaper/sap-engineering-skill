@@ -95,42 +95,39 @@ MEDIUM 发现 + 有缓解路径      → CONDITIONAL_GO（证据级别需 MEDIUM
 
 ---
 
-## 快速开始（在线传输模式）
+## 快速开始
 
-### 1. 安装依赖
+> 离线审查模式（离线包 / 离线本地）**不需要 CLI**——直接提供材料即可开始审查。以下步骤仅用于在线传输模式。
+
+### 1. 一次性安装 CLI
 
 ```bash
-cd scripts
-pip install -r requirements.txt
+pip install sap-adt==1.4.0            # Python ≥ 3.10
+# 或: npx sap-adt-cli@1.4.0 install   # Node.js ≥ 18，自包含运行时
 ```
+
+不存在自动安装依赖；全部渠道见 `references/setup.md`。
 
 ### 2. 配置 SAP 凭证
 
-**方式一：环境变量文件（推荐）**
-
-```bash
-cp .env.example .env
-# 编辑 .env，填入 SAP 连接信息
-```
-
-`.env` 文件内容示例：
-
-```ini
-SAP_URL=https://your-sap-system.example.com:8000
-SAP_USERNAME=YOUR_USERNAME
-SAP_PASSWORD=YOUR_PASSWORD
-SAP_CLIENT=100
-SAP_LANGUAGE=EN
-SAP_VERIFY_SSL=1   # 自签名证书请设为 0
-```
-
-**方式二：交互式配置（存入 `~/.sap-transport-gate/config.json`）**
+**方式一：交互式 Profile（推荐——口令存入操作系统密钥库）**
 
 ```bash
 sap-adt configure
+sap-adt status        # 本地配置状态（不是联机登录）
 ```
 
-凭证读取优先级：`<skill目录>/.env` → `~/.sap-transport-gate/config.json` → 环境变量
+**方式二：显式声明路径的 dotenv 文件**
+
+```bash
+cp .env.example ~/.config/sap-adt.env   # 或任意私有路径
+# 编辑并填入 SAP_URL、SAP_USERNAME、SAP_PASSWORD、SAP_CLIENT
+export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
+```
+
+凭证读取优先级：进程环境变量 → `SAP_ADT_DOTENV` 声明的 dotenv 文件 → ADT Profile + 操作系统密钥库。
+
+> 旧独立采集器的明文配置（`~/.sap-transport-gate/config.json`）已弃用，仅在显式 `--legacy-config` 时读取。
 
 ### 3. 测试连接
 
@@ -224,7 +221,9 @@ sap-transport-gate/
 │   ├── report-format.md              ← 报告 Markdown 模板 & JSON Schema
 │   ├── review-dimensions.md          ← 10 维度详细检查项
 │   ├── review-modes.md               ← 模式检测与证据清单
-│   └── sap-connectivity.md           ← SAP 连接配置指南
+│   ├── sap-connectivity.md           ← SAP 连接配置指南
+│   ├── setup.md                      ← 生成的 CLI 安装/就绪指南（离线模式无需 CLI）
+│   └── runtime-compatibility.json    ← 生成的 CLI 兼容性快照
 └── （无执行代码——在线采集使用 `sap-adt` CLI）
 ```
 

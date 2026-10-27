@@ -116,10 +116,13 @@ abap-code-review/
 ├── SKILL.md                          ← Agent instructions (SKILL definition; loaded by the agent host)
 ├── README.md                         ← This file (English)
 ├── README.zh-CN.md                   ← Chinese version
+├── LICENSE                           ← MIT License
 └── references/
     ├── REF_ABAP_SECURITY.md          ← Security rules for [SEC] and [AUTH] dimensions
     ├── REF_CLEAN_ABAP.md             ← Clean ABAP rules for [STD] dimension
-    └── REPORT_TEMPLATE.md            ← Report template loaded in Step 5
+    ├── REPORT_TEMPLATE.md            ← Report template loaded in Step 5
+    ├── setup.md                      ← Generated CLI guide (informational; this skill needs no CLI)
+    └── runtime-compatibility.json    ← Generated compatibility snapshot (no CLI required)
 ```
 
 ---

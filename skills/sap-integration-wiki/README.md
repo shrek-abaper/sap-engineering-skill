@@ -172,12 +172,15 @@ sap-integration-wiki/
 │   │   ├── btp-cloud-integration.md  BTP Integration Suite guide
 │   │   └── best-practices.md         Security, retry, monitoring, testing
 │   │
+│   ├── setup.md                      ← Generated CLI guide (informational; this skill needs no CLI)
+│   ├── runtime-compatibility.json    ← Generated compatibility snapshot (no CLI required)
 │   └── troubleshoot/                 ← Fix it
 │       ├── odata-errors.md           HTTP 4xx/5xx error solutions
 │       ├── auth-errors.md            Auth and CSRF error solutions
 │       ├── idoc-errors.md            IDoc stuck / status 51 solutions
 │       └── version-diff.md           ECC vs S/4HANA behavior differences
 │
+├── LICENSE                           ← MIT License
 ├── scripts/                          ← Runnable tools
 │   ├── gen-odata-postman.js          Generate Postman collection for any OData service
 │   ├── gen-jco-config.py             Generate JCo .jcoDestination config file

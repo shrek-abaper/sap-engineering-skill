@@ -102,42 +102,39 @@ In all modes: No AI-side SAP login; AI never holds or requests credentials. In O
 
 ---
 
-## Quick Start (Online Transport Mode)
+## Quick Start
 
-### 1. Install Dependencies
+> Offline review modes (Offline Package / Offline Local) need **no CLI** — provide the materials and start the review. The steps below are for Online Transport Mode.
+
+### 1. Install the CLI once
 
 ```bash
-cd scripts
-pip install -r requirements.txt
+pip install sap-adt==1.4.0            # Python ≥ 3.10
+# or: npx sap-adt-cli@1.4.0 install   # Node.js ≥ 18, self-contained runtime
 ```
+
+There is no auto-install of dependencies; see `references/setup.md` for all channels.
 
 ### 2. Configure SAP Credentials
 
-**Option A: Environment file (recommended)**
-
-```bash
-cp .env.example .env
-# Edit .env with your SAP connection details
-```
-
-`.env` content:
-
-```ini
-SAP_URL=https://your-sap-system.example.com:8000
-SAP_USERNAME=YOUR_USERNAME
-SAP_PASSWORD=YOUR_PASSWORD
-SAP_CLIENT=100
-SAP_LANGUAGE=EN
-SAP_VERIFY_SSL=1   # set to 0 for self-signed certificates
-```
-
-**Option B: Interactive configure (saved to `~/.sap-transport-gate/config.json`)**
+**Option A: Interactive profile (recommended — password goes to the OS keystore)**
 
 ```bash
 sap-adt configure
+sap-adt status        # local configuration state (not a live SAP login)
 ```
 
-Credential resolution order: `<skill_dir>/.env` → `~/.sap-transport-gate/config.json` → environment variables
+**Option B: dotenv file with an explicit path**
+
+```bash
+cp .env.example ~/.config/sap-adt.env   # or any private path
+# edit it with SAP_URL, SAP_USERNAME, SAP_PASSWORD, SAP_CLIENT
+export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
+```
+
+Credential resolution order: process environment variables → dotenv declared by `SAP_ADT_DOTENV` → ADT profile + OS keystore.
+
+> The old standalone collector config (`~/.sap-transport-gate/config.json`, plaintext) is deprecated and read only on the explicit `--legacy-config` path.
 
 ### 3. Test Connectivity
 
@@ -212,7 +209,7 @@ Load this skill when users say:
 
 ```
 sap-transport-gate/
-├── .env.example                      ← Credential template (never commit .env)
+├── .env.example                      ← Dotenv template for SAP_ADT_DOTENV (never commit the real file)
 ├── .gitignore                        ← Git ignore rules
 ├── changelog.md                      ← Version history and migration notes
 ├── LICENSE                           ← MIT License
@@ -232,7 +229,9 @@ sap-transport-gate/
 │   ├── report-format.md              ← Markdown report template & JSON schema
 │   ├── review-dimensions.md          ← Detailed check items for all 10 dimensions
 │   ├── review-modes.md               ← Mode detection, Review Package spec, evidence checklists
-│   └── sap-connectivity.md           ← SAP connection configuration guide
+│   ├── sap-connectivity.md           ← SAP connection configuration guide
+│   ├── setup.md                      ← Generated CLI install/readiness guide (no CLI for offline modes)
+│   └── runtime-compatibility.json    ← Generated CLI compatibility snapshot
 └── (no execution code — online collection is the `sap-adt` CLI)
 ```
 

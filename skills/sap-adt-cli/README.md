@@ -21,14 +21,18 @@ explicit capability flags and per-operation confirmation.
 
 ## Requirements
 
-- Python 3.8+
+- The `sap-adt` CLI, installed once (see [references/setup.md](references/setup.md)):
+  - npm/npx: `npx sap-adt-cli@1.4.0 install` — Node.js ≥ 18, self-contained runtime, no Python
+  - PyPI: `pip install sap-adt==1.4.0` — Python ≥ 3.10
+  - Linux portable archive from the release page (no Python/Node)
 - A SAP system (on-premise ECC / S/4HANA, or BTP ABAP) with ADT services activated
 - A SAP dialog user with the `SAP_ADT_BASE` role (or equivalent)
 
-Core dependencies (`click`, `requests`, `urllib3`) are installed automatically on first run.
-Keystore backends are optional: `pip install keyring` for desktop OS vaults,
-`pip install cryptography` for the encrypted-file fallback (WSL2 needs neither —
-it uses Windows DPAPI directly). See [Credential storage](#credential-storage-keystore).
+There is **no first-run auto-install** of dependencies. Core runtime dependencies are
+`click`, `requests`, `urllib3`; keystore backends are optional: the `keyring` extra for
+desktop OS vaults and the `file` extra (cryptography) for the encrypted-file fallback
+(WSL2 needs neither — it uses Windows DPAPI directly). See
+[Credential storage](#credential-storage-keystore).
 
 ---
 
@@ -47,14 +51,14 @@ it uses Windows DPAPI directly). See [Credential storage](#credential-storage-ke
 | 2 | Adds Node.js bin and npm global package paths to the user-level `PATH` |
 | 3 | Installs `opencode-ai` globally via `npm install -g opencode-ai` |
 | 4 | Clones this repository to `%USERPROFILE%\.agents\sap-engineering-skill` and creates a directory junction at `%USERPROFILE%\.agents\skills\sap-adt-cli` pointing to the `skills\sap-adt-cli` subfolder |
-| 5 | Installs Python dependencies: `click`, `requests`, `urllib3` |
+| 5 | Installs the `sap-adt` CLI from the clone (`python -m pip install "<clone>"`) and self-tests it via `python -m sap_adt --version` |
 
 ### Prerequisites
 
 Install these before running the script:
 
 - **[Node.js v18 LTS or later](https://nodejs.org)** — use default installer options (PATH is checked by default)
-- **[Python 3.8+](https://www.python.org/downloads)** — check **"Add Python to PATH"** during setup
+- **[Python 3.10+](https://www.python.org/downloads)** — check **"Add Python to PATH"** during setup
 - **[Git for Windows](https://git-scm.com/download/win)** — use default installer options
 
 ### Run the installer
@@ -92,17 +96,23 @@ missing authorization checks, and hardcoded credentials
 Scan the package ZMYPAYMENT and list all objects with potential security issues
 ```
 
-opencode automatically calls `sap-adt-cli` to fetch ABAP source code from your SAP system via ADT,
+opencode calls the `sap-adt` CLI to fetch ABAP source code from your SAP system via ADT,
 then passes it to the AI model for analysis — no copy-paste required.
 
 ### SAP credentials setup (first run)
 
-On the first query, opencode will prompt you for SAP connection details:
+Run the interactive wizard once (the agent will also suggest it when the CLI reports `CONFIG_MISSING`):
+
+```bash
+sap-adt configure
+```
+
+It prompts locally for:
 
 ```
 SAP System URL    — e.g. https://my-sap.example.com:8000
 SAP Username      — dialog user (e.g. DEVELOPER)
-SAP Password      — SAP logon password
+SAP Password      — SAP logon password (hidden input)
 SAP Client        — 3-digit client number (e.g. 100)
 Skip SSL check?   — yes for self-signed / internal certs
 ```
@@ -123,7 +133,7 @@ and integrates with any agent framework that supports custom tools or skills:
 |-------|-------|
 | [opencode](https://opencode.ai) | Free, open-source. Used in this example. Supports 30+ model providers. |
 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Anthropic's official CLI agent — natively supports SKILL.md |
-| [Cursor](https://cursor.sh) | AI-powered code editor; install via MCP tool adapter |
+| [Cursor](https://cursor.com) | Native Agent Skills support; discovers `~/.agents/skills/` |
 | Other agents | SKILL.md is natively supported by opencode and Claude Code; other frameworks may require adaptation |
 
 > ⚠️ **Data compliance note:** ABAP source code may contain core business logic and sensitive data.  
@@ -135,9 +145,9 @@ and integrates with any agent framework that supports custom tools or skills:
 ## Quickstart
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/shrek-abaper/sap-engineering-skill
-cd sap-engineering-skill
+# 1. Install the CLI once (pick one channel; details in references/setup.md)
+pip install sap-adt==1.4.0            # Python ≥ 3.10
+# or: npx sap-adt-cli@1.4.0 install   # Node.js ≥ 18, self-contained runtime
 
 # 2. Configure credentials (interactive wizard — password is not echoed and is
 #    saved to the OS keystore; add more systems later with: configure --profile qas / prd)
@@ -269,7 +279,7 @@ sap-adt credentials forget dev       # purge from all writable backends
 ### Environment variables
 
 Useful for CI/CD pipelines or one-off sessions. The complete-connection
-variables take precedence over both the SKILL-local `.env` and saved profiles.
+variables take precedence over both the declared dotenv file (`SAP_ADT_DOTENV`) and saved profiles.
 
 ```bash
 export SAP_URL=https://my-sap.example.com:8000
@@ -373,6 +383,8 @@ At runtime, CI can instead provide the password per profile via
 | `list-transports [--user U] [--status D\|R]` | List transport requests (JSON, read-only); default `--status D` (in development) |
 | `create-transport --package <DEVCLASS> --description "<DESC>" --ref <object-uri>` | Create transport via CreateCorrectionRequest *(allow_transport + confirm each time)*; package + object REF required; `$TMP` creates a local request; real-verified on Basis 7.56 (2026-09-17) |
 | `release-transport <TRKORR> [--yes]` | Release transport — irreversible *(allow_transport + confirm each time)* |
+| `transport ping` | ADT connectivity check for transport collection (plain text) |
+| `transport collect <TRKORR> [--output-dir DIR] [--verbose]` | Read-only collection of a TR's object list + sources into `review_package/` (`manifest.json` + `sources/`); `--legacy-config` explicitly opts into the deprecated plaintext collector config |
 
 Run any command with `--help` for full details.
 
@@ -501,6 +513,14 @@ all 16 error codes.
 ---
 
 ## Changelog
+
+### v1.4.0 — Installable CLI & multichannel distribution
+
+- **The CLI is now installable independently of the skill docs**: `src/sap_adt` package, `sap-adt` entry point, npm (`sap-adt-cli`), PyPI (`sap-adt`), Linux portable runtime
+- **No runtime auto-install**: dependencies must be installed once; old skill-local script entry points were removed
+- **Transport collection in the CLI**: `sap-adt transport collect|ping` (read-only); the legacy plaintext collector config is read only via explicit `--legacy-config`
+- **Dotenv is explicit**: `SAP_ADT_DOTENV` declares the file; the CLI never scans the CWD or skill folder
+- Program name `sap-adt-cli` → `sap-adt`; all command semantics, the 18 error codes, exit tiers and safety gates unchanged
 
 ### v1.3.0 — Keystore credential storage
 

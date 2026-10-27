@@ -169,6 +169,7 @@ sap-integration-wiki/
 │       ├── idoc-errors.md            IDoc 卡住/状态 51 解决方案
 │       └── version-diff.md           ECC 与 S/4HANA 行为差异
 │
+├── LICENSE                           ← MIT 许可证
 ├── scripts/                          ← 可运行工具脚本
 │   ├── gen-odata-postman.js          为任意 OData 服务生成 Postman 集合
 │   ├── gen-jco-config.py             生成 JCo .jcoDestination 配置文件
