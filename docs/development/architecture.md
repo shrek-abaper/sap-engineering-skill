@@ -39,6 +39,13 @@ src/sap_adt/
 └── transport/        collector (read-only), legacy config adapter
 ```
 
+## Single SAP access path
+
+All SAP HTTP traffic goes through `sap_adt/adt/client.py` (Basic Auth, CSRF,
+retry, redaction, `sap-client` query parameter). Transport collection injects
+its connection with `set_config()` and reuses the ADT handlers for source
+endpoints; it has no HTTP client of its own.
+
 ## No compatibility shims
 
 The old skill-local script entry points (`skills/*/scripts/sap_adt_cli.py`,

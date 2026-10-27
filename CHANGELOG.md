@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.1 — 2026-10-28
+
+- Transport collection now uses the shared ADT HTTP client and handlers
+  (`sap_adt.adt.client` / `sap_adt.adt.handlers`); the duplicated
+  `sap_adt/transport/client.py` and the duplicated source-endpoint helpers
+  were removed. One implementation owns Basic Auth, CSRF, retries, redaction
+  and the `sap-client` query parameter.
+- The shared client gained explicit connection injection (`set_config`) and
+  sends `sap-client` on every request, including the CSRF pre-flight.
+- No command, output-contract, credential or safety-gate changes. Request
+  construction is unchanged apart from the added `sap-client` parameter.
+- Plugin/docs payload unchanged (still 1.1.7); local candidate built, not yet
+  published.
+
 ## Plugin/docs 1.1.7 — 2026-10-28
 
 - Clarified npm vs npx in all install docs: the npm package is

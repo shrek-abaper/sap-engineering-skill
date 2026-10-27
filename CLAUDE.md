@@ -30,7 +30,7 @@ sap-engineering-skill/
 │   ├── config.py, credentials*.py, errors.py, output.py
 │   ├── adt/                      ← client, handlers, parsers, coverage
 │   ├── keystore/                 ← env/keyring/dpapi/pass/file backends
-│   └── transport/                ← collector, legacy config adapter
+│   └── transport/                ← collector, legacy config adapter (shared ADT client)
 ├── skills/                       ← Skill content (SKILL.md, references, evals)
 │   ├── sap-adt-cli/              ← skill content only (no execution code)
 │   ├── abap-code-review/
@@ -146,9 +146,9 @@ src/sap_adt/
 **handlers.py** - Command implementation, ADT request/response handling,
 one-time confirmation previews for write operations.
 
-**transport/** — the collector's ADT client is configured via explicit
-`set_config()`; the legacy plaintext config is read only via
-`--legacy-config`.
+**transport/** — the collector injects its connection into the shared
+ADT client via `set_config()` (no client of its own); the legacy plaintext
+config is read only via `--legacy-config`.
 
 **client.py** - Provides:
 - HTTP session management (requests library)

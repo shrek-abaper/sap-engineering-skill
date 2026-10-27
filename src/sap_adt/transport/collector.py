@@ -14,7 +14,7 @@ import click
 
 from sap_adt.config import SapConfig
 
-from . import client as transport_client
+from ..adt import client as adt_client
 from . import handlers
 
 
@@ -26,7 +26,7 @@ def run_collect(
     collector_version: str,
 ) -> None:
     """Collect TR_ID's objects and sources into the output directory."""
-    transport_client.set_config(config)
+    adt_client.set_config(config)
 
     out_path = Path(output_dir) if output_dir else Path("review_package") / tr_id
     out_path.mkdir(parents=True, exist_ok=True)

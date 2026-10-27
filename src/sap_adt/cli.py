@@ -8,6 +8,7 @@ import click
 
 from sap_adt import config as config_module
 from sap_adt import credentials, credentials_reports, errors, log_redaction, output
+from sap_adt.adt import client as adt_client
 from sap_adt.adt import handlers
 from sap_adt.config import (
     run_configure_wizard,
@@ -23,7 +24,6 @@ from sap_adt.config import (
 from sap_adt.config import ConfigError, ProfileNotFoundError
 from sap_adt.keystore.base import KeyStoreError
 from sap_adt.transport import collector, legacy_config
-from sap_adt.transport import client as transport_client
 from sap_adt.transport import handlers as collector_handlers
 from sap_adt.version import get_version
 
@@ -1130,7 +1130,7 @@ def transport_collect_cmd(tr_id, output_dir, verbose, legacy_config):
 def transport_ping_cmd(legacy_config):
     """Check ADT connectivity for the transport connection (plain text)."""
     config = _transport_config(legacy_config)
-    transport_client.set_config(config)
+    adt_client.set_config(config)
     result = collector_handlers.ping()
     if result.is_error:
         click.echo(result.text, err=True)

@@ -37,6 +37,9 @@ def sha256(path: Path) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release-dir", type=Path, default=ROOT / "dist" / "release")
+    parser.add_argument("--skip-marketplace", action="store_true",
+                        help="CLI-only release: do not compare the manifest's "
+                             "marketplace candidate with the live marketplace")
     args = parser.parse_args()
     rel = args.release_dir.resolve()
     manifest_path = rel / "release-manifest.json"
@@ -134,7 +137,9 @@ def main() -> int:
                 problems.append(f"marketplace candidate points at missing {zip_name}")
             elif market.get("plugin_zip_sha256") != sha256(zp):
                 problems.append("marketplace candidate sha256 mismatch")
-        if state == "candidate-not-published":
+        if args.skip_marketplace:
+            pass  # CLI-only candidate: the plugin marketplace is untouched
+        elif state == "candidate-not-published":
             if live_source != "./":
                 problems.append(
                     "manifest is still a candidate but the live marketplace "

@@ -11,6 +11,25 @@ from ..config import SapConfig, get_config
 _session: Optional[requests.Session] = None
 _csrf_token: Optional[str] = None
 _session_cookies: Optional[dict] = None
+# Explicit connection override (transport collection, tests). When None the
+# client resolves the active profile on every request as before.
+_active_config: Optional[SapConfig] = None
+
+
+def set_config(config: Optional[SapConfig]) -> None:
+    """Use an explicit connection for subsequent requests (None = resolve)."""
+    global _active_config
+    _active_config = config
+
+
+def config_override() -> Optional[SapConfig]:
+    """Return the injected config (or None when none was injected)."""
+    return _active_config
+
+
+def active_config() -> SapConfig:
+    """Return the explicit override, or resolve the active profile/env."""
+    return _active_config if _active_config is not None else get_config()
 
 # Query parameters whose values must never appear in error messages.
 _SENSITIVE_QUERY_RE = ("token", "password", "passwd", "secret", "codepage",
@@ -75,7 +94,8 @@ def _auth_headers(config: SapConfig) -> dict:
     return {"X-SAP-Client": config.client}
 
 
-def _fetch_csrf_token(url: str, config: SapConfig) -> str:
+def _fetch_csrf_token(url: str, config: SapConfig,
+                      params: Optional[dict] = None) -> str:
     global _session_cookies
     resp = _request(
         config,
@@ -83,6 +103,7 @@ def _fetch_csrf_token(url: str, config: SapConfig) -> str:
         url,
         auth=HTTPBasicAuth(config.username, config.password),
         headers={**_auth_headers(config), "x-csrf-token": "fetch"},
+        params=params,
         verify=config.verify_ssl,
         timeout=30,
     )
@@ -104,7 +125,7 @@ def make_adt_request(
 ) -> requests.Response:
     global _csrf_token, _session_cookies
 
-    config = get_config()
+    config = active_config()
     # Feed the live secret to the log filter so literal/Base64 leaks are
     # scrubbed even from libraries that log raw objects.
     log_redaction.set_secret(config.password, config.username)
@@ -112,11 +133,18 @@ def make_adt_request(
     if extra_headers:
         headers.update(extra_headers)
 
+    # Some gateways select/mandate the SAP client via the sap-client query
+    # parameter during Basic Auth login, so send it on every request -- the
+    # CSRF pre-flight, the business call, and the CSRF retry included. Copy
+    # the caller's dict (never mutate it) and let an explicit sap-client win.
+    request_params = dict(params or {})
+    request_params.setdefault("sap-client", config.client)
+
     if not config.verify_ssl:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     if method in ("POST", "PUT") and not _csrf_token:
-        _csrf_token = _fetch_csrf_token(url, config)
+        _csrf_token = _fetch_csrf_token(url, config, request_params)
 
     if method in ("POST", "PUT") and _csrf_token:
         headers["x-csrf-token"] = _csrf_token
@@ -130,12 +158,12 @@ def make_adt_request(
         verify=config.verify_ssl,
         timeout=timeout,
         data=data,
-        params=params,
+        params=request_params,
         cookies=_session_cookies or {},
     )
 
     if resp.status_code == 403 and "CSRF" in (resp.text or ""):
-        _csrf_token = _fetch_csrf_token(url, config)
+        _csrf_token = _fetch_csrf_token(url, config, request_params)
         headers["x-csrf-token"] = _csrf_token
         resp = _request(
             config,
@@ -146,7 +174,7 @@ def make_adt_request(
             verify=config.verify_ssl,
             timeout=timeout,
             data=data,
-            params=params,
+            params=request_params,
             cookies=_session_cookies or {},
         )
 

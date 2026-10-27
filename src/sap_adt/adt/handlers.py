@@ -8,7 +8,7 @@ from urllib.parse import quote
 import requests
 
 from . import coverage as coverage_lib
-from .client import AdtHttpError, make_adt_request
+from .client import AdtHttpError, config_override, make_adt_request
 from .parsers import capabilities as parse_capabilities
 from .parsers import fields as parse_fields
 from .parsers import findings as parse_findings
@@ -40,7 +40,10 @@ class AdtResult:
 
 
 def _base() -> str:
-    return get_config().base_url()
+    # Transport collection injects its connection explicitly; otherwise the
+    # module-level resolver (patchable in tests) chooses the profile.
+    cfg = config_override()
+    return (cfg if cfg is not None else get_config()).base_url()
 
 
 def _enc(name: str) -> str:

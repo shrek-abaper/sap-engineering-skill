@@ -1,19 +1,19 @@
+"""Transport-request collection handlers.
+
+HTTP transport (Basic Auth, CSRF, retries, redaction) and the ADT source
+endpoints now come from the shared implementation in ``sap_adt.adt``; this
+module keeps only the TR-specific collection logic: the object list with its
+E071 fallback, the object-type dispatch, and raw DTEL/DOMA fetches that have
+no source-envelope handler.
+"""
 import json
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import quote
 
-import requests
-
-from .client import make_adt_request
-from .client import active_config
-
-
-@dataclass
-class AdtResult:
-    text: str
-    is_error: bool = False
+from ..adt import handlers as adt_handlers
+from ..adt.client import AdtHttpError, active_config, make_adt_request
+from ..adt.handlers import AdtResult
 
 
 def _base() -> str:
@@ -24,17 +24,12 @@ def _enc(name: str) -> str:
     return quote(name, safe="")
 
 
-def _ok(resp: requests.Response) -> AdtResult:
-    return AdtResult(text=resp.text)
-
-
 def _err(exc: Exception) -> AdtResult:
-    if isinstance(exc, requests.HTTPError) and exc.response is not None:
-        return AdtResult(
-            text=f"HTTP {exc.response.status_code}: {exc.response.text or str(exc)}",
-            is_error=True,
-        )
-    return AdtResult(text=str(exc), is_error=True)
+    return AdtResult(
+        text=str(exc),
+        is_error=True,
+        http_status=getattr(exc, "status", None),
+    )
 
 
 def _tag_local(elem) -> str:
@@ -91,8 +86,8 @@ def _run_e071_sql(tr_id: str) -> list:
                 params={"rowNumber": 500, "sqlCommand": sql},
                 extra_headers={"Accept": "application/vnd.sap.adt.datapreview.table.v1+xml"},
             )
-        except requests.HTTPError as e2:
-            if e2.response is None or e2.response.status_code != 405:
+        except AdtHttpError as e2:
+            if e2.status != 405:
                 raise
             resp = make_adt_request(
                 url,
@@ -119,8 +114,8 @@ def get_transport_objects(tr_id: str) -> AdtResult:
             },
         )
         return AdtResult(text=resp.text)
-    except requests.HTTPError as e:
-        if e.response is not None and e.response.status_code == 404:
+    except AdtHttpError as e:
+        if e.status == 404:
             rows = _run_e071_sql(tr_id)
             seen: set = set()
             objects = []
@@ -206,103 +201,33 @@ def parse_transport_objects(xml_text: str) -> list:
     return unique
 
 
-def get_program(name: str) -> AdtResult:
+# --- source fetching (shared ADT handlers) --------------------------------
+
+def _as_text(result: AdtResult) -> AdtResult:
+    """Normalize a structured ADT result to the plain text the collector writes."""
+    if result.is_error:
+        return result
+    if result.kind == "source":
+        return AdtResult(text=(result.data or {}).get("source", ""))
+    if result.raw is not None:
+        return AdtResult(text=result.raw)
+    return AdtResult(text=result.text)
+
+
+def _raw_get(url: str) -> AdtResult:
+    """Raw payload fetch for object types without a source-envelope handler."""
     try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/programs/programs/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_include(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/programs/includes/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_class(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/oo/classes/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_interface(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/oo/interfaces/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_function_group(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/functions/groups/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_function_module(group: str, name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/functions/groups/{_enc(group)}/fmodules/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_table(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/ddic/tables/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_structure(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/ddic/structures/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
-
-
-def get_cds_view(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/ddic/ddl/sources/{_enc(name)}/source/main"
-        ))
+        return AdtResult(text=make_adt_request(url).text)
     except Exception as e:
         return _err(e)
 
 
 def get_data_element(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/ddic/dataelements/{_enc(name)}"
-        ))
-    except Exception as e:
-        return _err(e)
+    return _raw_get(f"{_base()}/sap/bc/adt/ddic/dataelements/{_enc(name)}")
 
 
 def get_domain(name: str) -> AdtResult:
-    try:
-        return _ok(make_adt_request(
-            f"{_base()}/sap/bc/adt/ddic/domains/{_enc(name)}/source/main"
-        ))
-    except Exception as e:
-        return _err(e)
+    return _raw_get(f"{_base()}/sap/bc/adt/ddic/domains/{_enc(name)}/source/main")
 
 
 # Each entry: (handler_fn, needs_group). "FUNC" needs_group=True → special dispatch below.
@@ -310,18 +235,18 @@ def get_domain(name: str) -> AdtResult:
 # CLAS=global class, INTF=interface, FUGR=function group, FUNC=function module,
 # TABL=transparent table, STRU=structure, DTEL=data element, DOMA=domain, DDLS=CDS view.
 _SOURCE_HANDLERS = {
-    "PROG": (get_program, False),
-    "REPS": (get_include, False),
-    "CINC": (get_include, False),
-    "CLAS": (get_class, False),
-    "INTF": (get_interface, False),
-    "FUGR": (get_function_group, False),
+    "PROG": (adt_handlers.get_program, False),
+    "REPS": (adt_handlers.get_include, False),
+    "CINC": (adt_handlers.get_include, False),
+    "CLAS": (adt_handlers.get_class, False),
+    "INTF": (adt_handlers.get_interface, False),
+    "FUGR": (adt_handlers.get_function_group, False),
     "FUNC": (None, True),
-    "TABL": (get_table, False),
-    "STRU": (get_structure, False),
+    "TABL": (adt_handlers.get_table, False),
+    "STRU": (adt_handlers.get_structure, False),
     "DTEL": (get_data_element, False),
     "DOMA": (get_domain, False),
-    "DDLS": (get_cds_view, False),
+    "DDLS": (adt_handlers.get_cds_view, False),
 }
 
 _NO_SOURCE_TYPES = {
@@ -350,9 +275,9 @@ def fetch_source_for_object(pgmid: str, object_type: str, object_name: str) -> A
             parts = object_name.rsplit("_", 1)
             group = parts[0] if len(parts) > 1 else object_name
             name = object_name
-        return get_function_module(group, name)
+        return _as_text(adt_handlers.get_function(name, group))
 
-    return handler_fn(object_name)
+    return _as_text(handler_fn(object_name))
 
 
 def ping() -> AdtResult:
