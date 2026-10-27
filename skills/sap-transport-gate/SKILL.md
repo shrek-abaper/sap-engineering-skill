@@ -120,7 +120,7 @@ Execute the following in order:
 1. **Check the execution environment** — you need a shell that can run binaries on the user's machine. No shell → hand the user the manual command (step 4) and wait. No install permission or no network → reclassify to Offline Local Mode with an explicit declaration.
 
 2. **Check CLI readiness** — run `sap-adt --version`.
-   - Missing: diagnose first (stale PATH vs sandbox vs absent install — never reinstall blindly). After confirming absence, guide the install and **ask before running anything**: Node.js ≥ 18 → `npx sap-adt-cli@1.4.0 install` (version pinned from `references/runtime-compatibility.json`, never `@latest`); no Node.js → `pip install sap-adt==1.4.0` or the portable archive.
+   - Missing: diagnose first (stale PATH vs sandbox vs absent install — never reinstall blindly). After confirming absence, guide the install and **ask before running anything**: Node.js ≥ 18 → `npx "sap-adt-cli@^1.4.0" install` (the range is the compatible range from `references/runtime-compatibility.json`; never an unbounded `@latest`); no Node.js → `pip install "sap-adt>=1.4.0,<2.0.0"` or the newest 1.x portable archive.
    - Below the compatible range: show the upgrade command and ask first.
    - Declined or unavailable → Offline Local Mode, declared.
 

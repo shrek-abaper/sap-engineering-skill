@@ -109,9 +109,9 @@ In all modes: No AI-side SAP login; AI never holds or requests credentials. In O
 ### 1. Install the CLI once
 
 ```bash
-pip install sap-adt==1.4.1            # Python ≥ 3.10
-# or: npm install -g sap-adt-cli && sap-adt install   # Node.js ≥ 18, no Python
-#     (npx: npx sap-adt-cli@1.4.1 install, then prefix calls)
+pip install "sap-adt>=1.4.0,<2.0.0"            # Python ≥ 3.10
+# or: npm install -g "sap-adt-cli@^1.4.0" && sap-adt install   # Node.js ≥ 18, no Python
+#     (npx: npx "sap-adt-cli@^1.4.0" install, then prefix calls)
 ```
 
 There is no auto-install of dependencies; see `references/setup.md` for all channels.

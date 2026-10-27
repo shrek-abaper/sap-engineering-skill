@@ -12,7 +12,7 @@ onedir runtime — built by `tools/build_runtime.py` on the target OS.
 ## Use
 
 ```bash
-tar -xzf sap-adt-1.4.1-linux-x86_64.tar.gz -C /opt   # or any directory
+tar -xzf sap-adt-<ver>-linux-x86_64.tar.gz -C /opt   # newest 1.x, any directory
 /opt/sap-adt/sap-adt --version
 /opt/sap-adt/sap-adt credentials doctor
 ```

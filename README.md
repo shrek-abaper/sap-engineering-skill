@@ -42,7 +42,7 @@ The skills `abap-code-review`, `sap-transport-gate`, and `sap-integration-wiki` 
 
 A command-line tool and AI agent skill for reading **and writing** ABAP source code, metadata, and transport requests from SAP systems via the [ADT REST API](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools).
 
-The CLI (`sap-adt`) is an installable product distributed separately from the skill docs: **npm** `npm install -g sap-adt-cli` (Node ≥ 18, self-contained runtime; npx also works but keeps no PATH command), **PyPI** `pip install sap-adt==1.4.1` (Python ≥ 3.10), and a **Linux portable archive** on the [release page](https://github.com/shrek-abaper/sap-engineering-skill/releases). The skill folder itself contains documentation only — no execution code.
+The CLI (`sap-adt`) is an installable product distributed separately from the skill docs: **npm** `npm install -g "sap-adt-cli@^1.4.0"` (Node ≥ 18, self-contained runtime; npx also works but keeps no PATH command), **PyPI** `pip install "sap-adt>=1.4.0,<2.0.0"` (Python ≥ 3.10), and a **Linux portable archive** on the [release page](https://github.com/shrek-abaper/sap-engineering-skill/releases). The skill folder itself contains documentation only — no execution code.
 
 **Supports**: programs, classes, function modules (with function group), function groups, interfaces, includes, CDS views, type groups (TYPE POOL), DDIC tables/structures/domains/data elements, packages, transactions, object search (`*` wildcard), read-only Open SQL data preview, where-used analysis, syntax checks, and transport request management (list/create/release).
 
@@ -167,7 +167,7 @@ This repository is a self-hosted Claude Code plugin marketplace. Inside Claude C
 
 All four skills are then available under the `sap-engineering-skills` namespace (e.g. `/sap-engineering-skills:sap-adt-cli`). Update with `/plugin` → Manage, or `claude plugin update sap-engineering-skills@sap-engineering`.
 
-> The plugin distributes **skill documentation only** — it does not install the CLI. Install `sap-adt` separately: npm `npm install -g sap-adt-cli` (or npx with the package prefix), PyPI `pip install sap-adt==1.4.1`, or the Linux portable archive (Windows installer and macOS runtime are not built yet). See [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md). Offline skills (`abap-code-review`, `sap-integration-wiki`) work without it. The archive-sourced plugin requires Claude Code ≥ 2.1.224. Maintainer note: the plugin ships a pinned `version` in `.claude-plugin/plugin.json` — it **must be bumped on every release** or existing installations will not receive updates.
+> The plugin distributes **skill documentation only** — it does not install the CLI. Install `sap-adt` separately: npm `npm install -g "sap-adt-cli@^1.4.0"` (or npx with the package prefix), PyPI `pip install "sap-adt>=1.4.0,<2.0.0"`, or the Linux portable archive (Windows installer and macOS runtime are not built yet). See [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md). Offline skills (`abap-code-review`, `sap-integration-wiki`) work without it. The archive-sourced plugin requires Claude Code ≥ 2.1.224. Maintainer note: the plugin ships a pinned `version` in `.claude-plugin/plugin.json` — it **must be bumped on every release** or existing installations will not receive updates.
 
 ### Windows — sap-adt-cli one-click installer (opencode)
 
@@ -189,9 +189,9 @@ ln -s "$(pwd)/skills/sap-transport-gate"  ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
 # Install the CLI once (pick one channel; see docs/installation/runtime-setup.md)
-pip install sap-adt==1.4.1            # Python ≥ 3.10 (published)
-# or: npm install -g sap-adt-cli && sap-adt install   # Node ≥ 18, no Python
-#     (npx: npx sap-adt-cli@1.4.1 install, then prefix calls with npx sap-adt-cli@1.4.1)
+pip install "sap-adt>=1.4.0,<2.0.0"            # Python ≥ 3.10 (published)
+# or: npm install -g "sap-adt-cli@^1.4.0" && sap-adt install   # Node ≥ 18, no Python
+#     (npx: npx "sap-adt-cli@^1.4.0" install, then prefix calls with npx "sap-adt-cli@^1.4.0")
 # or (developers, from this checkout): python3 -m pip install -e .
 
 # Configure a SAP connection profile (interactive wizard; password goes to the OS keystore)

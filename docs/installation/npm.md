@@ -10,7 +10,7 @@ a native executable — no Python. General guide:
 bin is **`sap-adt`** — a global install puts that command on PATH.
 
 ```bash
-npm install -g sap-adt-cli
+npm install -g "sap-adt-cli@^1.4.0"
 sap-adt install            # fetch + verify + install the runtime
 sap-adt --version
 ```
@@ -19,8 +19,8 @@ sap-adt --version
 keep the package prefix on every call.
 
 ```bash
-npx sap-adt-cli@1.4.1 install
-npx sap-adt-cli@1.4.1 --version
+npx "sap-adt-cli@^1.4.0" install
+npx "sap-adt-cli@^1.4.0" --version
 ```
 
 npx caches the package, and the runtime you installed, under

@@ -102,9 +102,9 @@ MEDIUM 发现 + 有缓解路径      → CONDITIONAL_GO（证据级别需 MEDIUM
 ### 1. 一次性安装 CLI
 
 ```bash
-pip install sap-adt==1.4.1            # Python ≥ 3.10
-# 或: npm install -g sap-adt-cli && sap-adt install   # Node.js ≥ 18，无需 Python
-#     （npx：npx sap-adt-cli@1.4.1 install，之后调用需带前缀）
+pip install "sap-adt>=1.4.0,<2.0.0"            # Python ≥ 3.10
+# 或: npm install -g "sap-adt-cli@^1.4.0" && sap-adt install   # Node.js ≥ 18，无需 Python
+#     （npx：npx "sap-adt-cli@^1.4.0" install，之后调用需带前缀）
 ```
 
 不存在自动安装依赖；全部渠道见 `references/setup.md`。

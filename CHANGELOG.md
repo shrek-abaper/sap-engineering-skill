@@ -1,5 +1,17 @@
 # Changelog
 
+## Plugin/docs 1.1.9 — 2026-10-28
+
+- Installation guidance now resolves the newest release **inside the
+  compatible range** instead of pinning one version:
+  npm `"sap-adt-cli@^1.4.0"`, PyPI `"sap-adt>=1.4.0,<2.0.0"`, portable
+  archive "newest 1.x". This removes the need to regenerate skill snapshots
+  on every CLI patch release and keeps standalone skill copies valid; an
+  unbounded `@latest` is still forbidden.
+- `compatibility.json` now also declares `npm_range` and
+  `pypi_requirement` next to `compatible_versions`.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.8 — 2026-10-28
 
 - Install docs, READMEs and skill snapshots now pin CLI `1.4.1` (the
