@@ -57,6 +57,28 @@ cache requires running `install` again.
 If PATH was just modified (installer), restart the terminal/agent before
 assuming `sap-adt` is missing — or call the absolute path once to verify.
 
+## Dotenv template (optional layer)
+
+Save this to a private path (never inside a skill folder or the repository),
+fill it in, and declare the path — the CLI only reads the file you name:
+
+```ini
+SAP_URL=https://your-sap-system.example.com:8000
+SAP_USERNAME=YOUR_USERNAME
+SAP_PASSWORD=YOUR_PASSWORD
+SAP_CLIENT=100
+SAP_LANGUAGE=EN
+SAP_VERIFY_SSL=1   # set to 0 only for self-signed / internal-CA systems
+```
+
+```bash
+chmod 600 ~/.config/sap-adt.env
+export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
+```
+
+Write/activate/transport operations still require the capability flags and
+per-operation confirmation; the env layer only supplies the connection.
+
 ## Diagnostics matrix
 
 | Symptom | Meaning | Action |

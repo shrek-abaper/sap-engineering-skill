@@ -1,5 +1,16 @@
 # Changelog
 
+## Plugin/docs 1.1.10 — 2026-10-28
+
+- Removed the skill-local `.env.example` templates: the CLI never reads a
+  `.env` from a skill folder, so the files implied a workflow that no longer
+  exists. The dotenv template now lives in the single-source install guide
+  (`docs/installation/runtime-setup.md`) and reaches every skill through
+  `references/setup.md`.
+- Skill READMEs and connectivity guidance point at that template instead of
+  `cp .env.example ...`; the build allowlist no longer ships `.env.example`.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.9 — 2026-10-28
 
 - Installation guidance now resolves the newest release **inside the

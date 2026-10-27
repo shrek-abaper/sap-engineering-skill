@@ -215,7 +215,7 @@ apply to every profile, including production.
 ### Dotenv file (explicit path, per-environment override)
 
 ```bash
-cp skills/sap-adt-cli/.env.example ~/.config/sap-adt.env   # or any private path
+# create ~/.config/sap-adt.env from the template in references/setup.md
 # edit it and fill SAP_URL, SAP_USERNAME, SAP_PASSWORD, SAP_CLIENT
 export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
 sap-adt status

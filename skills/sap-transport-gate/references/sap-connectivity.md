@@ -26,11 +26,12 @@ The old standalone collector's plaintext `~/.sap-transport-gate/config.json` is 
 
 ### Option A — dotenv file (explicit path)
 
-Copy `.env.example`, fill it in, and declare its path:
+Create a private dotenv file from the template in `setup.md`, fill it in,
+and declare its path:
 
 ```bash
-cp .env.example .env
-export SAP_ADT_DOTENV="$PWD/.env"
+chmod 600 ~/.config/sap-adt.env
+export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
 ```
 
 ```ini

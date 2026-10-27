@@ -128,7 +128,7 @@ sap-adt status        # local configuration state (not a live SAP login)
 **Option B: dotenv file with an explicit path**
 
 ```bash
-cp .env.example ~/.config/sap-adt.env   # or any private path
+# create ~/.config/sap-adt.env from the template in references/setup.md
 # edit it with SAP_URL, SAP_USERNAME, SAP_PASSWORD, SAP_CLIENT
 export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
 ```
@@ -210,7 +210,6 @@ Load this skill when users say:
 
 ```
 sap-transport-gate/
-├── .env.example                      ← Dotenv template for SAP_ADT_DOTENV (never commit the real file)
 ├── .gitignore                        ← Git ignore rules
 ├── changelog.md                      ← Version history and migration notes
 ├── LICENSE                           ← MIT License

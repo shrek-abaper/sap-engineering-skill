@@ -121,7 +121,7 @@ sap-adt status        # 本地配置状态（不是联机登录）
 **方式二：显式声明路径的 dotenv 文件**
 
 ```bash
-cp .env.example ~/.config/sap-adt.env   # 或任意私有路径
+# 按 references/setup.md 中的模板创建 ~/.config/sap-adt.env
 # 编辑并填入 SAP_URL、SAP_USERNAME、SAP_PASSWORD、SAP_CLIENT
 export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
 ```
@@ -202,7 +202,6 @@ sap-adt transport collect DEVK900123 --output-dir ./my-review
 
 ```
 sap-transport-gate/
-├── .env.example                      ← 凭证模板（请勿提交 .env）
 ├── .gitignore                        ← Git 忽略规则
 ├── changelog.md                      ← 版本历史与变更说明
 ├── LICENSE                           ← MIT 许可证

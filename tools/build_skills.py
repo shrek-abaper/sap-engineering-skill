@@ -22,11 +22,11 @@ ROOT = Path(__file__).resolve().parents[1]
 # Per-skill allowlist. Directories are copied recursively.
 ALLOWLIST: dict[str, list[str]] = {
     "sap-adt-cli": [
-        "SKILL.md", "README.md", "README.zh-CN.md", ".env.example", "LICENSE",
+        "SKILL.md", "README.md", "README.zh-CN.md", "LICENSE",
         "references/",
     ],
     "sap-transport-gate": [
-        "SKILL.md", "README.md", "README.zh-CN.md", ".env.example", "LICENSE",
+        "SKILL.md", "README.md", "README.zh-CN.md", "LICENSE",
         "references/",
     ],
     "abap-code-review": [
@@ -51,7 +51,7 @@ def _ignore(dir_path: str, names: list[str]) -> set[str]:
             ignored.add(name)
         elif Path(name).suffix in EXCLUDE_SUFFIXES:
             ignored.add(name)
-        elif name == ".env" or (name.startswith(".env.") and name != ".env.example"):
+        elif name == ".env" or name.startswith(".env."):
             ignored.add(name)
     return ignored
 
@@ -77,8 +77,8 @@ def build_skill(root: Path, name: str, dest: Path) -> Path:
         if entry == "LICENSE" and not source.exists():
             source = root / "LICENSE"  # repo-wide MIT license fallback
         if not source.exists():
-            # Bilingual README and .env.example are optional per skill.
-            if entry in ("README.zh-CN.md", ".env.example"):
+            # Bilingual README is optional per skill.
+            if entry in ("README.zh-CN.md",):
                 continue
             raise SystemExit(f"[build_skills] {name}: allowlisted entry missing: {entry}")
         target = dest / entry

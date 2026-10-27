@@ -65,7 +65,7 @@ profile name, exit 1).
 ## Environment / `.env` overrides
 
 - Explicit dotenv file: fill `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`,
-  `SAP_CLIENT` (copy `.env.example` to a private path), then declare it with
+  `SAP_CLIENT` (template in `setup.md`, saved to a private path), then declare it with
   `SAP_ADT_DOTENV=/path/to/.env`. The CLI never scans the current directory
   or the skill folder; unset `SAP_ADT_DOTENV` to use profiles only.
 - One-off env vars (nothing written): `SAP_URL=… SAP_USERNAME=… SAP_PASSWORD=…

@@ -188,7 +188,7 @@ profile 选择优先级：`--profile` > `SAP_PROFILE` > `profile use` 设置的 
 ### Dotenv 文件（显式路径，按环境覆盖）
 
 ```bash
-cp skills/sap-adt-cli/.env.example ~/.config/sap-adt.env   # 或任意私有路径
+# 按 references/setup.md 中的模板创建 ~/.config/sap-adt.env
 # 编辑并填写 SAP_URL、SAP_USERNAME、SAP_PASSWORD、SAP_CLIENT
 export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
 sap-adt status
