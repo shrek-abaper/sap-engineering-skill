@@ -79,6 +79,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-npm-pack", action="store_true",
                         help="reuse an existing npm tarball in dist/release/")
+    parser.add_argument("--release-state", default="candidate-not-published",
+                        choices=["candidate-not-published", "published"],
+                        help="npm runtime-manifest state; use 'published' only "
+                             "after the GitHub Release exists")
     args = parser.parse_args()
 
     rel = ROOT / "dist" / "release"
@@ -113,7 +117,8 @@ def main() -> int:
         add_artifact(artifacts, rel / src.name, "runtime", target)
 
     # --- npm tarball (regenerated with release URLs, still unpublished) ----
-    subprocess.run([sys.executable, str(ROOT / "tools" / "build_npm.py")],
+    subprocess.run([sys.executable, str(ROOT / "tools" / "build_npm.py"),
+                    "--release-state", args.release_state],
                    cwd=ROOT, check=True)
     if not args.skip_npm_pack:
         packed = subprocess.run(
@@ -160,7 +165,7 @@ def main() -> int:
         },
         "artifacts": artifacts,
         "marketplace_candidate": {
-            "state": "candidate-not-published",
+            "state": args.release_state,
             "plugin_version": plugin_version,
             "plugin_zip": plugin_zip.name,
             "plugin_zip_sha256": sha256(plugin_zip),

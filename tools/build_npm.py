@@ -64,7 +64,10 @@ def collect_artifacts(version: str, local_file_urls: bool) -> dict:
         else:
             url = (f"{RELEASE_REPO}/releases/download/sap-adt-v{version}/"
                    f"{archive.name}")
-            allowed = ["github.com", "objects.githubusercontent.com"]
+            # GitHub release assets redirect to release-assets.githubusercontent.com;
+            # keep the legacy objects host too (older GitHub behavior).
+            allowed = ["github.com", "release-assets.githubusercontent.com",
+                       "objects.githubusercontent.com"]
         artifacts[target] = {
             "url": url,
             "sha256": sha256_file(archive),
@@ -75,11 +78,17 @@ def collect_artifacts(version: str, local_file_urls: bool) -> dict:
     return artifacts
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--local-file-urls", action="store_true",
                         help="TEST ONLY: point artifact URLs at local files")
-    args = parser.parse_args()
+    parser.add_argument("--release-state", default="candidate-not-published",
+                        choices=["candidate-not-published", "published"],
+                        help="Manifest state: keep candidate-not-published until "
+                             "the GitHub Release exists, then regenerate with "
+                             "'published' so installs stop printing the "
+                             "pre-release note.")
+    args = parser.parse_args(argv)
 
     version = cli_version()
     if STAGING.exists():
@@ -104,7 +113,7 @@ def main() -> int:
     manifest = {
         "cli_version": version,
         "release_state": "local-test" if args.local_file_urls
-        else "candidate-not-published",
+        else args.release_state,
         "artifacts": artifacts,
     }
     (STAGING / "runtime-manifest.json").write_text(

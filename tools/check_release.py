@@ -113,13 +113,20 @@ def main() -> int:
         if not any(n.endswith(".claude-plugin/plugin.json") for n in names):
             problems.append("plugin zip lacks .claude-plugin/plugin.json")
 
-    # Marketplace candidate must be explicitly non-live and reference a
-    # locally built archive with a matching digest.
+    # Marketplace entry consistency:
+    #  - candidate state: the LIVE marketplace must still be on "./";
+    #  - published state: the LIVE marketplace must match this archive entry.
+    live_market = json.loads(
+        (ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    live_entry = (live_market.get("plugins") or [{}])[0]
+    live_source = live_entry.get("source")
+
     if not market:
         problems.append("marketplace candidate missing from manifest")
     else:
-        if market.get("state") != "candidate-not-published":
-            problems.append("marketplace candidate is not marked candidate-not-published")
+        state = market.get("state")
+        if state not in ("candidate-not-published", "published"):
+            problems.append(f"unknown marketplace state: {state}")
         zip_name = market.get("plugin_zip")
         if zip_name:
             zp = rel / zip_name
@@ -127,6 +134,20 @@ def main() -> int:
                 problems.append(f"marketplace candidate points at missing {zip_name}")
             elif market.get("plugin_zip_sha256") != sha256(zp):
                 problems.append("marketplace candidate sha256 mismatch")
+        if state == "candidate-not-published":
+            if live_source != "./":
+                problems.append(
+                    "manifest is still a candidate but the live marketplace "
+                    "already points at an archive")
+        elif state == "published":
+            expected = market.get("source") or {}
+            if not isinstance(live_source, dict) or live_source.get("source") != "archive":
+                problems.append("manifest says published but live marketplace is not archive")
+            else:
+                for field in ("url", "sha256"):
+                    if live_source.get(field) != expected.get(field):
+                        problems.append(
+                            f"live marketplace archive {field} differs from manifest")
 
     if problems:
         print("[check_release] FAILED:")
