@@ -103,7 +103,8 @@ MEDIUM 发现 + 有缓解路径      → CONDITIONAL_GO（证据级别需 MEDIUM
 
 ```bash
 pip install sap-adt==1.4.0            # Python ≥ 3.10
-# 或: npx sap-adt-cli@1.4.0 install   # Node.js ≥ 18，自包含运行时
+# 或: npm install -g sap-adt-cli && sap-adt install   # Node.js ≥ 18，无需 Python
+#     （npx：npx sap-adt-cli@1.4.0 install，之后调用需带前缀）
 ```
 
 不存在自动安装依赖；全部渠道见 `references/setup.md`。

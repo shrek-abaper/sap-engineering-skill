@@ -11,7 +11,7 @@
 ## 环境要求
 
 - 已安装 `sap-adt` CLI（一次性安装，见 [references/setup.md](references/setup.md)）：
-  - npm/npx：`npx sap-adt-cli@1.4.0 install` — Node.js ≥ 18，自包含运行时，无需 Python
+  - npm：`npm install -g sap-adt-cli`（提供 `sap-adt` 命令）——Node.js ≥ 18，无需 Python。也可用 npx（`npx sap-adt-cli@1.4.0 install`），但不会生成 PATH 命令，后续调用需带前缀
   - PyPI：`pip install sap-adt==1.4.0` — Python ≥ 3.10
   - Release 页面的 Linux 便携包（无需 Python/Node）
 - SAP 系统（本地 ECC / S/4HANA 或 BTP ABAP），需已激活 ADT 服务
@@ -124,7 +124,8 @@ opencode 仅作为示例。`sap-adt-cli` 实现了标准 Agent Skill 接口（`S
 ```bash
 # 1. 一次性安装 CLI（任选一种渠道，详见 references/setup.md）
 pip install sap-adt==1.4.0            # Python ≥ 3.10
-# 或: npx sap-adt-cli@1.4.0 install   # Node.js ≥ 18，自包含运行时
+# 或: npm install -g sap-adt-cli && sap-adt install   # Node.js ≥ 18，无需 Python
+#     （npx：npx sap-adt-cli@1.4.0 install，之后 npx sap-adt-cli@1.4.0 <命令>）
 
 # 2. 配置凭据（交互式向导 — 密码不回显，并存入操作系统密钥库；
 #    之后可用 configure --profile qas / prd 添加更多环境）

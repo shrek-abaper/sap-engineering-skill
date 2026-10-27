@@ -13,7 +13,8 @@ channels and shared by all skills.
 
 | Channel | When to use | Prerequisites | Command |
 |---|---|---|---|
-| npm / npx | Node.js ≥ 18 is available | Node.js only (no Python) | `npx sap-adt-cli@1.4.0 install` |
+| npm (global) | Node.js ≥ 18 is available; you want the `sap-adt` command on PATH | Node.js only (no Python) | `npm install -g sap-adt-cli`, then `sap-adt install` |
+| npx (no global install) | Try it without changing PATH | Node.js ≥ 18 | `npx sap-adt-cli@1.4.0 install`, then prefix every call: `npx sap-adt-cli@1.4.0 <command>` |
 | PyPI (wheel/sdist) | Python ≥ 3.10 available | Python | `pip install sap-adt==1.4.0` |
 | Portable archive (Linux) | No dev environment | Linux x86_64, glibc ≥ 2.39 build | unpack `sap-adt-1.4.0-linux-x86_64.tar.gz`, run inside it `./sap-adt/sap-adt` |
 | Windows installer | No dev environment | Windows 10+ x64 | `sap-adt-1.4.0-windows-x86_64-setup.exe` — **not built yet** (needs a Windows build host and a real install test) |
@@ -42,6 +43,13 @@ sap-adt configure            # interactive setup; the password never passes
 sap-adt status               # local configuration state — this does NOT
                              # contact SAP; a live read command does
 ```
+
+If you installed through **npx** instead of a global/local install, there is
+no `sap-adt` entry on PATH — prefix the commands:
+`npx sap-adt-cli@<version> <command>`, or switch to
+`npm install -g sap-adt-cli` for the bare `sap-adt` command. npx caches the
+package and the runtime you installed under `~/.npm/_npx/`; clearing that
+cache requires running `install` again.
 
 If PATH was just modified (installer), restart the terminal/agent before
 assuming `sap-adt` is missing — or call the absolute path once to verify.

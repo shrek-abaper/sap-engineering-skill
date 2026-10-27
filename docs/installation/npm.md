@@ -4,10 +4,27 @@
 a native executable — no Python. General guide:
 [runtime-setup.md](runtime-setup.md).
 
+## Two ways to run it
+
+**A. Global command (recommended):** the npm package is `sap-adt-cli`, but its
+bin is **`sap-adt`** — a global install puts that command on PATH.
+
 ```bash
-npx sap-adt-cli@1.4.0 install
+npm install -g sap-adt-cli
+sap-adt install            # fetch + verify + install the runtime
 sap-adt --version
 ```
+
+**B. npx (no global install):** npx does **not** add `sap-adt` to PATH, so
+keep the package prefix on every call.
+
+```bash
+npx sap-adt-cli@1.4.0 install
+npx sap-adt-cli@1.4.0 --version
+```
+
+npx caches the package, and the runtime you installed, under
+`~/.npm/_npx/`; clearing that cache means running `install` again.
 
 `install` is the package's own wizard, not an npm built-in:
 

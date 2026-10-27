@@ -42,7 +42,7 @@
 
 通过 [ADT REST API](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools) 对 SAP 系统进行读写操作的命令行工具与 AI Agent Skill。
 
-CLI(`sap-adt`) 是独立分发的可安装产品：**npm** `npx sap-adt-cli@1.4.0 install`（Node ≥ 18，自包含运行时）、**PyPI** `pip install sap-adt==1.4.0`（Python ≥ 3.10）、**Linux 便携包**（见 [Release 页面](https://github.com/shrek-abaper/sap-engineering-skill/releases)）。Skill 目录本身只含文档，不含执行代码。
+CLI(`sap-adt`) 是独立分发的可安装产品：**npm** `npm install -g sap-adt-cli`（Node ≥ 18，自包含运行时；用 npx 亦可，但不会在 PATH 上生成 `sap-adt` 命令）、**PyPI** `pip install sap-adt==1.4.0`（Python ≥ 3.10）、**Linux 便携包**（见 [Release 页面](https://github.com/shrek-abaper/sap-engineering-skill/releases)）。Skill 目录本身只含文档，不含执行代码。
 
 **支持对象类型**：程序、类、函数模块（需指定函数组）、函数组、接口、包含程序、CDS 视图、类型组（TYPE POOL）、DDIC 表/结构/域/数据元素、包、事务码、对象搜索（`*` 通配符）、只读 Open SQL 数据预览、where-used 分析、语法检查、传输请求管理（列表/创建/发布）。
 
@@ -167,7 +167,7 @@ sap-engineering-skill/
 
 安装后四个 Skill 统一位于 `sap-engineering-skills` 命名空间下（如 `/sap-engineering-skills:sap-adt-cli`）。更新可在 `/plugin` 面板操作，或执行 `claude plugin update sap-engineering-skills@sap-engineering`。
 
-> 插件只分发 **Skill 文档**，不会安装 CLI。`sap-adt` 需单独安装：npm `npx sap-adt-cli@1.4.0 install`、PyPI `pip install sap-adt==1.4.0` 或 Linux 便携包（Windows 安装器与 macOS 运行时尚未构建）——见 [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md)。离线 Skill（`abap-code-review`、`sap-integration-wiki`）无需 CLI。archive 源插件要求 Claude Code ≥ 2.1.224。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
+> 插件只分发 **Skill 文档**，不会安装 CLI。`sap-adt` 需单独安装：npm `npm install -g sap-adt-cli`（或用 npx 并保留包前缀）、PyPI `pip install sap-adt==1.4.0` 或 Linux 便携包（Windows 安装器与 macOS 运行时尚未构建）——见 [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md)。离线 Skill（`abap-code-review`、`sap-integration-wiki`）无需 CLI。archive 源插件要求 Claude Code ≥ 2.1.224。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
 
 ### Windows——sap-adt-cli 一键安装（opencode）
 
@@ -190,7 +190,8 @@ ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
 # 安装 CLI（任选一种渠道；详见 docs/installation/runtime-setup.md）
 pip install sap-adt==1.4.0            # Python ≥ 3.10（已发布）
-# 或: npx sap-adt-cli@1.4.0 install   # Node ≥ 18，自包含运行时
+# 或: npm install -g sap-adt-cli && sap-adt install   # Node ≥ 18，无需 Python
+#     （npx 方式：先 npx sap-adt-cli@1.4.0 install，之后调用需带前缀）
 # 或（开发者，本仓库检出目录）: python3 -m pip install -e .
 
 # 配置 SAP 连接 Profile（交互式向导；密码进入操作系统密钥库）

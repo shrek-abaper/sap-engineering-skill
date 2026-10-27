@@ -1,5 +1,15 @@
 # Changelog
 
+## Plugin/docs 1.1.7 — 2026-10-28
+
+- Clarified npm vs npx in all install docs: the npm package is
+  `sap-adt-cli`, its bin (and therefore the CLI command) is `sap-adt`.
+  `npm install -g sap-adt-cli` provides that command on PATH; npx does not,
+  so npx users must prefix every call (`npx sap-adt-cli@1.4.0 <command>`).
+- Updated runtime-setup (single source), npm guide, npm package README,
+  root READMEs and the skill READMEs; skill snapshots regenerated.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.6 — 2026-10-28
 
 - README audit against the post-refactor code: root READMEs now describe the

@@ -22,7 +22,7 @@ explicit capability flags and per-operation confirmation.
 ## Requirements
 
 - The `sap-adt` CLI, installed once (see [references/setup.md](references/setup.md)):
-  - npm/npx: `npx sap-adt-cli@1.4.0 install` — Node.js ≥ 18, self-contained runtime, no Python
+  - npm: `npm install -g sap-adt-cli` (provides the `sap-adt` command) — Node.js ≥ 18, no Python. npx also works (`npx sap-adt-cli@1.4.0 install`) but keeps no PATH command, so prefix later calls with `npx sap-adt-cli@1.4.0`
   - PyPI: `pip install sap-adt==1.4.0` — Python ≥ 3.10
   - Linux portable archive from the release page (no Python/Node)
 - A SAP system (on-premise ECC / S/4HANA, or BTP ABAP) with ADT services activated
@@ -147,7 +147,8 @@ and integrates with any agent framework that supports custom tools or skills:
 ```bash
 # 1. Install the CLI once (pick one channel; details in references/setup.md)
 pip install sap-adt==1.4.0            # Python ≥ 3.10
-# or: npx sap-adt-cli@1.4.0 install   # Node.js ≥ 18, self-contained runtime
+# or: npm install -g sap-adt-cli && sap-adt install   # Node.js ≥ 18, no Python
+#     (npx: npx sap-adt-cli@1.4.0 install, then npx sap-adt-cli@1.4.0 <command>)
 
 # 2. Configure credentials (interactive wizard — password is not echoed and is
 #    saved to the OS keystore; add more systems later with: configure --profile qas / prd)

@@ -11,8 +11,21 @@ instead.
 
 ## Install the runtime (once)
 
+The package is named `sap-adt-cli`; its bin is **`sap-adt`**.
+
+**Global command (recommended):**
+
 ```bash
-npx sap-adt-cli install
+npm install -g sap-adt-cli
+sap-adt install
+```
+
+**npx (no global install) — keep the prefix on every call** (npx does not add
+`sap-adt` to PATH):
+
+```bash
+npx sap-adt-cli@1.4.0 install
+npx sap-adt-cli@1.4.0 --version
 ```
 
 `install` is this package's own wizard (not an npm/npx built-in): it matches
@@ -29,6 +42,8 @@ sap-adt status
 sap-adt configure            # interactive; password goes to the OS keystore
 sap-adt credentials doctor   # backend diagnostics (no secrets shown)
 ```
+
+With npx, prefix each command: `npx sap-adt-cli@1.4.0 <command>`.
 
 Configuration and credentials live in `~/.sap-adt-cli/` and the OS keystore —
 never inside this package. Upgrading the npm package requires re-running
