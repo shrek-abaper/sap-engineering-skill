@@ -30,6 +30,50 @@ authorization.** Remote publishing is a separate, human-approved step.
 6. Announce the minimum Claude Code version for archive sources
    (≥ 2.1.224, verified against the official marketplace reference).
 
+## Local publishing credentials (maintainers)
+
+Publishing tokens are stored in the tools' standard user-level config files —
+outside the repository, mode 600, never committed and never passed on a
+command line:
+
+| Tool | File | Content |
+|---|---|---|
+| npm | `~/.npmrc` | `//registry.npmjs.org/:_authToken=<granular publish token>` |
+| PyPI | `~/.pypirc` | `[pypi]` / `username = __token__` / `password = pypi-...` |
+
+Set them once with hidden input:
+
+```bash
+# npm — replace any existing auth line first
+umask 077
+grep -v '^//registry.npmjs.org/:_authToken=' ~/.npmrc > ~/.npmrc.tmp
+mv ~/.npmrc.tmp ~/.npmrc && chmod 600 ~/.npmrc
+read -rs -p "npm token: " T
+printf '//registry.npmjs.org/:_authToken=%s\n' "$T" >> ~/.npmrc
+unset T
+
+# PyPI
+read -rs -p "PyPI token: " T
+umask 077
+printf '[pypi]\nusername = __token__\npassword = %s\n' "$T" > ~/.pypirc
+chmod 600 ~/.pypirc
+unset T
+```
+
+Guidance:
+
+- npm: use a **granular access token** with *Read and write → Publish* only
+  (plus *Bypass 2FA* for unattended publishing), set an expiry, and scope it
+  to `sap-adt-cli` once the package exists.
+- PyPI: the first upload of a new project needs an account-scoped token;
+  replace it with a **project-scoped** token (`sap-adt`) afterwards.
+- Rotate the tokens on a schedule and immediately after any exposure
+  (chat, logs, screenshots). Files must stay 600 and outside the repo.
+- The OS keyring is not usable in this WSL2 setup (`keyring.backends.fail`),
+  and twine's keyring integration therefore falls back to prompting.
+- After setup, `npm publish` (from `dist/npm/`) and
+  `.venv/bin/twine upload dist/release/sap_adt-<ver>*` work non-interactively.
+
 ## Versioning
 
 - CLI: `1.4.0` (single source: `pyproject.toml`; runtime/npm/installers
