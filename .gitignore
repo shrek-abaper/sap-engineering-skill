@@ -38,6 +38,10 @@ Thumbs.db
 # opencode auto-generated — do not commit
 AGENTS.md
 
+# Real-machine raw ADT captures — internal hosts, usernames and business data.
+# Sanitized fixtures are tracked; raw/ stays local only.
+tests/fixtures/sap_adt_cli/raw/
+
 # Test & coverage artifacts (the tests/ source tree is tracked; only caches are ignored)
 .pytest_cache/
 .coverage

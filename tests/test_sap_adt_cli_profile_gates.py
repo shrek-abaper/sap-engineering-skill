@@ -143,7 +143,7 @@ class CommandGateMatrixTests(unittest.TestCase):
             no_http.assert_not_called()
 
     def test_unit_dangerous_three_states(self):
-        payload = (ROOT / "skills/sap-adt-cli/tests/fixtures/unit.empty.xml").read_bytes()
+        payload = (ROOT / "tests/fixtures/sap_adt_cli/unit.empty.xml").read_bytes()
 
         class R:
             content = payload

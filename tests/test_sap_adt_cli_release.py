@@ -110,7 +110,7 @@ class ReleaseHandlerTests(unittest.TestCase):
         self.assertTrue(all(m == "GET" for m, _ in calls))
 
     def test_real_released_readback_fixture(self):
-        path = ROOT / "skills/sap-adt-cli/tests/fixtures/transport.released.xml"
+        path = ROOT / "tests/fixtures/sap_adt_cli/transport.released.xml"
         if not path.exists():
             self.skipTest("transport.released.xml not present")
         from sap_adt.adt.parsers import records
@@ -121,7 +121,7 @@ class ReleaseHandlerTests(unittest.TestCase):
         self.assertEqual(d["tasks"], [])
 
     def test_synthetic_release_report(self):
-        path = (ROOT / "skills/sap-adt-cli/tests/fixtures/synthetic"
+        path = (ROOT / "tests/fixtures/sap_adt_cli/synthetic"
                 / "transport.release-report.synthetic.xml")
         if not path.exists():
             self.skipTest("synthetic release report absent")
@@ -133,8 +133,8 @@ class ReleaseHandlerTests(unittest.TestCase):
 
     def test_real_single_request_fixture(self):
         payload = (
-            ROOT / "skills/sap-adt-cli/tests/fixtures/transport.single.xml"
-        ).read_bytes() if (ROOT / "skills/sap-adt-cli/tests/fixtures/transport.single.xml").exists() else None
+            ROOT / "tests/fixtures/sap_adt_cli/transport.single.xml"
+        ).read_bytes() if (ROOT / "tests/fixtures/sap_adt_cli/transport.single.xml").exists() else None
         if payload is None:
             self.skipTest("transport.single.xml not present")
         from sap_adt.adt.parsers import records

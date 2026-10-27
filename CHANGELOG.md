@@ -1,5 +1,17 @@
 # Changelog
 
+## Plugin/docs 1.1.5 — 2026-10-28
+
+- Moved development assets out of the skill folder: the four refactor/history
+  documents now live in `docs/development/archive/sap-adt-cli/`, and the ADT
+  test fixtures (sanitized captures + golden + synthetic + sanitizer) moved
+  to `tests/fixtures/sap_adt_cli/` (local `raw/` captures stay git-ignored).
+- `skills/sap-adt-cli/` now contains only SKILL.md, READMEs, references and
+  the dotenv example. No distribution payload changes beyond the SKILL.md
+  reference to the archive location.
+- Tests, contract checker, CLAUDE.md and ignore rules updated for the new
+  paths. Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.4 — 2026-10-28
 
 - Removed the legacy skill-local script entry points
@@ -80,4 +92,4 @@ release; user configuration is untouched.
 ## Before 1.4.0
 
 See git tags `v1.0.0`–`v1.1.1` and the skill revision history in
-`skills/sap-adt-cli/docs/refactor-summary.md`.
+`docs/development/archive/sap-adt-cli/refactor-summary.md`.

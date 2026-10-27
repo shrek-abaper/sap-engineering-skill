@@ -12,7 +12,7 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURES = ROOT / "skills" / "sap-adt-cli" / "tests" / "fixtures"
+FIXTURES = ROOT / "tests" / "fixtures" / "sap_adt_cli"
 sys.path.insert(0, str(ROOT / "src"))
 
 from sap_adt.adt.parsers import findings  # noqa: E402

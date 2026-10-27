@@ -3,8 +3,8 @@
 End state after batches 0–10. Companion docs (same directory):
 `refactor-summary.md` (batches/commits, twelve protocol facts, follow-ups),
 `known-issues.md` (unverified paths, trigger conditions),
-`../SKILL.md` (operational contract, ≤141 lines),
-`../references/adt_api.md` (canonical protocol-fact table).
+`skills/sap-adt-cli/SKILL.md` (operational contract, ≤141 lines),
+`skills/sap-adt-cli/references/adt_api.md` (canonical protocol-fact table).
 
 ## 1. Completed batches
 
@@ -80,7 +80,7 @@ asserts all four tables stay aligned with SKILL.md and fails CI on drift.
 
 ## 3. Twelve verified protocol facts (S/4HANA 2021 / Basis 7.56)
 
-Canonical copy in `../references/adt_api.md` (dated old→new table, with the
+Canonical copy in `skills/sap-adt-cli/references/adt_api.md` (dated old→new table, with the
 write-side "2xx ≠ completed" and read-side "empty ≠ absent" rules) and
 `refactor-summary.md`. Short form:
 
@@ -147,7 +147,7 @@ ATC/Unit reporter expansion, doctor --coverage UI consumption.
   lock handles never logged (progress line shows a short hash only).
 - **Write-side 2xx is "accepted", never "completed"** — release, activate
   and unlock all require an independent readback; a foreign-context unlock
-  200 is a measured silent no-op (`../references/adt_api.md` top rule).
+  200 is a measured silent no-op (`skills/sap-adt-cli/references/adt_api.md` top rule).
 - Errors are JSON envelopes with the closed code set; Click usage errors
   stay plain text. `--yes` only by explicit user instruction.
 - Passwords in keystore only; fixtures via sanitizer, synthetic/ separated

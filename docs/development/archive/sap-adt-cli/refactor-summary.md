@@ -39,7 +39,7 @@ Tests: **293** (2026-09-17; was 232 at batch 5). CI also runs
 ## Twelve verified ADT protocol facts (not in SAP's public documentation)
 
 Capture system: S/4HANA 2021 / SAP_BASIS 7.56, client 400.
-Canonical copy: `../references/adt_api.md` (dated old→new table plus the
+Canonical copy: `skills/sap-adt-cli/references/adt_api.md` (dated old→new table plus the
 write-side "2xx ≠ completed" and read-side "empty ≠ absent" rules). These
 could only be learned by probing a live system.
 
@@ -59,7 +59,7 @@ could only be learned by probing a live system.
    requests"**: on 2026-09-17 the root tree came back empty while the user
    owned a modifiable D request; per-TR GET is the positive check (see
    `known-issues.md` "empty root tree" and the read-side rule in
-   `../references/adt_api.md`). 2026-09-15/17.
+   `skills/sap-adt-cli/references/adt_api.md`). 2026-09-15/17.
 4. **Data preview** — GET `freestyle?sqlCommand=` is 405; POST
    `freestyle?rowNumber=N`, `Content-Type: text/plain; charset=utf-8`,
    raw SQL body. Accept **must** be
@@ -177,7 +177,7 @@ from this:
   like the read-side DEV fixtures;
 - never treat a write-side 2xx as completion — always add the independent
   readback (release/activate/unlock, see the top rule in
-  `../references/adt_api.md`);
+  `skills/sap-adt-cli/references/adt_api.md`);
 - when a write path has never been live-verified, say so explicitly
   rather than implying it works.
 

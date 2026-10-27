@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_from": "compatibility.json",
   "plugin_name": "sap-engineering-skills",
-  "plugin_version": "1.1.4",
+  "plugin_version": "1.1.5",
   "cli": {
     "command": "sap-adt",
     "pypi_package": "sap-adt",

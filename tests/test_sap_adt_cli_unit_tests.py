@@ -2,7 +2,7 @@
 
 Real captures (empty shell, alert-only) live in tests/fixtures/. The
 testMethod path is exercised only against synthetic/*.synthetic.xml and
-is marked as such — see skills/sap-adt-cli/docs/known-issues.md.
+is marked as such — see docs/development/archive/sap-adt-cli/known-issues.md.
 """
 import json
 import sys
@@ -13,7 +13,7 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURES = ROOT / "skills" / "sap-adt-cli" / "tests" / "fixtures"
+FIXTURES = ROOT / "tests" / "fixtures" / "sap_adt_cli"
 sys.path.insert(0, str(ROOT / "src"))
 
 from sap_adt.adt.parsers import findings  # noqa: E402

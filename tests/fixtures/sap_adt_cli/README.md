@@ -36,7 +36,7 @@ Never run `write-source`, `activate`, `create-transport`, `release-transport`,
 `configure`, `credentials set|forget`, and never pass `--yes`.
 
 ```bash
-FX=skills/sap-adt-cli/tests/fixtures/raw
+FX=tests/fixtures/sap_adt_cli/raw
 mkdir -p "$FX"
 CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
 $CLI get-table VBAK > "$FX/get-table.VBAK.xml" ; echo "get-table.VBAK.xml $?" >> "$FX/_exit_codes.txt"
@@ -56,8 +56,8 @@ explain how they were captured in `raw/_system.md`.
 2. Run:
 
    ```bash
-   python3 skills/sap-adt-cli/tests/fixtures/sanitize.py
-   python3 skills/sap-adt-cli/tests/fixtures/sanitize.py --check
+   python3 tests/fixtures/sap_adt_cli/sanitize.py
+   python3 tests/fixtures/sap_adt_cli/sanitize.py --check
    ```
 
 The sanitizer copies only the files in its explicit `FILE_MAP` allow-list;
@@ -78,7 +78,7 @@ After sanitizing, additionally grep the committable tree (excluding `raw/`):
 
 ```bash
 grep -rnE "<internal-ip>|<real-user>|Nextev|DEVK9[0-9]{6}" \
-  skills/sap-adt-cli/tests/fixtures/ --exclude-dir=raw
+  tests/fixtures/sap_adt_cli/ --exclude-dir=raw
 ```
 
 ## Fixture inventory (captured 2026-09-15, S/4HANA 2021 / SAP_BASIS 7.56)

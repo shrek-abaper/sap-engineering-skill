@@ -237,7 +237,7 @@ Skills have explicit reference loading requirements documented in their `SKILL.m
 4. Reference the ADT REST API endpoint used
 5. Update `skills/sap-adt-cli/SKILL.md`'s command index —
    `tests/check_contract.py` fails on drift (command count constants in
-   `skills/sap-adt-cli/docs/refactor-*.md` must match too)
+   `docs/development/archive/sap-adt-cli/refactor-*.md` must match too)
 6. Add/extend tests; run the local verification baseline
 
 ### Helper Scripts

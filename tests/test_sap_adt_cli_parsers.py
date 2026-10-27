@@ -1,7 +1,7 @@
 """Batch 2 tests for the pure ADT payload parsers.
 
 Fully offline: parsers read only the sanitized fixtures under
-skills/sap-adt-cli/tests/fixtures/ and are compared against golden/*.json.
+tests/fixtures/sap_adt_cli/ and are compared against golden/*.json.
 No HTTP, config or clock access anywhere in lib/parsers.
 """
 import ast
@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "src"
-FIXTURES = ROOT / "skills" / "sap-adt-cli" / "tests" / "fixtures"
+FIXTURES = ROOT / "tests" / "fixtures" / "sap_adt_cli"
 GOLDEN = FIXTURES / "golden"
 
 sys.path.insert(0, str(SCRIPTS))

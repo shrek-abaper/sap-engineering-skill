@@ -224,7 +224,7 @@ for cmd, kind in sorted(declared.items()):
 # history folder (operational contract stays <= one hop deep).
 
 SKILL_ROOT = ROOT / "skills" / "sap-adt-cli"
-SKILL_DOCS = SKILL_ROOT / "docs"
+SKILL_DOCS = ROOT / "docs" / "development" / "archive" / "sap-adt-cli"
 HANDOFF = SKILL_DOCS / "refactor-handoff.md"
 SUMMARY = SKILL_DOCS / "refactor-summary.md"
 ADT_API = SKILL_ROOT / "references" / "adt_api.md"

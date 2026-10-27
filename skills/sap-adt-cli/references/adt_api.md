@@ -28,7 +28,7 @@ exists". Known case: the root `GET /cts/transportrequests` tree behind
 D request (measured 2026-09-17; per-TR GET confirms it). Do not branch
 on emptiness without a positive check; the trigger condition is unprobed.
 Background: project notes on the open trigger investigation live in
-`../docs/known-issues.md` ("empty root tree") — not required to act on
+the archived known-issues notes (repo docs/development/archive/sap-adt-cli) ("empty root tree") — not required to act on
 this rule.
 
 ## Authentication
@@ -191,7 +191,7 @@ the object, and the object resource must carry
 bodies use `chkl:messages/msg` (`type` E/A/X) and `ioc:inactiveObjects` per
 the reference implementation. (The older `error/message/checkResult` shape
 is what the current parser looks for; a real failed activation fixture is
-still needed — background: `../docs/known-issues.md`.)
+still needed — background: the archived known-issues notes (repo docs/development/archive/sap-adt-cli).)
 
 ## Syntax Check (legacy — see verified facts #2)
 
