@@ -19,8 +19,8 @@ sap-adt --version
 keep the package prefix on every call.
 
 ```bash
-npx sap-adt-cli@1.4.0 install
-npx sap-adt-cli@1.4.0 --version
+npx sap-adt-cli@1.4.1 install
+npx sap-adt-cli@1.4.1 --version
 ```
 
 npx caches the package, and the runtime you installed, under
@@ -46,7 +46,7 @@ python tools/build_runtime.py            # build the runtime for this platform
 python tools/build_npm.py --local-file-urls
 cd dist/npm && npm pack
 # in a scratch project:
-npm install <path>/shrek-abaper-sap-adt-cli-1.4.0.tgz
+npm install <path>/sap-adt-cli-1.4.1.tgz
 SAP_ADT_INSTALL_ALLOW_FILE=1 ./node_modules/.bin/sap-adt install
 ./node_modules/.bin/sap-adt --version
 ```

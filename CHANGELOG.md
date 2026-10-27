@@ -1,5 +1,13 @@
 # Changelog
 
+## Plugin/docs 1.1.8 — 2026-10-28
+
+- Install docs, READMEs and skill snapshots now pin CLI `1.4.1` (the
+  transport-consolidation release); compatible range stays
+  `>=1.4.0,<2.0.0`.
+- Plugin payload regenerated; marketplace archive points at the 1.4.1
+  release.
+
 ## 1.4.1 — 2026-10-28
 
 - Transport collection now uses the shared ADT HTTP client and handlers

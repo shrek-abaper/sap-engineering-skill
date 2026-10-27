@@ -14,10 +14,10 @@ channels and shared by all skills.
 | Channel | When to use | Prerequisites | Command |
 |---|---|---|---|
 | npm (global) | Node.js ≥ 18 is available; you want the `sap-adt` command on PATH | Node.js only (no Python) | `npm install -g sap-adt-cli`, then `sap-adt install` |
-| npx (no global install) | Try it without changing PATH | Node.js ≥ 18 | `npx sap-adt-cli@1.4.0 install`, then prefix every call: `npx sap-adt-cli@1.4.0 <command>` |
-| PyPI (wheel/sdist) | Python ≥ 3.10 available | Python | `pip install sap-adt==1.4.0` |
-| Portable archive (Linux) | No dev environment | Linux x86_64, glibc ≥ 2.39 build | unpack `sap-adt-1.4.0-linux-x86_64.tar.gz`, run inside it `./sap-adt/sap-adt` |
-| Windows installer | No dev environment | Windows 10+ x64 | `sap-adt-1.4.0-windows-x86_64-setup.exe` — **not built yet** (needs a Windows build host and a real install test) |
+| npx (no global install) | Try it without changing PATH | Node.js ≥ 18 | `npx sap-adt-cli@1.4.1 install`, then prefix every call: `npx sap-adt-cli@1.4.1 <command>` |
+| PyPI (wheel/sdist) | Python ≥ 3.10 available | Python | `pip install sap-adt==1.4.1` |
+| Portable archive (Linux) | No dev environment | Linux x86_64, glibc ≥ 2.39 build | unpack `sap-adt-1.4.1-linux-x86_64.tar.gz`, run inside it `./sap-adt/sap-adt` |
+| Windows installer | No dev environment | Windows 10+ x64 | `sap-adt-1.4.1-windows-x86_64-setup.exe` — **not built yet** (needs a Windows build host and a real install test) |
 | Python source | Developers, contributors | Python ≥ 3.10 | `pip install -e .` from the repo |
 
 Pin the version that this skill's `references/runtime-compatibility.json`
@@ -27,8 +27,8 @@ All channels install the same runtime built from the same commit. `install`
 in the npm channel is this package's own wizard (fetch → SHA-256 verify →
 atomic install → self-test), not an npm built-in.
 
-> Channel status (2026-10-28): npm `sap-adt-cli@1.4.0` and PyPI
-> `sap-adt==1.4.0` are live; the GitHub Release `sap-adt-v1.4.0` carries the
+> Channel status (2026-10-28): npm `sap-adt-cli@1.4.1` and PyPI
+> `sap-adt==1.4.1` are live; the GitHub Release `sap-adt-v1.4.1` carries the
 > Linux x86_64 portable runtime, the plugin/skill zips and the checksums.
 > The Windows installer and the macOS runtime are **not built yet** — do not
 > promise them until a real build and install smoke pass on those systems.
