@@ -1,5 +1,12 @@
 # sap-transport-gate
 
+<!-- BEGIN GENERATED cli-setup -->
+<!-- GENERATED from docs/installation/runtime-setup.md + compatibility.json by tools/sync_skill_runtime_docs.py — do not edit; run the tool to refresh -->
+
+Offline review works without it; online collection needs the `sap-adt` CLI. Compatible CLI range: `>=1.4.0,<2.0.0`.
+Install/readiness guide: [`references/setup.md`](references/setup.md).
+<!-- END GENERATED cli-setup -->
+
 [English](README.md) | [中文](README.zh-CN.md)
 
 > [!IMPORTANT]

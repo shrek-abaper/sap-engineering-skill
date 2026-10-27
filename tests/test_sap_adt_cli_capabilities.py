@@ -8,11 +8,11 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS = ROOT / "src"
 sys.path.insert(0, str(SCRIPTS))
 
-from lib.parsers import capabilities  # noqa: E402
-from lib import coverage as cov  # noqa: E402
+from sap_adt.adt.parsers import capabilities  # noqa: E402
+from sap_adt.adt import coverage as cov  # noqa: E402
 from test_sap_adt_cli_config import load_cli_module  # noqa: E402
 
 ATOM = b"""<?xml version="1.0" encoding="utf-8"?>
@@ -94,7 +94,7 @@ class DiscoveryCliTests(unittest.TestCase):
             def base_url(self):
                 return "https://sap-dev.example.com:8000"
 
-        self.handlers = sys.modules["lib.handlers"]
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
         p = patch.object(self.handlers, "get_config", return_value=FakeConfig())
         p.start()
         self.addCleanup(p.stop)

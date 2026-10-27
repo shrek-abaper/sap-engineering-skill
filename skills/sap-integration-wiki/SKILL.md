@@ -18,6 +18,10 @@ description: >
 
 # SAP Integration Wiki
 
+**Runtime requirement: none.** This is a knowledge base — never check for,
+install, or require the `sap-adt` CLI. (`references/runtime-compatibility.json`
+declares `not-required`; `references/setup.md` is informational only.)
+
 This skill routes integration questions to the right reference based on your context.
 Before loading any reference file, ask the following if not already clear from the
 user's message:

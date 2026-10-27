@@ -19,18 +19,18 @@ UI tabs that can overwrite earlier answers). Fields:
 Save non-secret fields with one command, then store the password:
 
 ```bash
-python3 "$SAP_CLI" configure --profile dev \
+sap-adt configure --profile dev \
   --url "https://my-sap-dev.example.com:8000" \
   --username "DEVELOPER" --client "100"
 # add --no-verify-ssl when skipping the certificate check
-python3 "$SAP_CLI" credentials set dev        # hidden prompt
+sap-adt credentials set dev        # hidden prompt
 ```
 
 Non-interactive alternative (avoids shell history; configure moves the value
 into the keystore and removes it from config.json):
 
 ```bash
-SAP_PASSWORD="mysecret" python3 "$SAP_CLI" configure --profile dev \
+SAP_PASSWORD="mysecret" sap-adt configure --profile dev \
   --url "https://my-sap-dev.example.com:8000" \
   --username "DEVELOPER" --client "100"
 ```
@@ -64,11 +64,14 @@ profile name, exit 1).
 
 ## Environment / `.env` overrides
 
-- SKILL-local `.env` (copy `.env.example`): fill `SAP_URL`, `SAP_USERNAME`,
-  `SAP_PASSWORD`, `SAP_CLIENT`; isolated per skill.
+- Explicit dotenv file: fill `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`,
+  `SAP_CLIENT` (copy `.env.example`), then declare its path with
+  `SAP_ADT_DOTENV=/path/to/.env`. The CLI never scans the current directory;
+  the legacy `scripts/sap_adt_cli.py` shim sets this variable to the
+  skill-local `.env` automatically during the compat window.
 - One-off env vars (nothing written): `SAP_URL=… SAP_USERNAME=… SAP_PASSWORD=…
-  SAP_CLIENT=100 python3 sap_adt_cli.py status`.
-- Precedence: process env vars → SKILL-local `.env` → selected profile.
+  SAP_CLIENT=100 sap-adt status`.
+- Precedence: process env vars → dotenv (SAP_ADT_DOTENV) → selected profile.
   When all four `SAP_*` are present they override profiles entirely;
   `SAP_PROFILE` only selects among profiles otherwise.
 - Optional: `SAP_LANGUAGE`, `SAP_VERIFY_SSL=0`, `SAP_ALLOW_WRITE=1`,

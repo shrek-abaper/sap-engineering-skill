@@ -1,0 +1,24 @@
+{
+  "name": "@shrek-abaper/sap-engineering-cli",
+  "version": "0.0.0",
+  "description": "Installer and launcher for the self-contained sap-adt CLI (SAP ADT REST API). No Python required; Node.js >=18 needed for this npm channel only.",
+  "license": "MIT",
+  "author": { "name": "shrek-abaper", "url": "https://github.com/shrek-abaper" },
+  "homepage": "https://github.com/shrek-abaper/sap-engineering-skill",
+  "repository": "https://github.com/shrek-abaper/sap-engineering-skill",
+  "bin": {
+    "sap-adt": "scripts/run.js"
+  },
+  "files": [
+    "scripts/",
+    "runtime-manifest.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -13,11 +13,11 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SCRIPTS_PATH))
 
-from lib.keystore import dpapi_store  # noqa: E402
-from lib.keystore.base import KeyStoreError  # noqa: E402
+from sap_adt.keystore import dpapi_store  # noqa: E402
+from sap_adt.keystore.base import KeyStoreError  # noqa: E402
 
 
 class FakePowershell:
@@ -188,7 +188,7 @@ class DpapiRealRunnerTests(unittest.TestCase):
 
     def test_runner_invokes_windows_powershell_with_profile_disabled_and_stdin_payload(self):
         completed = unittest.mock.Mock(returncode=0, stdout="ENC:blob\n", stderr="")
-        with patch("lib.keystore.dpapi_store.subprocess.run", return_value=completed) as run:
+        with patch("sap_adt.keystore.dpapi_store.subprocess.run", return_value=completed) as run:
             out = self.store._run_powershell("SCRIPT", {"secret": "Sap-Pass-123"})
 
         self.assertEqual(out, "ENC:blob")
@@ -203,7 +203,7 @@ class DpapiRealRunnerTests(unittest.TestCase):
 
     def test_runner_nonzero_exit_raises_keystore_error(self):
         completed = unittest.mock.Mock(returncode=1, stdout="", stderr="boom")
-        with patch("lib.keystore.dpapi_store.subprocess.run", return_value=completed):
+        with patch("sap_adt.keystore.dpapi_store.subprocess.run", return_value=completed):
             with self.assertRaises(KeyStoreError):
                 self.store._run_powershell("SCRIPT", {"secret": "x"})
 

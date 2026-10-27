@@ -12,7 +12,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(
     0,
-    str(Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"),
+    str(Path(__file__).resolve().parents[1] / "src"),
 )
 
 from test_sap_adt_cli_config import MemoryKeystore, load_config_module  # noqa: E402

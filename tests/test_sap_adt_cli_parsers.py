@@ -12,13 +12,13 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS = ROOT / "src"
 FIXTURES = ROOT / "skills" / "sap-adt-cli" / "tests" / "fixtures"
 GOLDEN = FIXTURES / "golden"
 
 sys.path.insert(0, str(SCRIPTS))
 
-from lib.parsers import (  # noqa: E402
+from sap_adt.adt.parsers import (  # noqa: E402
     common,
     fields,
     findings,
@@ -200,13 +200,13 @@ class ParseErrorTests(unittest.TestCase):
 
 FORBIDDEN_IMPORTS = {
     "requests", "urllib3", "http", "http.client", "socket",
-    "lib.client", "lib.config", "lib.handlers", "lib.credentials",
+    "sap_adt.adt.client", "sap_adt.config", "sap_adt.adt.handlers", "sap_adt.credentials",
 }
 
 
 class ParserPurityTests(unittest.TestCase):
     def test_parsers_use_only_stdlib_and_common(self):
-        pkg = SCRIPTS / "lib" / "parsers"
+        pkg = SCRIPTS / "sap_adt" / "adt" / "parsers"
         for path in pkg.glob("*.py"):
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
             for node in ast.walk(tree):
@@ -222,7 +222,7 @@ class ParserPurityTests(unittest.TestCase):
                         root, FORBIDDEN_IMPORTS,
                         f"{path.name} imports {node.module}",
                     )
-                    if node.module.startswith("lib") and node.module != "lib.parsers.common":
+                    if node.module.startswith("sap_adt") and node.module != "sap_adt.adt.parsers.common":
                         self.fail(f"{path.name} may only import lib.parsers.common")
 
 

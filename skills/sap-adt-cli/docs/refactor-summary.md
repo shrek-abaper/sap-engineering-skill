@@ -33,7 +33,7 @@ DEV system with read-only calls and an offline golden test suite.
 | 10 — docs | `f42bc09` + this commit | empty-root-tree false negative; docs moved inside the skill dir; inward-only link + cross-doc number assertions in check_contract | link checker green |
 
 Tests: **293** (2026-09-17; was 232 at batch 5). CI also runs
-`python tests/check_contract.py` (18 codes / 34 commands / 8 kinds /
+`python tests/check_contract.py` (18 codes / 36 commands / 8 kinds /
 21 command→kind declarations).
 
 ## Twelve verified ADT protocol facts (not in SAP's public documentation)

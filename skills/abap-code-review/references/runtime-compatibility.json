@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "generated_from": "compatibility.json",
+  "plugin_name": "sap-engineering-skills",
+  "plugin_version": "1.1.0",
+  "cli": {
+    "command": "sap-adt",
+    "pypi_package": "sap-adt",
+    "npm_package": "@shrek-abaper/sap-engineering-cli",
+    "compatible_versions": ">=1.4.0,<2.0.0",
+    "config_dir": "~/.sap-adt-cli",
+    "homepage": "https://github.com/shrek-abaper/sap-engineering-skill"
+  },
+  "skill": {
+    "name": "abap-code-review",
+    "cli_requirement": "not-required",
+    "cli_required_for": [],
+    "cli_not_required_for": [
+      "reviewing source the user provides"
+    ],
+    "notes": "No online fetch path is defined for this skill; it must not demand a CLI install."
+  }
+}

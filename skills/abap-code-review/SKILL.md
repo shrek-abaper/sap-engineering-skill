@@ -23,6 +23,11 @@ metadata:
 
 Performs pre-release security and quality assessment of SAP ABAP programs, producing a formal Markdown report ready for sign-off and circulation.
 
+**Runtime requirement: none.** This skill reviews source you provide; it does
+not connect to SAP and does not need the `sap-adt` CLI. Never demand a CLI
+install for this skill (`references/runtime-compatibility.json` declares
+`not-required`; `references/setup.md` is informational only).
+
 ## Invocation
 
 Any message matching the description above will load this skill. A complete invocation with full context:

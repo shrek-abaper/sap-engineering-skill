@@ -172,8 +172,8 @@ if ($opencodeCmd) {
 #
 #   好处：
 #     - 仓库与技能路径职责分离，结构清晰
-#     - 更新时只需 git pull（在 .agents\sap-engineering-skill\ 执行），
-#       技能链接自动反映最新代码，无需重新配置
+#     - 更新：在 .agents\sap-engineering-skill\ 执行 git pull，然后重新运行
+#       本脚本（重新 pip install 仓库）以同时更新技能文档与 sap-adt CLI
 # =============================================================================
 Write-Step "克隆 sap-engineering-skill 仓库并配置技能目录联接"
 
@@ -222,18 +222,27 @@ if (Test-Path $skillLink) {
 }
 
 # =============================================================================
-# STEP 5 — 安装 Python 依赖
+# STEP 5 — 安装 sap-adt CLI（唯一安装路径，不在此另装依赖）
 # =============================================================================
-Write-Step "安装 Python 依赖（click、requests、urllib3）"
+Write-Step "安装 sap-adt CLI（pip install 本地仓库）"
 
 try {
     & $pythonCmd -m pip install --upgrade pip --quiet
-    & $pythonCmd -m pip install click requests urllib3 --quiet
-    Write-Ok "Python 依赖安装完成"
+    & $pythonCmd -m pip install --quiet "$repoDir"
+    Write-Ok "sap-adt CLI 安装完成（click/requests/urllib3 作为依赖自动安装）"
 } catch {
-    Write-Fail "Python 依赖安装失败：$($_.Exception.Message)"
+    Write-Fail "sap-adt CLI 安装失败：$($_.Exception.Message)"
+    Write-Warn "请先进入 $repoDir 执行 git pull 获取最新代码，然后重新运行本脚本。"
     exit 1
 }
+
+# 就地自检（不依赖尚未刷新的 PATH）
+$sapAdtVersion = & $pythonCmd -m sap_adt --version 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Fail "sap-adt 自检失败：$sapAdtVersion"
+    exit 1
+}
+Write-Ok "sap-adt 自检通过：$sapAdtVersion"
 
 # =============================================================================
 # 完成摘要
@@ -267,7 +276,8 @@ Write-Host "  ──────────────────────
   Write-Host "  🔄  如何更新 sap-engineering-skill" -ForegroundColor Cyan
 Write-Host "  ─────────────────────────────────────────────────────────" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  在以下目录执行 git pull 即可，技能自动生效：" -ForegroundColor White
+Write-Host "  在以下目录执行 git pull，然后重新运行本脚本（或手动执行" -ForegroundColor White
+Write-Host "  python -m pip install \"$repoDir\"）以更新 sap-adt CLI：" -ForegroundColor White
 Write-Host "  $repoDir" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  ─────────────────────────────────────────────────────────" -ForegroundColor Cyan

@@ -25,33 +25,32 @@ The three skills `abap-code-review`, `sap-transport-gate`, and `sap-integration-
 
 ```
 sap-engineering-skill/
-├── skills/
-│   ├── sap-adt-cli/              ← Source in this repo (main skill)
-│   │   ├── scripts/
-│   │   │   ├── sap_adt_cli.py    ← Main CLI entry point
-│   │   │   └── lib/              ← config.py, credentials.py, keystore/, log_redaction.py, handlers.py, client.py
-│   │   └── SKILL.md              ← Skill spec for agent frameworks
-│   ├── abap-code-review/         ← ABAP code review skill
-│   │   ├── references/           ← REF_ABAP_SECURITY.md, REF_CLEAN_ABAP.md
-│   │   │                        └── REPORT_TEMPLATE.md
-│   │   └── SKILL.md
-│   ├── sap-transport-gate/       ← Transport gate review skill
-│   │   ├── scripts/
-│   │   │   ├── tr_collector.py   ← Online TR collection CLI
-│   │   │   └── lib/              ← config.py, handlers.py, client.py
-│   │   ├── references/           ← Decision policy, review dimensions, etc.
-│   │   ├── evals/                ← Golden set, evals.json
-│   │   └── SKILL.md
-│   └── sap-integration-wiki/     ← SAP integration knowledge base
-│       ├── references/           ├── scenarios/, tech/, troubleshoot/
-│       ├── scripts/              ← gen-odata-postman.js, gen-jco-config.py, etc.
-│       ├── assets/               ├── payloads/, configs/
-│       └── SKILL.md
-├── README.md
-├── README.zh-CN.md
-├── LICENSE
+├── src/sap_adt/                  ← ONLY CLI business implementation
+│   ├── cli.py                    ← Click group `sap-adt`
+│   ├── config.py, credentials*.py, errors.py, output.py
+│   ├── adt/                      ← client, handlers, parsers, coverage
+│   ├── keystore/                 ← env/keyring/dpapi/pass/file backends
+│   └── transport/                ← collector, legacy config adapter
+├── skills/                       ← Skill content (SKILL.md, references, evals)
+│   ├── sap-adt-cli/              ← scripts/ holds a forwarding shim only
+│   ├── abap-code-review/
+│   ├── sap-transport-gate/       ← scripts/ holds a forwarding shim only
+│   └── sap-integration-wiki/
+├── packaging/                    ← pyinstaller spec, npm templates, windows iss, targets.json
+├── tools/                        ← build_runtime/build_npm/build_skills/build_plugin/
+│                                   build_manifest/check_release/sync_skill_runtime_docs
+├── docs/                         ← installation/, development/, agents/, authentication/
+├── tests/                        ← unittest suite (incl. distribution contracts)
+├── compatibility.json            ← per-skill CLI requirement + compatible range
+├── pyproject.toml                ← single CLI version source
+├── .claude-plugin/               ← marketplace.json + plugin.json (docs-only plugin)
 └── setup-opencode-abap-cli.bat   ← Windows one-click installer
 ```
+
+Generated outputs (`dist/`, per-skill `references/setup.md` +
+`runtime-compatibility.json` snapshots) are produced by `tools/`; the
+snapshots are committed so a source checkout's skill folder is
+self-contained. Never hand-edit files marked GENERATED.
 
 ---
 
@@ -69,82 +68,87 @@ The three skills below were previously maintained as standalone public repositor
 
 ## Common Commands
 
-### sap-adt-cli (ABAP CLI Tool)
+### sap-adt CLI
 
-The CLI entry point is `scripts/sap_adt_cli.py` inside the skill directory.
+Install once (editable, in a venv): `python3 -m pip install -e .`
 
 **Configure SAP credentials:**
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 ```
 
 **Check connection status:**
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py status
+sap-adt status
 ```
 
 **Read ABAP objects (examples):**
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-program SAPMV45A
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-class ZCL_MY_CLASS
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-table VBAK
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-package ZMYPACKAGE
+sap-adt get-program SAPMV45A
+sap-adt get-class ZCL_MY_CLASS
+sap-adt get-table VBAK
+sap-adt get-package ZMYPACKAGE
 ```
 
 **Write operations (requires `allow_write: true` + confirmation):**
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py activate class ZCL_MY_CLASS
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
+sap-adt activate class ZCL_MY_CLASS
 ```
 
-### sap-transport-gate (TR Collection CLI)
+### Transport collection (read-only)
 
-**Configure SAP credentials:**
 ```bash
-python3 skills/sap-transport-gate/scripts/tr_collector.py configure
+sap-adt transport collect DEVK900123 --output-dir reports/DEVK900123_package/ --verbose
+sap-adt transport ping          # connectivity check
 ```
 
-**Collect transport package:**
-```bash
-python3 skills/sap-transport-gate/scripts/tr_collector.py collect DEVK900123 --output-dir reports/DEVK900123_package/ --verbose
-```
+The old `tr_collector.py collect/ping` shim still forwards (adding
+`--legacy-config` to reproduce its old resolution). Its `configure` is
+refused: use `sap-adt configure`.
 
 ### Testing
 
-Each skill's evals are stored in `evals/` directories. Run evals using the skill creator's evaluation framework or the JSON-based eval definitions in `evals/evals.json`.
+```bash
+python -m unittest discover -s tests -v      # unit + contract + distribution
+python tests/check_contract.py               # SKILL.md ↔ code contract
+node --test packaging/npm/test/install.test.js
+```
+
+There is **no cloud CI** (hosted runners cannot reach real SAP); these local
+runs are the verification baseline. Each skill's evals live in `evals/`.
 
 ---
 
 ## Architecture Patterns
 
-### CLI Tools (sap-adt-cli & sap-transport-gate)
-
-Both Python CLI tools share a common `lib/` pattern:
+### CLI package (`src/sap_adt`)
 
 ```
-scripts/
-├── <entrypoint>.py          ← Main Click CLI
-└── lib/
-    ├── __init__.py
-    ├── config.py            ← Config/profile loading, env/.env overrides, capability flags
-    ├── credentials.py       ← (sap-adt-cli only) password set/forget/status/doctor
-    ├── keystore/            ← (sap-adt-cli only) env/keyring/dpapi/pass/file backends
-    ├── log_redaction.py     ← (sap-adt-cli only) secret redaction in logs and tracebacks
-    ├── handlers.py          ← ADT/HTTP request handlers, command logic
-    └── client.py            ← HTTP client (requests), session management
+src/sap_adt/
+├── cli.py            ← Click group `sap-adt` (commands, gates, confirmations)
+├── config.py         ← profiles/env/dotenv resolution, ~/.sap-adt-cli
+├── credentials.py    ← keystore orchestration (+ credentials_reports.py for doctor)
+├── errors.py         ← closed 18-code set + exit tiers
+├── output.py         ← envelope rendering (format_version = 1)
+├── adt/              ← client.py, handlers.py, parsers/, coverage.py
+├── keystore/         ← env/keyring/dpapi/pass/file backends
+└── transport/        ← collector.py (read-only), client.py, legacy_config.py
 ```
 
 **config.py** - Handles:
-- Configuration file at `~/.<skill>/config.json` (Python path: `os.path.expanduser`); sap-adt-cli stores multiple environment profiles with non-secret fields only
-- Environment variable and skill-local `.env` overrides (`SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT`, `SAP_PROFILE`, etc.)
-- Capability flags (`allow_write`, `allow_transport`)
-- Interactive and non-interactive setup wizards
-- sap-adt-cli only: password storage is delegated to `credentials.py` + the `keystore/` backends; sap-transport-gate's `tr_collector.py` still reads passwords via its `.env` → config → env chain
+- `~/.sap-adt-cli/config.json` v2 profiles (non-secret fields only, 0600)
+- Process env > explicit dotenv (`SAP_ADT_DOTENV`) > profile; never scans CWD
+- Capability flags (`allow_write`, `allow_transport`), environment (dev/qas/prd)
+- Interactive and non-interactive setup wizards; old-config migration
+- Password storage is delegated to `credentials.py` + the `keystore/` backends
 
-**handlers.py** - Contains:
-- Command implementation (get-program, get-class, etc.)
-- ADT REST API request/response handling
-- One-time confirmation prompts for write operations
+**handlers.py** - Command implementation, ADT request/response handling,
+one-time confirmation previews for write operations.
+
+**transport/** — the collector's ADT client is configured via explicit
+`set_config()`; the legacy plaintext config is read only via
+`--legacy-config`.
 
 **client.py** - Provides:
 - HTTP session management (requests library)
@@ -225,12 +229,16 @@ Skills have explicit reference loading requirements documented in their `SKILL.m
 
 ## Development Notes
 
-### Adding New Commands to sap-adt-cli
+### Adding New Commands to sap-adt
 
-1. Implement command handler in `scripts/lib/handlers.py`
-2. Register Click command in `scripts/sap_adt_cli.py`
-3. Add docstring explaining output format (text/JSON/XML)
+1. Implement the handler in `src/sap_adt/adt/handlers.py`
+2. Register the Click command in `src/sap_adt/cli.py`
+3. Add a docstring explaining the output format (text/JSON/XML)
 4. Reference the ADT REST API endpoint used
+5. Update `skills/sap-adt-cli/SKILL.md`'s command index —
+   `tests/check_contract.py` fails on drift (command count constants in
+   `skills/sap-adt-cli/docs/refactor-*.md` must match too)
+6. Add/extend tests; run the local verification baseline
 
 ### Helper Scripts
 
@@ -238,9 +246,23 @@ Skills have explicit reference loading requirements documented in their `SKILL.m
 - `skills/sap-integration-wiki/scripts/gen-jco-config.py` - Generate JCo `.jcoDestination` properties file
 - `skills/sap-integration-wiki/scripts/gen-idoc-template.py` - Generate IDoc XML skeleton
 
+### Distribution build
+
+See `docs/development/building.md` for the full order. In short:
+`python -m build` → `tools/build_runtime.py` → `tools/build_installer.py` →
+`tools/build_npm.py` → `tools/sync_skill_runtime_docs.py` →
+`tools/build_skills.py` → `tools/build_plugin.py` →
+`tools/build_manifest.py` → `tools/check_release.py`. Publishing is a
+separate authorized step (`docs/development/releasing.md`); never push,
+tag, publish or switch the live marketplace without explicit approval.
+
 ### Windows Installer
 
-`setup-opencode-abap-cli.bat` performs one-click setup of opencode + this skill suite. It installs opencode, clones the repo, and creates symlinks to `~/.agents/skills/`.
+`setup-opencode-abap-cli.bat` performs one-click setup of opencode + this
+skill suite. It installs opencode, clones the repo, `pip install`s the
+`sap-adt` CLI from the clone, and creates symlinks to `~/.agents/skills/`.
+The self-contained installer for users without Python is
+`packaging/windows/setup.iss` (implemented, not yet verified on Windows).
 
 ---
 

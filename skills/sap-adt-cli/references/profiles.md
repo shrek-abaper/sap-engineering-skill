@@ -9,8 +9,8 @@ keystore. Write/transport capability switches are **global**, not per profile.
 
 ```bash
 # Configure environments (each save activates that profile)
-python3 "$SAP_CLI" configure --profile dev --url "https://sap-dev…" --username … --client 100
-SAP_PASSWORD="…" python3 "$SAP_CLI" configure --profile prd --url "https://sap-prd…" --username … --client 200
+sap-adt configure --profile dev --url "https://sap-dev…" --username … --client 100
+SAP_PASSWORD="…" sap-adt configure --profile prd --url "https://sap-prd…" --username … --client 200
 
 profile list                 # all environments, * = active
 profile use prd              # persistent switch

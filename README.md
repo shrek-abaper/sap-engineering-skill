@@ -118,10 +118,9 @@ Cross-project guides live under [`docs/`](docs/), independent of any single skil
 sap-engineering-skill/
 ├── README.md                         ← This file (English)
 ├── README.zh-CN.md                   ← Chinese version
-├── CONTRIBUTING.md                   ← Tests, CI matrix, secret-scanning notes
+├── CONTRIBUTING.md                   ← Tests and secret-scanning notes
 ├── LICENSE
 ├── setup-opencode-abap-cli.bat       ← Windows one-click installer
-├── .github/workflows/tests.yml       ← CI: 3-OS unittest matrix + gitleaks
 ├── .gitleaks.toml                    ← Secret-scan rules (also a pre-commit hook)
 ├── tests/                            ← Root-level unittest suite (keystore, credentials, security…)
 ├── docs/authentication/              ← Auth playbook (synced copy of sap-functional-skill)
@@ -155,7 +154,7 @@ This repository is a self-hosted Claude Code plugin marketplace. Inside Claude C
 
 All four skills are then available under the `sap-engineering-skills` namespace (e.g. `/sap-engineering-skills:sap-adt-cli`). Update with `/plugin` → Manage, or `claude plugin update sap-engineering-skills@sap-engineering`.
 
-> Prerequisite: Python 3 must be on `PATH`; the CLIs auto-install `click`/`requests`/`urllib3` on first run. Maintainer note: the plugin ships a pinned `version` in `.claude-plugin/plugin.json` — it **must be bumped on every release** or existing installations will not receive updates.
+> The plugin distributes **skill documentation only** — it does not install the CLI. Install `sap-adt` separately (npm/npx, Windows installer, portable archive, or Python) — see [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md). Offline skills (`abap-code-review`, `sap-integration-wiki`) work without it. Maintainer note: the plugin ships a pinned `version` in `.claude-plugin/plugin.json` — it **must be bumped on every release** or existing installations will not receive updates.
 
 ### Windows — sap-adt-cli one-click installer (opencode)
 
@@ -176,10 +175,14 @@ ln -s "$(pwd)/skills/abap-code-review"    ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"  ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
+# Install the CLI once (from this checkout; npm/installer/portable also available)
+python3 -m pip install -e .
+
 # Configure a SAP connection profile (interactive wizard; password goes to the OS keystore)
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 # Add more environments with --profile dev/qas/prd; verify the active keystore backend:
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+sap-adt credentials doctor
+# Offline knowledge/review skills need no CLI at all — see each skill's references/setup.md
 ```
 
 Exceptions: Amazon Kiro only reads `~/.kiro/skills/` (use its "Import a skill" UI), Cline only reads `~/.cline/skills/`, and Trae requires UI import.
@@ -216,7 +219,7 @@ Exceptions: Amazon Kiro only reads `~/.kiro/skills/` (use its "Import a skill" U
   ```
 
   Only `click` / `requests` / `urllib3` are required; `keyring` and `cryptography` are optional native-backend dependencies.
-- **CI** — [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs the suite on Ubuntu / Windows / macOS with Python 3.12, plus a gitleaks full-history secret scan.
+- **Verification is local** — no cloud CI: hosted runners cannot reach real SAP systems. Run the suite and the contract check (`python tests/check_contract.py`) locally before pushing.
 - **Secret scanning** — gitleaks also runs as a pre-commit hook (`.pre-commit-config.yaml`). See [CONTRIBUTING.md](CONTRIBUTING.md) for placeholder rules and the WSL/DPAPI manual verification checklist.
 
 ---

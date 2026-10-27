@@ -19,8 +19,8 @@ sys.path.insert(0, str(SCRIPTS_PATH))
 class OutputModuleTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
-        self.output = sys.modules["lib.output"]
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
+        self.output = sys.modules["sap_adt.output"]
         self.output.set_format(None)
 
     def test_raw_render_is_identity_for_every_format(self):
@@ -77,8 +77,8 @@ class OutputModuleTests(unittest.TestCase):
 class OutputCliPassthroughTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
-        self.output = sys.modules["lib.output"]
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
+        self.output = sys.modules["sap_adt.output"]
         self.output.set_format(None)
 
     def _patch_config(self):

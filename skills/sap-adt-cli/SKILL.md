@@ -11,16 +11,46 @@ description: "Read/write ABAP source and metadata via SAP ADT REST API: programs
 
 # SAP ADT CLI
 
-CLI: `scripts/sap_adt_cli.py` in this skill directory. First run auto-installs
-`click`/`requests`/`urllib3`. Always run `status` first to check the profile and switches.
+CLI: the `sap-adt` command — a self-contained binary (no Python needed) or
+the Python package. Install and readiness guide: **references/setup.md**;
+the compatible CLI range is declared in
+**references/runtime-compatibility.json** (never guess it, never resolve
+`@latest` per task). The legacy `scripts/sap_adt_cli.py` forwards to the
+package during the compat window (and keeps this skill's `.env` via
+SAP_ADT_DOTENV) but no longer auto-installs dependencies.
 
 ```bash
-SKILL_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]:-$0}")")"
-SAP_CLI="$SKILL_DIR/scripts/sap_adt_cli.py"
-python3 "$SAP_CLI" status
-python3 "$SAP_CLI" <command> [args]
-# Windows: python "%USERPROFILE%\.agents\skills\sap-adt-cli\scripts\sap_adt_cli.py"
+sap-adt status
+sap-adt <command> [args]
+sap-adt --profile qas get-table VBAK
 ```
+
+## Runtime readiness (conditional)
+
+Decide the task mode first:
+
+- **Offline task** (explain or review source the user already provided,
+  draft code, read this skill's references): continue without any CLI
+  checks — do not probe for or install anything.
+- **Online task** (read from or write to a live SAP system):
+  1. Check the execution environment: you need a shell that runs binaries
+     on the user's machine. No shell, no install permission, or no network
+     → give the manual steps from references/setup.md and stop; never
+     fabricate an online result.
+  2. Probe `sap-adt --version`.
+     - Not found: it may be installed with a PATH not refreshed in this
+       session — ask the user to restart the terminal/agent or try the
+       absolute install path from references/setup.md. Do not blindly
+       reinstall. Only after confirming absence, show the install command
+       matching references/runtime-compatibility.json and ASK before
+       running it.
+     - Found: compare against the compatible range; on mismatch show the
+       upgrade command and ask before changing anything.
+  3. `sap-adt status` reports local configuration only (not a live login).
+     Unconfigured → offer `sap-adt configure` (interactive; the password is
+     entered locally — never ask the user to paste it into chat).
+  4. Only then run the requested task. Install approval never implies
+     approval for SAP writes, permission changes, or production operations.
 
 Unconfigured → `CONFIG_MISSING` (exit 2). First-use credential collection and
 non-interactive `configure`: read **references/credentials.md**.
@@ -103,6 +133,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `activate <TYPE> <N> [--group G] [--yes]` | `?method=activate`; no lock/shared session needed, succeeds in a separate process (real-verified Basis 7.56) | gated |
 | `create-transport --package P --description D --ref URI [--yes]` | CreateCorrectionRequest ASX (`DEVCLASS`+`REF` required, `$TMP`=local); real-verified Basis 7.56, 2026-09-17 | gated |
 | `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
+| `transport ping\|collect` | transport utilities (read-only): ping = ADT connectivity (plain text); collect = TR object list + sources into `review_package/` (manifest schema unchanged from tr_collector; `--legacy-config` explicitly opts into the old plaintext collector config — never implicit) | — |
 
 > **Unit risk levels**: `dangerous`/`critical` tests execute ABAP that may
 > modify business data — require `allow_write`, a risk/object/data-change

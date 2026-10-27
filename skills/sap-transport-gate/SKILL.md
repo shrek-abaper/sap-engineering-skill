@@ -113,42 +113,39 @@ Determine the review mode from the input. Full rules in `references/review-modes
 
 **Online Transport Mode — Proactive Collection Protocol:**
 
-When a TR ID is identified and no pre-assembled package exists, the SKILL must **proactively attempt collection** rather than waiting for the user to provide materials. Execute the following in order:
+When a TR ID is identified and no pre-assembled package exists, the SKILL must **proactively attempt collection** rather than waiting for the user to provide materials. Online collection is read-only and performed by the `sap-adt` CLI (`transport collect`). Offline modes never need the CLI.
 
-1. **Check credential availability** — inspect `.env` in the skill directory, `~/.sap-transport-gate/config.json`, and process environment variables for `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT`.
+Execute the following in order:
 
-2. **Credentials found → run `tr_collector.py collect` automatically**:
+1. **Check the execution environment** — you need a shell that can run binaries on the user's machine. No shell → hand the user the manual command (step 4) and wait. No install permission or no network → reclassify to Offline Local Mode with an explicit declaration.
 
-   Using available shell execution tools (e.g., Bash), run:
+2. **Check CLI readiness** — run `sap-adt --version`.
+   - Missing or below the compatible range: follow the conditional install flow in `references/setup.md` (range: `references/runtime-compatibility.json`). **Ask the user before installing or upgrading anything.** A stale PATH, a sandbox different from the user's desktop, and an absent install are distinct cases — diagnose first, never reinstall blindly.
+   - Declined or unavailable → Offline Local Mode, declared.
+
+3. **Run collection**:
+
    ```bash
-   python3 scripts/tr_collector.py collect {TR_ID} --output-dir reports/{TR_ID}_package/ --verbose
+   sap-adt transport collect {TR_ID} --output-dir reports/{TR_ID}_package/ --verbose
    ```
 
-   - **Collection succeeds** → proceed as Offline Package Mode with the collected package at `reports/{TR_ID}_package/`. Do NOT ask the user to run the script.
+   - **Collection succeeds** → proceed as Offline Package Mode with the collected package at `reports/{TR_ID}_package/`. Do NOT ask the user to run the command.
    - **Collection fails** (HTTP 401, 403, connection refused, SSL error, timeout):
      > "SAP connection failed: `{error}`. Proceeding with Offline Local Mode. See `references/sap-connectivity.md §11` for the step-by-step manual export guide if you want a complete evidence package."
 
      Reclassify to Offline Local Mode and continue.
 
-3. **Credentials not configured** — no `.env`, no config file, no env vars:
-
-   > "No SAP credentials found. Proceeding with Offline Local Mode using materials already provided.
-   >
-   > To enable automatic TR collection in future reviews, configure credentials via:
-   > - **Option A**: Copy `.env.example` to `.env` and fill in `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT`.
-   > - **Option B**: Run `python3 scripts/tr_collector.py configure` for interactive setup, then `python3 scripts/tr_collector.py ping` to verify."
-
-   Reclassify to Offline Local Mode and continue.
-
-4. **Shell execution not available** — if the AI agent has no shell/bash capability:
+4. **Shell execution not available**:
 
    > "Shell execution is not available in this environment. To use automatic collection, run:
    > ```bash
-   > python3 scripts/tr_collector.py collect {TR_ID} --output-dir reports/{TR_ID}_package/ --verbose
+   > sap-adt transport collect {TR_ID} --output-dir reports/{TR_ID}_package/ --verbose
    > ```
    > Once the package is ready, provide the path and I will proceed as Offline Package Mode. Or confirm you cannot run it to proceed now with Offline Local Mode."
 
    Wait for user response before continuing. Do NOT fabricate materials.
+
+5. **Configuration state** — never read `.env` files, `config.json`, or credential stores yourself. `sap-adt status` (local, non-secret) reports whether a profile is configured; unconfigured → point the user at `sap-adt configure` (interactive, password stays local). The legacy `tr_collector.py` shim still forwards with its old plaintext-config resolution during the compat window; do not use it for new setups, and never use the legacy plaintext config as an implicit fallback for a missing profile.
 
 When falling back to Offline Local Mode at any point, reclassify mode, declare the fallback reason in the report, and continue.
 
@@ -367,7 +364,7 @@ Always save reports to `reports/{TR_ID}_package/` regardless of review mode. Nev
 
 | Mode | Directory creation |
 | ---- | ------------------ |
-| **Online Transport Mode** | `tr_collector.py collect --output-dir reports/{TR_ID}_package/` creates the directory automatically. Reports are saved inside it alongside `manifest.json` and `sources/`. |
+| **Online Transport Mode** | `sap-adt transport collect --output-dir reports/{TR_ID}_package/` creates the directory automatically. Reports are saved inside it alongside `manifest.json` and `sources/`. |
 | **Offline Package Mode** | If the user provided a package at a different path, save reports to that path. If no path was specified, create `reports/{TR_ID}_package/` and save there. |
 | **Offline Local Mode** | Create `reports/{TR_ID}_package/` even if no manifest exists. Save all reports and any user-provided evidence files there. |
 

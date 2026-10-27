@@ -24,8 +24,8 @@ def _envelope(runner_result):
 class GateTier3Tests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
-        self.AdtHttpError = sys.modules["lib.client"].AdtHttpError
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
+        self.AdtHttpError = sys.modules["sap_adt.adt.client"].AdtHttpError
 
         class Cfg:
             username = "DEVELOPER"
@@ -119,8 +119,8 @@ class GateTier3Tests(unittest.TestCase):
 class HandlerErrorTiersTests(unittest.TestCase):
     def setUp(self):
         self.cli, _ = load_cli_module()
-        self.handlers = sys.modules["lib.handlers"]
-        self.AdtHttpError = sys.modules["lib.client"].AdtHttpError
+        self.handlers = sys.modules["sap_adt.adt.handlers"]
+        self.AdtHttpError = sys.modules["sap_adt.adt.client"].AdtHttpError
 
         class FakeConfig:
             def base_url(self):

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "description": "Project-owned compatibility declaration (NOT a Claude Code manifest extension). Per-skill snapshots under skills/<name>/references/runtime-compatibility.json are GENERATED from this file by tools/sync_skill_runtime_docs.py — never edit the copies.",
+  "plugin_name": "sap-engineering-skills",
+  "plugin_version": "1.1.0",
+  "marketplace": "sap-engineering",
+  "cli": {
+    "command": "sap-adt",
+    "pypi_package": "sap-adt",
+    "npm_package": "@shrek-abaper/sap-engineering-cli",
+    "compatible_versions": ">=1.4.0,<2.0.0",
+    "config_dir": "~/.sap-adt-cli",
+    "homepage": "https://github.com/shrek-abaper/sap-engineering-skill"
+  },
+  "skills": {
+    "sap-adt-cli": {
+      "cli_requirement": "required",
+      "cli_required_for": ["every online read/write/transport operation"],
+      "cli_not_required_for": ["explaining source or behavior the user already provided"],
+      "notes": "Without the CLI this skill can only guide installation/configuration; it must never fake an online result."
+    },
+    "sap-transport-gate": {
+      "cli_requirement": "conditional",
+      "cli_required_for": ["online TR collection via `sap-adt transport collect`"],
+      "cli_not_required_for": ["Offline Package Mode review", "Offline Local Mode review"],
+      "notes": "A missing CLI degrades to offline modes with an explicit declaration; collection results are never fabricated."
+    },
+    "abap-code-review": {
+      "cli_requirement": "not-required",
+      "cli_required_for": [],
+      "cli_not_required_for": ["reviewing source the user provides"],
+      "notes": "No online fetch path is defined for this skill; it must not demand a CLI install."
+    },
+    "sap-integration-wiki": {
+      "cli_requirement": "not-required",
+      "cli_required_for": [],
+      "cli_not_required_for": ["all knowledge/routing/troubleshooting use"],
+      "notes": "Pure knowledge base; never checks for or installs a CLI."
+    }
+  }
+}

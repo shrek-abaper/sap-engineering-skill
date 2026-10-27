@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "description": "Declared platform matrix for the self-contained sap-adt runtime. 'status' is maintained explicitly: a target is 'verified-local' only after a real build + install smoke on that OS/arch. Never mark a target verified from a script's existence alone.",
+  "primary_target": "windows-x86_64",
+  "targets": {
+    "windows-x86_64": {
+      "status": "blocked-no-windows-host",
+      "python_floor": "3.10",
+      "installer": "packaging/windows/setup.iss (Inno Setup 6, per-user default)",
+      "notes": "Primary release target. Build requires a Windows host with Inno Setup; NOT verified in this workspace (WSL2/Linux only)."
+    },
+    "linux-x86_64": {
+      "status": "verified-local",
+      "python_floor": "3.10",
+      "installer": "portable tar.gz (dist/runtime/sap-adt-<ver>-linux-x86_64.tar.gz)",
+      "notes": "Verified on Ubuntu 24.04 glibc 2.39 (WSL2). glibc floor applies to other distros; do not generalize to musl/older glibc without a real build there."
+    },
+    "darwin-arm64": {
+      "status": "planned-unverified",
+      "python_floor": "3.10",
+      "installer": "portable tar.gz",
+      "notes": "No macOS build host available. Keychain backend additionally unverified. Planned, not supported yet."
+    }
+  }
+}

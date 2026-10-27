@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Single source of truth for the CLI version (spec §5: pyproject.toml is the
+# authority; runtime reads it via importlib.metadata, no second constant).
+name = "sap-adt"
+version = "1.4.0"
+description = "SAP ADT REST API CLI: read/write ABAP source and metadata, transport request collection (read-only)."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "shrek-abaper" }]
+requires-python = ">=3.10"
+keywords = ["sap", "abap", "adt", "s4hana", "cli"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Environment :: Console",
+]
+dependencies = [
+    "click>=8.1.0",
+    "requests>=2.31.0",
+    "urllib3>=2.0.0",
+]
+
+[project.optional-dependencies]
+# OS-native keystore backend (keyring) and encrypted-file fallback
+# (cryptography). The core CLI runs without either; credential backends
+# report unavailable/fail-closed when the extra is missing.
+keystore = ["keyring>=24.0.0"]
+file = ["cryptography>=41.0.0"]
+all = ["sap-adt[keystore,file]"]
+
+[project.scripts]
+sap-adt = "sap_adt.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -118,10 +118,9 @@ SAP ABAP 上线前代码审查 AI Agent Skill。对 **9 个维度**进行安全�
 sap-engineering-skill/
 ├── README.md                         ← 英文版（默认）
 ├── README.zh-CN.md                   ← 本文件（中文）
-├── CONTRIBUTING.md                   ← 测试、CI 矩阵、密钥扫描说明
+├── CONTRIBUTING.md                   ← 测试与密钥扫描说明
 ├── LICENSE
 ├── setup-opencode-abap-cli.bat       ← Windows 一键安装脚本
-├── .github/workflows/tests.yml       ← CI：三平台 unittest 矩阵 + gitleaks
 ├── .gitleaks.toml                    ← 密钥扫描规则（同时作为 pre-commit hook）
 ├── tests/                            ← 仓库级 unittest 测试套（密钥库、凭据、安全防护等）
 ├── docs/authentication/              ← 认证参考手册（同步自 sap-functional-skill）
@@ -155,7 +154,7 @@ sap-engineering-skill/
 
 安装后四个 Skill 统一位于 `sap-engineering-skills` 命名空间下（如 `/sap-engineering-skills:sap-adt-cli`）。更新可在 `/plugin` 面板操作，或执行 `claude plugin update sap-engineering-skills@sap-engineering`。
 
-> 前置条件：`PATH` 中需有 Python 3；CLI 首次运行时会自动安装 `click`/`requests`/`urllib3`。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
+> 插件只分发 **Skill 文档**，不会安装 CLI。`sap-adt` 需单独安装（npm/npx、Windows 安装器、便携包或 Python）——见 [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md)。离线 Skill（`abap-code-review`、`sap-integration-wiki`）无需 CLI。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
 
 ### Windows——sap-adt-cli 一键安装（opencode）
 
@@ -176,10 +175,14 @@ ln -s "$(pwd)/skills/abap-code-review"     ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"   ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
+# 安装 CLI（本仓库检出目录；也支持 npm/安装器/便携包）
+python3 -m pip install -e .
+
 # 配置 SAP 连接 Profile（交互式向导；密码进入操作系统密钥库）
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 # 可用 --profile dev/qas/prd 添加多个环境；检查当前生效的密钥库后端：
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+sap-adt credentials doctor
+# 离线知识/审查类 Skill 完全不需要 CLI——见各 Skill 的 references/setup.md
 ```
 
 例外：Amazon Kiro 只读取 `~/.kiro/skills/`（用其 "Import a skill" UI 导入），Cline 只读取 `~/.cline/skills/`，Trae 仅支持 UI 导入。
@@ -216,7 +219,7 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
   ```
 
   仅依赖 `click` / `requests` / `urllib3`；`keyring` 与 `cryptography` 是原生密钥库后端的可选依赖。
-- **CI**——[`.github/workflows/tests.yml`](.github/workflows/tests.yml) 在 Ubuntu / Windows / macOS 三平台与 Python 3.12 上运行同一测试套，并执行 gitleaks 全历史密钥扫描。
+- **验证在本地完成**——无云端 CI:托管 runner 无法连接真实 SAP 系统。推送前请本地运行测试套与契约检查(`python tests/check_contract.py`)。
 - **密钥扫描**——gitleaks 同时作为 pre-commit hook 运行（`.pre-commit-config.yaml`）。占位符规则与 WSL/DPAPI 手动验证清单见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ---

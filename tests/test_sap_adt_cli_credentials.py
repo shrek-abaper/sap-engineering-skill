@@ -3,11 +3,11 @@ import sys
 import unittest
 from pathlib import Path
 
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SCRIPTS_PATH))
 
-from lib import credentials  # noqa: E402
-from lib.keystore.base import (  # noqa: E402
+from sap_adt import credentials  # noqa: E402
+from sap_adt.keystore.base import (  # noqa: E402
     BackendNotWritableError,
     BackendUnavailableError,
     UnknownBackendError,

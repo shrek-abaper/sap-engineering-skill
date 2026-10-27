@@ -7,14 +7,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "skills" / "sap-adt-cli" / "scripts"
+SCRIPTS_PATH = Path(__file__).resolve().parents[1] / "src"
 sys.path.insert(0, str(SCRIPTS_PATH))
 
 import requests  # noqa: E402
 
-from lib import client  # noqa: E402
-from lib import log_redaction  # noqa: E402
-from lib.config import SapConfig  # noqa: E402
+from sap_adt.adt import client  # noqa: E402
+from sap_adt import log_redaction  # noqa: E402
+from sap_adt.config import SapConfig  # noqa: E402
 
 SECRET = "SUPER-SECRET-PW-9001"
 BASIC_TOKEN = base64.b64encode(f"DEVUSER:{SECRET}".encode()).decode()

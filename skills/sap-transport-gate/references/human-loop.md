@@ -28,8 +28,8 @@ The following situations always require human confirmation. AI cannot substitute
 ### §1.3 Evidence-Based Triggers
 
 > **SKILL BOUNDARY**: The SKILL automatically fetches the following when TR ID and credentials are available — these are NOT human confirmation triggers:
-> - **Object list**: fetched via `tr_collector.py collect` (ADT `/objects` endpoint or E071 fallback)
-> - **Source code**: fetched for all supported object types via `tr_collector.py`
+> - **Object list**: fetched via `sap-adt transport collect` (ADT `/objects` endpoint or E071 fallback)
+> - **Source code**: fetched for all supported object types via `sap-adt transport collect`
 >
 > Only evidence that the SKILL **cannot obtain programmatically** requires human confirmation.
 
@@ -157,4 +157,4 @@ These are two distinct sections in the report with different purposes. Do NOT co
 | **Example** | "Developer: fix the hardcoded company code in method POST_DOC" | "Security Owner: confirm that AUTHORITY-CHECK on F_BKPF_BUK is sufficient given variable input" |
 | **Decision gate** | CONDITIONAL_GO / NO_GO / NEED_MORE_EVIDENCE | Any finding with `requires_human_confirmation: true` |
 
-**Critical rule**: Items the SKILL can fetch automatically (object list, source code) must appear in **neither** section. They are SKILL responsibilities, not human tasks. If a `tr_collector.py` run fails, the fallback is Offline Local Mode — not a Required Action asking the human to provide what the SKILL should have fetched.
+**Critical rule**: Items the SKILL can fetch automatically (object list, source code) must appear in **neither** section. They are SKILL responsibilities, not human tasks. If a `sap-adt transport collect` run fails, the fallback is Offline Local Mode — not a Required Action asking the human to provide what the SKILL should have fetched.

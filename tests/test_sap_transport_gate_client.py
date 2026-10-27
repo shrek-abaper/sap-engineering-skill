@@ -1,4 +1,4 @@
-"""Tests for the sap-transport-gate ADT HTTP client (lib/client.py).
+"""Tests for the transport ADT HTTP client (sap_adt.transport.client).
 
 Focus of this suite: every ADT request -- including the CSRF-token fetch and
 its 403-triggered retry -- must carry the client as the ``sap-client`` query
@@ -7,9 +7,6 @@ the URL parameter rather than (or in addition to) the ``X-SAP-Client`` header.
 
 No real SAP system is contacted: the requests session and config are mocked.
 """
-import importlib.util
-import sys
-import types
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -18,32 +15,9 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 ROOT = Path(__file__).resolve().parents[1]
-_GATE_LIB = ROOT / "skills" / "sap-transport-gate" / "scripts" / "lib"
 
-# Both skills ship a top-level package called ``lib``. Under ``unittest
-# discover`` the sap-adt-cli tests run first and cache their ``lib`` in
-# sys.modules, so a plain ``from lib.client import ...`` here would silently
-# resolve to the *adt-cli* client. Load the transport-gate package under a
-# unique, isolated name instead and leave the shared ``lib`` untouched.
-_PKG_NAME = "_sap_transport_gate_lib_under_test"
-_pkg = types.ModuleType(_PKG_NAME)
-_pkg.__path__ = [str(_GATE_LIB)]
-sys.modules[_PKG_NAME] = _pkg
-
-
-def _load_submodule(short_name: str, file_name: str):
-    full_name = f"{_PKG_NAME}.{short_name}"
-    spec = importlib.util.spec_from_file_location(full_name, _GATE_LIB / file_name)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[full_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-config_module = _load_submodule("config", "config.py")
-client_module = _load_submodule("client", "client.py")
-
-SapConfig = config_module.SapConfig
+from sap_adt.config import SapConfig  # noqa: E402
+from sap_adt.transport import client as client_module  # noqa: E402
 
 URL = "https://sap.example.com:8000/sap/bc/adt/discovery"
 
@@ -67,6 +41,7 @@ class SapClientParameterTests(unittest.TestCase):
         client_module._csrf_token = None
         client_module._session = None
         client_module._session_cookies = None
+        client_module._active_config = None
 
         self.cfg = SapConfig(
             url="https://sap.example.com:8000",
@@ -80,7 +55,9 @@ class SapClientParameterTests(unittest.TestCase):
         self.session.get.return_value = _make_response(200, csrf_token="TOKEN-1")
 
         patch.object(client_module, "_get_session", return_value=self.session).start()
-        patch.object(client_module, "get_config", return_value=self.cfg).start()
+        # The connection is injected explicitly (ported from the old module,
+        # which resolved a module-global config instead).
+        client_module.set_config(self.cfg)
         self.addCleanup(patch.stopall)
         self.addCleanup(self._reset_module_globals)
 
@@ -88,6 +65,7 @@ class SapClientParameterTests(unittest.TestCase):
         client_module._csrf_token = None
         client_module._session = None
         client_module._session_cookies = None
+        client_module._active_config = None
 
     # --- Tests 1-4: sap-client defaulting on the business request ---------
 

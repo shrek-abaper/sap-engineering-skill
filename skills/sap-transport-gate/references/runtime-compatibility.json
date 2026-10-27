@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "generated_from": "compatibility.json",
+  "plugin_name": "sap-engineering-skills",
+  "plugin_version": "1.1.0",
+  "cli": {
+    "command": "sap-adt",
+    "pypi_package": "sap-adt",
+    "npm_package": "@shrek-abaper/sap-engineering-cli",
+    "compatible_versions": ">=1.4.0,<2.0.0",
+    "config_dir": "~/.sap-adt-cli",
+    "homepage": "https://github.com/shrek-abaper/sap-engineering-skill"
+  },
+  "skill": {
+    "name": "sap-transport-gate",
+    "cli_requirement": "conditional",
+    "cli_required_for": [
+      "online TR collection via `sap-adt transport collect`"
+    ],
+    "cli_not_required_for": [
+      "Offline Package Mode review",
+      "Offline Local Mode review"
+    ],
+    "notes": "A missing CLI degrades to offline modes with an explicit declaration; collection results are never fabricated."
+  }
+}
