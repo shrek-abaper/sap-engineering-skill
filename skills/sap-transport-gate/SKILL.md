@@ -120,7 +120,8 @@ Execute the following in order:
 1. **Check the execution environment** — you need a shell that can run binaries on the user's machine. No shell → hand the user the manual command (step 4) and wait. No install permission or no network → reclassify to Offline Local Mode with an explicit declaration.
 
 2. **Check CLI readiness** — run `sap-adt --version`.
-   - Missing or below the compatible range: follow the conditional install flow in `references/setup.md` (range: `references/runtime-compatibility.json`). **Ask the user before installing or upgrading anything.** A stale PATH, a sandbox different from the user's desktop, and an absent install are distinct cases — diagnose first, never reinstall blindly.
+   - Missing: diagnose first (stale PATH vs sandbox vs absent install — never reinstall blindly). After confirming absence, guide the install and **ask before running anything**: Node.js ≥ 18 → `npx sap-adt-cli@1.4.0 install` (version pinned from `references/runtime-compatibility.json`, never `@latest`); no Node.js → `pip install sap-adt==1.4.0` or the portable archive.
+   - Below the compatible range: show the upgrade command and ask first.
    - Declined or unavailable → Offline Local Mode, declared.
 
 3. **Run collection**:
@@ -145,7 +146,7 @@ Execute the following in order:
 
    Wait for user response before continuing. Do NOT fabricate materials.
 
-5. **Configuration state** — never read `.env` files, `config.json`, or credential stores yourself. `sap-adt status` (local, non-secret) reports whether a profile is configured; unconfigured → point the user at `sap-adt configure` (interactive, password stays local). The legacy `tr_collector.py` shim still forwards with its old plaintext-config resolution during the compat window; do not use it for new setups, and never use the legacy plaintext config as an implicit fallback for a missing profile.
+5. **Configuration state** — never read `.env` files, `config.json`, or credential stores yourself. `sap-adt status` (local, non-secret) reports whether a profile is configured; unconfigured → point the user at `sap-adt configure` (interactive, password stays local). The old plaintext collector config (`~/.sap-transport-gate/config.json`) is deprecated and read only on the explicit `--legacy-config` path — never as an implicit fallback for a missing profile.
 
 When falling back to Offline Local Mode at any point, reclassify mode, declare the fallback reason in the report, and continue.
 

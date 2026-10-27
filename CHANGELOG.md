@@ -1,5 +1,22 @@
 # Changelog
 
+## Plugin/docs 1.1.4 — 2026-10-28
+
+- Removed the legacy skill-local script entry points
+  (`skills/sap-adt-cli/scripts/sap_adt_cli.py`,
+  `skills/sap-transport-gate/scripts/tr_collector.py`) and their
+  `requirements.txt` files. Old-path invocations now fail — use `sap-adt`.
+  No released artifact ever contained these shims, so no CLI version bump.
+- `SKILL.md` now states the missing-CLI path explicitly: probe
+  `sap-adt --version`; if absent, diagnose first, then guide the user —
+  preferred `npx sap-adt-cli@1.4.0 install` when Node ≥ 18 exists, otherwise
+  `pip install sap-adt==1.4.0` or the portable archive — and ask before
+  running anything.
+- Skill READMEs/references now document the `SAP_ADT_DOTENV` dotenv model
+  (no skill-local `.env` scanning) and the `sap-adt transport collect`
+  commands.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.3 — 2026-10-28
 
 - All distribution channels are now live: npm `sap-adt-cli@1.4.0`, PyPI

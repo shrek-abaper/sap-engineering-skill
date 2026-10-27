@@ -34,10 +34,10 @@ authorization.** Remote publishing is a separate, human-approved step.
 
 - CLI: `1.4.0` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.1.0` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.1.4` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
-- Removing the compatibility shims later is a CLI 2.0.0 change (it breaks
-  direct `scripts/sap_adt_cli.py` users).
+- The compatibility shims were removed in the 1.4.0 source tree; no released
+  artifact ever contained them, so no CLI version bump was required.
 
 ## Rollback
 

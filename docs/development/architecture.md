@@ -39,15 +39,14 @@ src/sap_adt/
 └── transport/        collector (read-only), legacy config adapter
 ```
 
-## Compatibility shims
+## No compatibility shims
 
-`skills/sap-adt-cli/scripts/sap_adt_cli.py` and
-`skills/sap-transport-gate/scripts/tr_collector.py` only forward to the
-installed package (no business code, no auto-install). They exist so old
-links keep working during the compat window and are excluded from every
-generated distribution. The collector shim adds `--legacy-config` to
-reproduce its old resolution and refuses `configure` (which used to write a
-plaintext password); `sap-adt configure` is the replacement.
+The old skill-local script entry points (`skills/*/scripts/sap_adt_cli.py`,
+`tr_collector.py`) were removed: they only forwarded to the installed
+package and no distribution ever shipped them. Every path now uses the
+`sap-adt` command. The deprecated plaintext collector config is still read
+only on the explicit `--legacy-config` flag; `sap-adt configure` replaces the
+old collector wizard.
 
 ## Data & credentials (unchanged by packaging)
 

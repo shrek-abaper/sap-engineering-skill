@@ -49,24 +49,24 @@ cat > "$TMPHOME/.sap-adt-cli/config.json" <<'JSON'
 "profiles":{"dev":{"url":"https://D01.example.com:8000","username":"DEVUSER",
 "password":"PLACEHOLDER-SECRET","client":"100","language":"EN","verify_ssl":true}}}
 JSON
-CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
+CLI="sap-adt"
 
 # 1. First command triggers migration: warning printed, password stripped
-HOME="$TMPHOME" $CLI profile list
+HOME="$TMPHOME" sap-adt profile list
 ! grep -q PLACEHOLDER "$TMPHOME/.sap-adt-cli/config.json"   # no plaintext left
 test "$(stat -c %a "$TMPHOME/.sap-adt-cli/secrets.json")" = 600
 test ! -e "$TMPHOME/.sap-adt-cli/config.json.bak"           # no backup copies
 
 # 2. Backend selection and status/doctor output
-HOME="$TMPHOME" $CLI credentials status     # dev -> configured (dpapi)
-HOME="$TMPHOME" $CLI credentials doctor      # dpapi selected, mode 0600, fs=ext4
+HOME="$TMPHOME" sap-adt credentials status     # dev -> configured (dpapi)
+HOME="$TMPHOME" sap-adt credentials doctor      # dpapi selected, mode 0600, fs=ext4
 
 # 3. Idempotency: second run prints no migration warning
-HOME="$TMPHOME" $CLI status 2>&1 | grep -c "plain text" | grep -q '^0$'
+HOME="$TMPHOME" sap-adt status 2>&1 | grep -c "plain text" | grep -q '^0$'
 
 # 4. Forget removes the DPAPI blob
-HOME="$TMPHOME" $CLI credentials forget dev
-HOME="$TMPHOME" $CLI credentials status | grep -q "not configured"
+HOME="$TMPHOME" sap-adt credentials forget dev
+HOME="$TMPHOME" sap-adt credentials status | grep -q "not configured"
 
 rm -rf "$TMPHOME"
 ```

@@ -141,15 +141,15 @@ cd sap-engineering-skill
 
 # 2. Configure credentials (interactive wizard — password is not echoed and is
 #    saved to the OS keystore; add more systems later with: configure --profile qas / prd)
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 
 # 3. Verify the connection
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py status
+sap-adt status
 
 # 4. Start reading ABAP objects
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-program SAPMV45A
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-class ZCL_MY_CLASS
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
+sap-adt get-program SAPMV45A
+sap-adt get-class ZCL_MY_CLASS
+sap-adt get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
 ```
 
 ---
@@ -159,7 +159,7 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-function BAPI_SALESORDER_C
 Credential lookup order is:
 
 1. Process environment variables
-2. `skills/sap-adt-cli/.env`
+2. Dotenv file declared by `SAP_ADT_DOTENV`
 3. The selected profile in `~/.sap-adt-cli/config.json` (non-secret fields)
    and its password in the OS keystore — see [Credential storage](#credential-storage-keystore)
 
@@ -171,26 +171,26 @@ run creates a profile called `default`; an old single-connection config is
 migrated automatically:
 
 ```bash
-CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
+
 
 # Add environments (each saved profile becomes the active one)
-$CLI configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
-$CLI credentials set dev                       # then store the password (hidden prompt)
-SAP_PASSWORD="..." $CLI configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
+sap-adt configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
+sap-adt credentials set dev                       # then store the password (hidden prompt)
+SAP_PASSWORD="..." sap-adt configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
                                                # ^ SAP_PASSWORD is moved into the keystore, not left in config.json
 
 # List environments; * marks the active profile
-$CLI profile list
+sap-adt profile list
 
 # Persistent switch
-$CLI profile use dev
+sap-adt profile use dev
 
 # One-off override: global --profile (before the command) or SAP_PROFILE env var
-$CLI --profile prd get-program SAPMV45A
-SAP_PROFILE=qas $CLI status
+sap-adt --profile prd get-program SAPMV45A
+SAP_PROFILE=qas sap-adt status
 
 # Remove an environment (the active profile cannot be removed)
-$CLI profile remove qas
+sap-adt profile remove qas
 ```
 
 Profile selection order: `--profile` > `SAP_PROFILE` > the active profile set by
@@ -198,23 +198,25 @@ Profile selection order: `--profile` > `SAP_PROFILE` > the active profile set by
 apply to every profile, including production.
 
 > A complete set of `SAP_URL/USERNAME/PASSWORD/CLIENT` environment variables (or a
-> SKILL-local `.env`) overrides all profiles. Run `status` to see which source is
-> actually used.
+> dotenv file declared by `SAP_ADT_DOTENV`) overrides all profiles. Run `status`
+> to see which source is actually used.
 
-### SKILL-local `.env` (recommended for per-skill isolation)
+### Dotenv file (explicit path, per-environment override)
 
 ```bash
-cp skills/sap-adt-cli/.env.example skills/sap-adt-cli/.env
-# edit skills/sap-adt-cli/.env and fill SAP_URL, SAP_USERNAME, SAP_PASSWORD, SAP_CLIENT
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py status
+cp skills/sap-adt-cli/.env.example ~/.config/sap-adt.env   # or any private path
+# edit it and fill SAP_URL, SAP_USERNAME, SAP_PASSWORD, SAP_CLIENT
+export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
+sap-adt status
 ```
 
-Never commit the real `.env` file.
+The CLI never scans the current directory or the skill folder for a `.env`;
+only the file named by `SAP_ADT_DOTENV` is read. Never commit the real file.
 
 ### Interactive wizard
 
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 ```
 
 Connection fields are saved as a profile (the wizard asks for a profile name) in
@@ -239,18 +241,18 @@ There is deliberately no `credentials export` command. Diagnose the active
 backend with:
 
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+sap-adt credentials doctor
 # force a specific backend (fail-closed: an unavailable choice errors out)
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py --keystore file credentials status
+sap-adt --keystore file credentials status
 ```
 
 Manage stored passwords:
 
 ```bash
-CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
-$CLI credentials set dev          # prompts with hidden input + confirmation
-$CLI credentials status           # configured / not configured per profile — never prints secrets
-$CLI credentials forget dev       # purge from all writable backends
+
+sap-adt credentials set dev          # prompts with hidden input + confirmation
+sap-adt credentials status           # configured / not configured per profile — never prints secrets
+sap-adt credentials forget dev       # purge from all writable backends
 ```
 
 > **Keystore-bound secrets are not portable.** DPAPI blobs are tied to the
@@ -295,10 +297,10 @@ before write operations.
 
 ```bash
 # Enable interactively (answer 'y' to the write/transport prompts)
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev
+sap-adt configure --profile dev
 
 # Enable non-interactively
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
+SAP_PASSWORD="secret" sap-adt configure --profile dev \
   --url "https://sap-dev.example.com:44300" \
   --username "DEVELOPER" \
   --client "400" \
@@ -321,7 +323,7 @@ after use and must be repeated for each subsequent operation.
 ```bash
 # Pass password via environment variable to avoid shell history exposure.
 # configure stores it in the keystore; it does not remain in config.json.
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
+SAP_PASSWORD="secret" sap-adt configure --profile dev \
   --url      "https://my-sap.example.com:8000" \
   --username "MYUSER" \
   --client   "100"
@@ -379,42 +381,42 @@ Run any command with `--help` for full details.
 ## Examples
 
 ```bash
-CLI="skills/sap-adt-cli/scripts/sap_adt_cli.py"
+
 
 # Source code
-python3 $CLI get-program SAPMV45A
-python3 $CLI get-class ZCL_MY_CLASS
-python3 $CLI get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
-python3 $CLI get-include MV45AFZZ
-python3 $CLI get-interface ZIF_MY_INTERFACE
+sap-adt get-program SAPMV45A
+sap-adt get-class ZCL_MY_CLASS
+sap-adt get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
+sap-adt get-include MV45AFZZ
+sap-adt get-interface ZIF_MY_INTERFACE
 
 # Dictionary objects
-python3 $CLI get-table VBAK
-python3 $CLI get-structure VBAKKOM
-python3 $CLI get-type-info MATNR
-python3 $CLI get-type-group ICON
+sap-adt get-table VBAK
+sap-adt get-structure VBAKKOM
+sap-adt get-type-info MATNR
+sap-adt get-type-group ICON
 
 # Discovery
-python3 $CLI search-object "ZCL_ORDER*" --max-results 20
-python3 $CLI get-package ZMYPACKAGE
-python3 $CLI get-transaction VA01
-python3 $CLI get-cds-view ZI_INVENTORY_POSITION
+sap-adt search-object "ZCL_ORDER*" --max-results 20
+sap-adt get-package ZMYPACKAGE
+sap-adt get-transaction VA01
+sap-adt get-cds-view ZI_INVENTORY_POSITION
 
 # Analysis (read-only)
-python3 $CLI syntax-check class ZCL_MY_CLASS
-python3 $CLI where-used class ZCL_PAYMENT_PROCESSOR
-python3 $CLI run-sql "SELECT * FROM t001 UP TO 5 ROWS"
+sap-adt syntax-check class ZCL_MY_CLASS
+sap-adt where-used class ZCL_PAYMENT_PROCESSOR
+sap-adt run-sql "SELECT * FROM t001 UP TO 5 ROWS"
 
 # Write & activate (allow_write + confirm each time)
-python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
-python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # write + activate in one step
-python3 $CLI activate class ZCL_MY_CLASS
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # write + activate in one step
+sap-adt activate class ZCL_MY_CLASS
 
 # Transport management
-python3 $CLI list-transports --status D                              # read-only
-python3 $CLI create-transport --package '$TMP' --description "My feature" \
+sap-adt list-transports --status D                              # read-only
+sap-adt create-transport --package '$TMP' --description "My feature" \
   --ref /sap/bc/adt/programs/programs/zmy_feature/source/main        # allow_transport + confirm
-python3 $CLI release-transport DEVK900001                           # allow_transport + confirm
+sap-adt release-transport DEVK900001                           # allow_transport + confirm
 ```
 
 ---
@@ -520,7 +522,7 @@ all 16 error codes.
 - **One-off profile override**: global `--profile NAME` option (before the command name) or `SAP_PROFILE` env var; selection order is `--profile` > `SAP_PROFILE` > active profile
 - **Capability flags are global**: `allow_write` / `allow_transport` now apply to every profile — check `status` before write operations
 - **Wizard UX**: prompts for a profile name; re-editing a profile with a blank password keeps the stored password
-- `.env` / `SAP_*` environment variables remain a single-environment override layer that wins over all profiles
+- `SAP_ADT_DOTENV` / `SAP_*` environment variables remain a single-environment override layer that wins over all profiles
 
 ### v1.1.1 — `run-sql` robustness improvements
 

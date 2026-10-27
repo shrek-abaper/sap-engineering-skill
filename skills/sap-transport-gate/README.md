@@ -134,7 +134,7 @@ SAP_VERIFY_SSL=1   # set to 0 for self-signed certificates
 **Option B: Interactive configure (saved to `~/.sap-transport-gate/config.json`)**
 
 ```bash
-python3 scripts/tr_collector.py configure
+sap-adt configure
 ```
 
 Credential resolution order: `<skill_dir>/.env` → `~/.sap-transport-gate/config.json` → environment variables
@@ -142,15 +142,15 @@ Credential resolution order: `<skill_dir>/.env` → `~/.sap-transport-gate/confi
 ### 3. Test Connectivity
 
 ```bash
-python3 scripts/tr_collector.py ping
+sap-adt transport ping
 ```
 
 ### 4. Collect Transport Review Package
 
 ```bash
-python3 scripts/tr_collector.py collect DEVK900123
+sap-adt transport collect DEVK900123
 # Optional: specify output directory
-python3 scripts/tr_collector.py collect DEVK900123 --output-dir ./my-review
+sap-adt transport collect DEVK900123 --output-dir ./my-review
 ```
 
 After collection, provide the `review_package/` directory (containing `manifest.json` + source files) to the AI for review.
@@ -233,14 +233,7 @@ sap-transport-gate/
 │   ├── review-dimensions.md          ← Detailed check items for all 10 dimensions
 │   ├── review-modes.md               ← Mode detection, Review Package spec, evidence checklists
 │   └── sap-connectivity.md           ← SAP connection configuration guide
-└── scripts/
-    ├── requirements.txt              ← Python dependencies
-    ├── tr_collector.py               ← CLI: collect TR Review Package
-    └── lib/
-        ├── __init__.py
-        ├── client.py                 ← SAP ADT HTTP client
-        ├── config.py                 ← Credential loading (3-level priority)
-        └── handlers.py              ← TR data handlers (with E071 fallback)
+└── (no execution code — online collection is the `sap-adt` CLI)
 ```
 
 ---

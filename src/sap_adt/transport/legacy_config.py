@@ -2,9 +2,9 @@
 
 Reads the standalone collector's plaintext config at
 ~/.sap-transport-gate/config.json. This is ONLY invoked on the explicit
---legacy-config path (or via the old tr_collector.py shim); the default
-transport collect resolution never touches this file, so a missing ADT
-profile or failed authentication can never silently fall back to it.
+--legacy-config path; the default transport collect resolution never touches
+this file, so a missing ADT profile or failed authentication can never
+silently fall back to it.
 
 The warning is printed on every use and names only the file path — never the
 credentials it contains. Users are pointed at `sap-adt configure` to migrate.

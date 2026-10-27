@@ -4,10 +4,10 @@
 
 | Before | After |
 |---|---|
-| `python3 skills/sap-adt-cli/scripts/sap_adt_cli.py <cmd>` | `sap-adt <cmd>` (shim still forwards old invocations) |
+| `python3 skills/sap-adt-cli/scripts/sap_adt_cli.py <cmd>` | `sap-adt <cmd>` (the old script was removed; update the command) |
 | First run pip-installed click/requests/urllib3 | No auto-install: install the CLI once (`pip install sap-adt`, npm, installer, portable) |
-| Skill-local `.env` located by walking up from `config.py` | Explicit `SAP_ADT_DOTENV=/path/to/.env`; the old shim sets it automatically |
-| `tr_collector.py collect/configure/ping` | `sap-adt transport collect/ping`; `configure` → `sap-adt configure` |
+| Skill-local `.env` located by walking up from `config.py` | Declare the file explicitly with `SAP_ADT_DOTENV=/path/to/.env` |
+| `tr_collector.py collect/configure/ping` (removed) | `sap-adt transport collect/ping`; `configure` → `sap-adt configure` |
 | Collector stored a plaintext password in `~/.sap-transport-gate/config.json` | Profiles in `~/.sap-adt-cli/config.json` + OS keystore |
 | Program name `sap-adt-cli` | `sap-adt` (help, `--version`, hint text) |
 
@@ -31,9 +31,8 @@ sap-adt transport ping                 # verify connectivity
 # ~/.sap-transport-gate/config.json, which holds a plaintext password)
 ```
 
-The old file is read only when `--legacy-config` is passed (or via the old
-`tr_collector.py` shim, which adds it). It is never an implicit fallback for
-a missing profile or a failed authentication.
+The old file is read only when `--legacy-config` is passed. It is never an
+implicit fallback for a missing profile or a failed authentication.
 
 ## Rollback
 

@@ -65,10 +65,9 @@ profile name, exit 1).
 ## Environment / `.env` overrides
 
 - Explicit dotenv file: fill `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`,
-  `SAP_CLIENT` (copy `.env.example`), then declare its path with
-  `SAP_ADT_DOTENV=/path/to/.env`. The CLI never scans the current directory;
-  the legacy `scripts/sap_adt_cli.py` shim sets this variable to the
-  skill-local `.env` automatically during the compat window.
+  `SAP_CLIENT` (copy `.env.example` to a private path), then declare it with
+  `SAP_ADT_DOTENV=/path/to/.env`. The CLI never scans the current directory
+  or the skill folder; unset `SAP_ADT_DOTENV` to use profiles only.
 - One-off env vars (nothing written): `SAP_URL=… SAP_USERNAME=… SAP_PASSWORD=…
   SAP_CLIENT=100 sap-adt status`.
 - Precedence: process env vars → dotenv (SAP_ADT_DOTENV) → selected profile.

@@ -127,7 +127,7 @@ SAP_VERIFY_SSL=1   # 自签名证书请设为 0
 **方式二：交互式配置（存入 `~/.sap-transport-gate/config.json`）**
 
 ```bash
-python3 scripts/tr_collector.py configure
+sap-adt configure
 ```
 
 凭证读取优先级：`<skill目录>/.env` → `~/.sap-transport-gate/config.json` → 环境变量
@@ -135,15 +135,15 @@ python3 scripts/tr_collector.py configure
 ### 3. 测试连接
 
 ```bash
-python3 scripts/tr_collector.py ping
+sap-adt transport ping
 ```
 
 ### 4. 采集传输请求审查包
 
 ```bash
-python3 scripts/tr_collector.py collect DEVK900123
+sap-adt transport collect DEVK900123
 # 可选：指定输出目录
-python3 scripts/tr_collector.py collect DEVK900123 --output-dir ./my-review
+sap-adt transport collect DEVK900123 --output-dir ./my-review
 ```
 
 采集完成后，将 `review_package/` 目录的内容（`manifest.json` + 源码文件）提供给 AI 进行审查。
@@ -225,14 +225,7 @@ sap-transport-gate/
 │   ├── review-dimensions.md          ← 10 维度详细检查项
 │   ├── review-modes.md               ← 模式检测与证据清单
 │   └── sap-connectivity.md           ← SAP 连接配置指南
-└── scripts/
-    ├── requirements.txt              ← Python 依赖
-    ├── tr_collector.py               ← CLI：采集 TR 审查包
-    └── lib/
-        ├── __init__.py
-        ├── client.py                 ← SAP ADT HTTP 客户端
-        ├── config.py                 ← 凭证加载（三级优先级）
-        └── handlers.py              ← TR 数据处理（含 E071 回退）
+└── （无执行代码——在线采集使用 `sap-adt` CLI）
 ```
 
 ---

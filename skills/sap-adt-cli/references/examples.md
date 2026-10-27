@@ -1,8 +1,7 @@
 # Usage examples
 
 All examples use the installed `sap-adt` command (see `setup.md` for install
-channels). The legacy `scripts/sap_adt_cli.py` shim accepts the same
-arguments during the compat window.
+channels).
 
 ## Source code
 

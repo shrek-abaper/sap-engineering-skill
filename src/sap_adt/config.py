@@ -12,9 +12,7 @@ from .keystore.base import KeyStoreError
 # Optional dotenv layer. The file location must be declared explicitly via
 # the SAP_ADT_DOTENV environment variable (absolute path); the CLI never
 # scans the current directory or guesses a skill root from its own install
-# path. The legacy skill entrypoint shim
-# (skills/sap-adt-cli/scripts/sap_adt_cli.py) sets this variable to the
-# skill-local .env it resolved before, preserving old-entry behavior.
+# path.
 _DOTENV_ENV_VAR = "SAP_ADT_DOTENV"
 
 # Test seam: when set, wins over SAP_ADT_DOTENV (fresh modules per test get

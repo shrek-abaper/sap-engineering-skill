@@ -1141,8 +1141,8 @@ def transport_ping_cmd(legacy_config):
 def main(prog_name: str = "sap-adt", args=None) -> None:
     """Console-script entry (pyproject [project.scripts]).
 
-    ``args`` lets compatibility shims forward a rewritten argv; None means
-    Click reads sys.argv as usual.
+    ``args`` optionally overrides argv for embedding/tests; None means Click
+    reads sys.argv as usual.
     """
     cli(args=args, prog_name=prog_name)
 

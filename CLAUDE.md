@@ -32,9 +32,9 @@ sap-engineering-skill/
 │   ├── keystore/                 ← env/keyring/dpapi/pass/file backends
 │   └── transport/                ← collector, legacy config adapter
 ├── skills/                       ← Skill content (SKILL.md, references, evals)
-│   ├── sap-adt-cli/              ← scripts/ holds a forwarding shim only
+│   ├── sap-adt-cli/              ← skill content only (no execution code)
 │   ├── abap-code-review/
-│   ├── sap-transport-gate/       ← scripts/ holds a forwarding shim only
+│   ├── sap-transport-gate/       ← skill content only (no execution code)
 │   └── sap-integration-wiki/
 ├── packaging/                    ← pyinstaller spec, npm templates, windows iss, targets.json
 ├── tools/                        ← build_runtime/build_npm/build_skills/build_plugin/
@@ -103,9 +103,9 @@ sap-adt transport collect DEVK900123 --output-dir reports/DEVK900123_package/ --
 sap-adt transport ping          # connectivity check
 ```
 
-The old `tr_collector.py collect/ping` shim still forwards (adding
-`--legacy-config` to reproduce its old resolution). Its `configure` is
-refused: use `sap-adt configure`.
+The old `tr_collector.py` entry point was removed in 1.4.0's source tree;
+scripts that still call it must switch to `sap-adt transport collect|ping`.
+The legacy plaintext config is read only via explicit `--legacy-config`.
 
 ### Testing
 
@@ -208,12 +208,12 @@ Skills have explicit reference loading requirements documented in their `SKILL.m
 - **Read-only by default** - Write operations require `allow_write: true` in config
 - **One-time confirmation** - Every write/activate/transport operation shows a preview and requires user `[y/N]` confirmation per operation (never cached)
 - **Passwords stored in the OS keystore** - Non-secret connection settings live in `~/.sap-adt-cli/config.json` (0600, multi-environment profiles); profile passwords are stored only in the OS keystore — backend priority `env` (`SAP_ADT_<PROFILE>_PASSWORD`) → `keyring` → `dpapi` (WSL2) → `pass` → `file` (scrypt+Fernet fallback); manage with `credentials set|forget|status|doctor`; old plaintext-password configs are auto-migrated
-- **Env vars / `.env` override config** - Set `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT` per invocation or in a skill-local `.env`; `SAP_PROFILE` / `--profile` selects among profiles (a complete set of `SAP_*` connection vars bypasses profiles entirely)
+- **Env vars / dotenv override config** - Set `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT` per invocation or in a dotenv file declared by `SAP_ADT_DOTENV` (the CLI never scans the CWD or skill folder); `SAP_PROFILE` / `--profile` selects among profiles (a complete set of `SAP_*` connection vars bypasses profiles entirely)
 - **SQL DML blocked** - `INSERT`/`UPDATE`/`DELETE`/`MODIFY`/`TRUNCATE` statements are unconditionally rejected in `run-sql`
 
 ### sap-transport-gate
 
-- **No SAP login** - Skill never accepts SAP passwords; ADT API access is via `tr_collector.py` CLI only
+- **No SAP login** - Skill never accepts SAP passwords; ADT API access is via the `sap-adt` CLI only
 - **No evidence fabrication** - Every finding must cite real code or materials; gaps must be declared as `EVIDENCE_GAP`
 - **Evidence Level LOW → NO GO** - If evidence is insufficient, the decision cannot be `GO`
 - **Single file ≠ full TR review** - A single ABAP file does not constitute a Transport Request-level review

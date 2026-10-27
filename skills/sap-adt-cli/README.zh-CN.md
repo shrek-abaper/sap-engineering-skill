@@ -121,15 +121,15 @@ cd sap-engineering-skill
 
 # 2. 配置凭据（交互式向导 — 密码不回显，并存入操作系统密钥库；
 #    之后可用 configure --profile qas / prd 添加更多环境）
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 
 # 3. 验证连接
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py status
+sap-adt status
 
 # 4. 开始读取 ABAP 对象
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-program SAPMV45A
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-class ZCL_MY_CLASS
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
+sap-adt get-program SAPMV45A
+sap-adt get-class ZCL_MY_CLASS
+sap-adt get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
 ```
 
 ---
@@ -139,7 +139,7 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-function BAPI_SALESORDER_C
 凭据查找顺序为：
 
 1. 进程环境变量
-2. `skills/sap-adt-cli/.env`
+2. 由 `SAP_ADT_DOTENV` 声明的 dotenv 文件
 3. `~/.sap-adt-cli/config.json` 中选中 profile 的非密字段，口令则从操作系统密钥库读取——见[凭据存储（密钥库）](#凭据存储密钥库)
 
 ### 多 SAP 环境（Profile）
@@ -149,48 +149,50 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py get-function BAPI_SALESORDER_C
 `default` 的 profile；旧的单连接配置会自动迁移：
 
 ```bash
-CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
+
 
 # 添加环境（每次保存的 profile 会成为当前生效环境）
-$CLI configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
-$CLI credentials set dev                       # 随后以隐藏输入存入口令
-SAP_PASSWORD="..." $CLI configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
+sap-adt configure --profile dev --url "https://sap-dev:8000" --username DEV --client 100
+sap-adt credentials set dev                       # 随后以隐藏输入存入口令
+SAP_PASSWORD="..." sap-adt configure --profile prd --url "https://sap-prd:8000" --username PRD --client 200
                                                # ^ SAP_PASSWORD 会被转入密钥库，不会留在 config.json
 
 # 列出所有环境，* 为当前生效
-$CLI profile list
+sap-adt profile list
 
 # 粘性切换（持久化）
-$CLI profile use dev
+sap-adt profile use dev
 
 # 单次覆盖：全局参数 --profile（放在命令名之前）或 SAP_PROFILE 环境变量
-$CLI --profile prd get-program SAPMV45A
-SAP_PROFILE=qas $CLI status
+sap-adt --profile prd get-program SAPMV45A
+SAP_PROFILE=qas sap-adt status
 
 # 删除环境（当前生效的 profile 不能删）
-$CLI profile remove qas
+sap-adt profile remove qas
 ```
 
 profile 选择优先级：`--profile` > `SAP_PROFILE` > `profile use` 设置的 active profile。
 请注意写入/传输能力开关是**全局**的，对所有环境（含 PRD）都生效。
 
-> 当环境变量或 SKILL 本地 `.env` 中同时存在完整的 `SAP_URL/USERNAME/PASSWORD/CLIENT`
+> 当环境变量或由 `SAP_ADT_DOTENV` 声明的 dotenv 文件中同时存在完整的 `SAP_URL/USERNAME/PASSWORD/CLIENT`
 > 四个变量时，它们会整体覆盖所有 profile；可运行 `status` 查看实际生效的配置来源。
 
-### SKILL 本地 `.env`（推荐用于技能隔离）
+### Dotenv 文件（显式路径，按环境覆盖）
 
 ```bash
-cp skills/sap-adt-cli/.env.example skills/sap-adt-cli/.env
-# 编辑 skills/sap-adt-cli/.env，填写 SAP_URL、SAP_USERNAME、SAP_PASSWORD、SAP_CLIENT
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py status
+cp skills/sap-adt-cli/.env.example ~/.config/sap-adt.env   # 或任意私有路径
+# 编辑并填写 SAP_URL、SAP_USERNAME、SAP_PASSWORD、SAP_CLIENT
+export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
+sap-adt status
 ```
 
-不要提交真实 `.env` 文件。
+CLI 不会扫描当前目录或 Skill 目录中的 `.env`，只读取 `SAP_ADT_DOTENV`
+声明的文件。不要提交真实文件。
 
 ### 交互式向导
 
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 ```
 
 非密字段以 profile 形式（向导会询问 profile 名称）保存至 `~/.sap-adt-cli/config.json`（`0600`），口令写入当前选中的密钥库。对已存在的 profile 再次运行向导时，密码留空表示保留原密码。
@@ -210,18 +212,18 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
 刻意不提供 `credentials export` 命令。诊断当前后端：
 
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+sap-adt credentials doctor
 # 强制指定后端（不可用时直接报错，不静默回退）
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py --keystore file credentials status
+sap-adt --keystore file credentials status
 ```
 
 口令管理：
 
 ```bash
-CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
-$CLI credentials set dev          # 隐藏输入并二次确认
-$CLI credentials status           # 逐 profile 显示 已配置/未配置，绝不回显口令
-$CLI credentials forget dev       # 从所有可写后端清除
+
+sap-adt credentials set dev          # 隐藏输入并二次确认
+sap-adt credentials status           # 逐 profile 显示 已配置/未配置，绝不回显口令
+sap-adt credentials forget dev       # 从所有可写后端清除
 ```
 
 > **密钥库中的口令不可跨机器、跨平台复制。** DPAPI 绑定 Windows 账户、Keychain 绑定 macOS 登录态，拷贝 `secrets.json` 或配置到其他机器/用户无法解密——换机后重新执行 `credentials set` 是预期行为，不是 bug。
@@ -230,7 +232,7 @@ $CLI credentials forget dev       # 从所有可写后端清除
 
 ### 环境变量
 
-适用于 CI/CD 流水线或临时会话。完整连接四件套的优先级高于 SKILL 本地 `.env` 和所有 profile。
+适用于 CI/CD 流水线或临时会话。完整连接四件套的优先级高于 `SAP_ADT_DOTENV` 声明的 dotenv 文件和所有 profile。
 
 ```bash
 export SAP_URL=https://my-sap.example.com:8000
@@ -255,10 +257,10 @@ export SAP_ADT_MASTER_PASSPHRASE=...
 
 ```bash
 # 交互式开启（在写入/传输提示处输入 'y'）
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev
+sap-adt configure --profile dev
 
 # 非交互式开启
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
+SAP_PASSWORD="secret" sap-adt configure --profile dev \
   --url "https://sap-dev.example.com:44300" \
   --username "DEVELOPER" \
   --client "400" \
@@ -278,7 +280,7 @@ SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configur
 ```bash
 # 通过环境变量传递密码，避免暴露在 Shell 历史记录中。
 # configure 会把口令转入密钥库，不会留在 config.json。
-SAP_PASSWORD="secret" python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure --profile dev \
+SAP_PASSWORD="secret" sap-adt configure --profile dev \
   --url      "https://my-sap.example.com:8000" \
   --username "MYUSER" \
   --client   "100"
@@ -335,42 +337,42 @@ CI 运行期也可以按 profile 直接提供口令：`SAP_ADT_<PROFILE>_PASSWOR
 ## 示例
 
 ```bash
-CLI="skills/sap-adt-cli/scripts/sap_adt_cli.py"
+
 
 # 源代码
-python3 $CLI get-program SAPMV45A
-python3 $CLI get-class ZCL_MY_CLASS
-python3 $CLI get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
-python3 $CLI get-include MV45AFZZ
-python3 $CLI get-interface ZIF_MY_INTERFACE
+sap-adt get-program SAPMV45A
+sap-adt get-class ZCL_MY_CLASS
+sap-adt get-function BAPI_SALESORDER_CREATEFROMDAT2 --group BAPI_SD_SALESORDER
+sap-adt get-include MV45AFZZ
+sap-adt get-interface ZIF_MY_INTERFACE
 
 # 字典对象
-python3 $CLI get-table VBAK
-python3 $CLI get-structure VBAKKOM
-python3 $CLI get-type-info MATNR
-python3 $CLI get-type-group ICON
+sap-adt get-table VBAK
+sap-adt get-structure VBAKKOM
+sap-adt get-type-info MATNR
+sap-adt get-type-group ICON
 
 # 对象发现
-python3 $CLI search-object "ZCL_ORDER*" --max-results 20
-python3 $CLI get-package ZMYPACKAGE
-python3 $CLI get-transaction VA01
-python3 $CLI get-cds-view ZI_INVENTORY_POSITION
+sap-adt search-object "ZCL_ORDER*" --max-results 20
+sap-adt get-package ZMYPACKAGE
+sap-adt get-transaction VA01
+sap-adt get-cds-view ZI_INVENTORY_POSITION
 
 # 分析（只读）
-python3 $CLI syntax-check class ZCL_MY_CLASS
-python3 $CLI where-used class ZCL_PAYMENT_PROCESSOR
-python3 $CLI run-sql "SELECT * FROM t001 UP TO 5 ROWS"
+sap-adt syntax-check class ZCL_MY_CLASS
+sap-adt where-used class ZCL_PAYMENT_PROCESSOR
+sap-adt run-sql "SELECT * FROM t001 UP TO 5 ROWS"
 
 # 写入与激活（需 allow_write + 每次确认）
-python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
-python3 $CLI write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # 写入并立即激活
-python3 $CLI activate class ZCL_MY_CLASS
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # 写入并立即激活
+sap-adt activate class ZCL_MY_CLASS
 
 # 传输管理
-python3 $CLI list-transports --status D                              # 只读
-python3 $CLI create-transport --package '$TMP' --description "My feature" \
+sap-adt list-transports --status D                              # 只读
+sap-adt create-transport --package '$TMP' --description "My feature" \
   --ref /sap/bc/adt/programs/programs/zmy_feature/source/main        # 需 allow_transport + 确认
-python3 $CLI release-transport DEVK900001                           # 需 allow_transport + 确认
+sap-adt release-transport DEVK900001                           # 需 allow_transport + 确认
 ```
 
 ---
@@ -458,7 +460,7 @@ python3 $CLI release-transport DEVK900001                           # 需 allow_
 - **单次环境覆盖**：全局参数 `--profile NAME`（放在命令名之前）或 `SAP_PROFILE` 环境变量；选择优先级为 `--profile` > `SAP_PROFILE` > 当前 active profile
 - **能力开关改为全局**：`allow_write` / `allow_transport` 对所有 profile 生效——执行写操作前请先用 `status` 确认当前环境
 - **向导体验**：会询问 profile 名称；编辑已有 profile 时密码留空即保留原密码
-- `.env` / `SAP_*` 环境变量仍作为单环境覆盖层，优先级高于所有 profile
+- `SAP_ADT_DOTENV` / `SAP_*` 环境变量仍作为单环境覆盖层，优先级高于所有 profile
 
 ### v1.1.1 — `run-sql` 兼容性与解析修复
 

@@ -22,7 +22,7 @@ Credentials are resolved in priority order (highest first):
 | 2 | Explicit dotenv file declared via `SAP_ADT_DOTENV` | One-off single-environment override; never scanned from the CWD |
 | 3 | ADT profile in `~/.sap-adt-cli/config.json` + OS keystore | Normal use; create once with `sap-adt configure` |
 
-The old standalone collector's plaintext `~/.sap-transport-gate/config.json` is **deprecated**: it is only read on the explicit `--legacy-config` path (or through the `tr_collector.py` shim during the compat window), never as an implicit fallback. Migrate with `sap-adt configure`.
+The old standalone collector's plaintext `~/.sap-transport-gate/config.json` is **deprecated**: it is only read on the explicit `--legacy-config` path, never as an implicit fallback. Migrate with `sap-adt configure`.
 
 ### Option A — dotenv file (explicit path)
 
@@ -42,7 +42,7 @@ SAP_LANGUAGE=EN          # optional, default: EN
 SAP_VERIFY_SSL=1         # optional: 0 to disable SSL verification
 ```
 
-The CLI never scans the current directory or guesses a skill root; the path must be declared. The legacy `tr_collector.py` shim sets `SAP_ADT_DOTENV` to the skill-local `.env` automatically during the compat window.
+The CLI never scans the current directory or guesses a skill root; the path must be declared.
 
 ### Option B — Environment Variables (CI / headless use)
 

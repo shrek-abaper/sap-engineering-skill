@@ -82,11 +82,11 @@ Covers **10 review dimensions**: code quality, performance, security, authorizat
 **Three review modes**:
 - **Offline Package** — structured Review Package exported from SAP *(preferred)*
 - **Offline Local** — partial materials (source files only)
-- **Online Transport** — TR ID + `tr_collector.py` CLI for live ADT collection
+- **Online Transport** — TR ID + the `sap-adt` CLI for live ADT collection
 
 **Core principle**: Evidence-first. AI never invents conclusions from insufficient evidence.
 
-- **Proactive online collection** — given a TR ID, the skill runs `tr_collector.py collect` itself and only falls back to Offline Local Mode when credentials or connectivity are missing; review scope (code-only vs functional + code) is confirmed before the review starts.
+- **Proactive online collection** — given a TR ID, the skill runs `sap-adt transport collect` itself and only falls back to Offline Local Mode when credentials or connectivity are missing; review scope (code-only vs functional + code) is confirmed before the review starts.
 
 ---
 
