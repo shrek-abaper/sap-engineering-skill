@@ -2,11 +2,11 @@
   "schema_version": 1,
   "generated_from": "compatibility.json",
   "plugin_name": "sap-engineering-skills",
-  "plugin_version": "1.1.0",
+  "plugin_version": "1.1.1",
   "cli": {
     "command": "sap-adt",
     "pypi_package": "sap-adt",
-    "npm_package": "@shrek-abaper/sap-engineering-cli",
+    "npm_package": "@shrek-abaper/sap-adt-cli",
     "compatible_versions": ">=1.4.0,<2.0.0",
     "config_dir": "~/.sap-adt-cli",
     "homepage": "https://github.com/shrek-abaper/sap-engineering-skill"

@@ -5,7 +5,7 @@ a native executable — no Python. General guide:
 [runtime-setup.md](runtime-setup.md).
 
 ```bash
-npx @shrek-abaper/sap-engineering-cli@1.4.0 install
+npx @shrek-abaper/sap-adt-cli@1.4.0 install
 sap-adt --version
 ```
 
@@ -29,7 +29,7 @@ python tools/build_runtime.py            # build the runtime for this platform
 python tools/build_npm.py --local-file-urls
 cd dist/npm && npm pack
 # in a scratch project:
-npm install <path>/shrek-abaper-sap-engineering-cli-1.4.0.tgz
+npm install <path>/shrek-abaper-sap-adt-cli-1.4.0.tgz
 SAP_ADT_INSTALL_ALLOW_FILE=1 ./node_modules/.bin/sap-adt install
 ./node_modules/.bin/sap-adt --version
 ```

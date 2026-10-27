@@ -1,5 +1,5 @@
 {
-  "name": "@shrek-abaper/sap-engineering-cli",
+  "name": "@shrek-abaper/sap-adt-cli",
   "version": "0.0.0",
   "description": "Installer and launcher for the self-contained sap-adt CLI (SAP ADT REST API). No Python required; Node.js >=18 needed for this npm channel only.",
   "license": "MIT",

@@ -1,5 +1,13 @@
 # Changelog
 
+## Plugin/docs 1.1.1 — 2026-10-27
+
+- npm package renamed to `@shrek-abaper/sap-adt-cli` (install command:
+  `npx @shrek-abaper/sap-adt-cli@1.4.0 install`). The CLI version is
+  unchanged at 1.4.0.
+- Skill snapshots and the plugin payload regenerated with the new package
+  name; marketplace archive points at the regenerated plugin zip.
+
 ## 1.4.0 — 2026-10-27
 
 CLI distribution refactor (skill docs plugin version 1.1.0).
@@ -9,7 +17,7 @@ CLI distribution refactor (skill docs plugin version 1.1.0).
   implementation now lives in the installable `src/sap_adt` package.
 - Self-contained runtime builds (PyInstaller onedir), portable archives and
   a Windows installer script (implemented, not yet verified on Windows).
-- npm/npx channel `@shrek-abaper/sap-engineering-cli` with a custom
+- npm/npx channel `@shrek-abaper/sap-adt-cli` with a custom
   `install` wizard (manifest-pinned SHA-256, atomic swap, self-test).
 - `sap-adt transport collect|ping`; collection is read-only and uses the
   normal ADT profile/keystore resolution.

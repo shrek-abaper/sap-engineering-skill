@@ -21,7 +21,7 @@ channels and shared by all skills.
 
 | Channel | When to use | Prerequisites | Command |
 |---|---|---|---|
-| npm / npx | Node.js ≥ 18 is available | Node.js only (no Python) | `npx @shrek-abaper/sap-engineering-cli@1.4.0 install` |
+| npm / npx | Node.js ≥ 18 is available | Node.js only (no Python) | `npx @shrek-abaper/sap-adt-cli@1.4.0 install` |
 | Windows installer / portable | No dev environment at all | Windows 10+ x64 | run `sap-adt-1.4.0-windows-x86_64-setup.exe`, or unzip the portable archive and run `sap-adt.exe` inside |
 | Portable archive (Linux/macOS) | No dev environment | supported OS/glibc | unpack `sap-adt-1.4.0-<os>-<arch>.tar.gz`, run inside it `./sap-adt/sap-adt` |
 | Python source / wheel | Developers, contributors | Python ≥ 3.10 | `pip install sap-adt==1.4.0` (once released) or `pip install -e .` from the repo |
