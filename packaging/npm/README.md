@@ -1,4 +1,4 @@
-# @shrek-abaper/sap-adt-cli
+# sap-adt-cli
 
 npm/npx channel for the self-contained **sap-adt** CLI (SAP ADT REST API:
 read/write ABAP source and metadata, transport request collection).
@@ -12,7 +12,7 @@ instead.
 ## Install the runtime (once)
 
 ```bash
-npx @shrek-abaper/sap-adt-cli install
+npx sap-adt-cli install
 ```
 
 `install` is this package's own wizard (not an npm/npx built-in): it matches

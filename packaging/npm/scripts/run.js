@@ -47,7 +47,7 @@ function main(argv) {
   if (!fs.existsSync(bin)) {
     fail(
       `sap-adt runtime is not installed for ${platformKey()}.\n` +
-      `Run the install wizard once:  npx @shrek-abaper/sap-adt-cli install\n` +
+      `Run the install wizard once:  npx sap-adt-cli install\n` +
       `(or: <this-bin> install). Nothing was downloaded or modified.`,
       2,
     );

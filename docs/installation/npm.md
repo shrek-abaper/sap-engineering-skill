@@ -5,7 +5,7 @@ a native executable — no Python. General guide:
 [runtime-setup.md](runtime-setup.md).
 
 ```bash
-npx @shrek-abaper/sap-adt-cli@1.4.0 install
+npx sap-adt-cli@1.4.0 install
 sap-adt --version
 ```
 
