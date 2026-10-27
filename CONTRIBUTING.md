@@ -9,20 +9,21 @@ root in `tests/`:
 python3 -m unittest discover -s tests -v
 ```
 
-Tests load the skill scripts directly from `skills/sap-adt-cli/scripts/` — no
-installation step is needed. Required packages: `click`, `requests`, `urllib3`,
-plus the optional `keyring` and `cryptography` (backends are exercised through
-injected seams, but the `file` backend uses the real `cryptography` package).
+Tests import the `sap_adt` package from `src/`: run `pip install -e .` once in
+your venv (most suites also put `src/` on the path when run from the repo
+root). Required packages: `click`, `requests`, `urllib3`, plus the optional
+`keyring` and `cryptography` (backends are exercised through injected seams,
+but the `file` backend uses the real `cryptography` package).
 
-CI runs the same command on `ubuntu-latest`, `windows-latest` and
-`macos-latest` (`.github/workflows/tests.yml`).
+There is no cloud CI: hosted runners cannot reach real SAP systems, so
+verification is local — `python -m unittest discover -s tests -v` and
+`python tests/check_contract.py`. Run them before pushing.
 
 ## Secret scanning
 
-`gitleaks` runs as a pre-commit hook (`.pre-commit-config.yaml`) and as a CI
-job, using `.gitleaks.toml` (built-in rules plus a hardcoded-secret rule;
-`tests/`, `references/`, docs and `.env.example` are allowlisted placeholder
-zones).
+`gitleaks` runs as a pre-commit hook (`.pre-commit-config.yaml`), using
+`.gitleaks.toml` (built-in rules plus a hardcoded-secret rule; `tests/`,
+`references/`, docs and `.env.example` are allowlisted placeholder zones).
 
 ```bash
 pre-commit install

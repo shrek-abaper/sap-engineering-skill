@@ -118,10 +118,9 @@ SAP ABAP 上线前代码审查 AI Agent Skill。对 **9 个维度**进行安全�
 sap-engineering-skill/
 ├── README.md                         ← 英文版（默认）
 ├── README.zh-CN.md                   ← 本文件（中文）
-├── CONTRIBUTING.md                   ← 测试、CI 矩阵、密钥扫描说明
+├── CONTRIBUTING.md                   ← 测试与密钥扫描说明
 ├── LICENSE
 ├── setup-opencode-abap-cli.bat       ← Windows 一键安装脚本
-├── .github/workflows/tests.yml       ← CI：三平台 unittest 矩阵 + gitleaks
 ├── .gitleaks.toml                    ← 密钥扫描规则（同时作为 pre-commit hook）
 ├── tests/                            ← 仓库级 unittest 测试套（密钥库、凭据、安全防护等）
 ├── docs/authentication/              ← 认证参考手册（同步自 sap-functional-skill）
@@ -216,7 +215,7 @@ python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
   ```
 
   仅依赖 `click` / `requests` / `urllib3`；`keyring` 与 `cryptography` 是原生密钥库后端的可选依赖。
-- **CI**——[`.github/workflows/tests.yml`](.github/workflows/tests.yml) 在 Ubuntu / Windows / macOS 三平台与 Python 3.12 上运行同一测试套，并执行 gitleaks 全历史密钥扫描。
+- **验证在本地完成**——无云端 CI:托管 runner 无法连接真实 SAP 系统。推送前请本地运行测试套与契约检查(`python tests/check_contract.py`)。
 - **密钥扫描**——gitleaks 同时作为 pre-commit hook 运行（`.pre-commit-config.yaml`）。占位符规则与 WSL/DPAPI 手动验证清单见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ---

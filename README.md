@@ -118,10 +118,9 @@ Cross-project guides live under [`docs/`](docs/), independent of any single skil
 sap-engineering-skill/
 ├── README.md                         ← This file (English)
 ├── README.zh-CN.md                   ← Chinese version
-├── CONTRIBUTING.md                   ← Tests, CI matrix, secret-scanning notes
+├── CONTRIBUTING.md                   ← Tests and secret-scanning notes
 ├── LICENSE
 ├── setup-opencode-abap-cli.bat       ← Windows one-click installer
-├── .github/workflows/tests.yml       ← CI: 3-OS unittest matrix + gitleaks
 ├── .gitleaks.toml                    ← Secret-scan rules (also a pre-commit hook)
 ├── tests/                            ← Root-level unittest suite (keystore, credentials, security…)
 ├── docs/authentication/              ← Auth playbook (synced copy of sap-functional-skill)
@@ -216,7 +215,7 @@ Exceptions: Amazon Kiro only reads `~/.kiro/skills/` (use its "Import a skill" U
   ```
 
   Only `click` / `requests` / `urllib3` are required; `keyring` and `cryptography` are optional native-backend dependencies.
-- **CI** — [`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs the suite on Ubuntu / Windows / macOS with Python 3.12, plus a gitleaks full-history secret scan.
+- **Verification is local** — no cloud CI: hosted runners cannot reach real SAP systems. Run the suite and the contract check (`python tests/check_contract.py`) locally before pushing.
 - **Secret scanning** — gitleaks also runs as a pre-commit hook (`.pre-commit-config.yaml`). See [CONTRIBUTING.md](CONTRIBUTING.md) for placeholder rules and the WSL/DPAPI manual verification checklist.
 
 ---
