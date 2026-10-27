@@ -17,6 +17,24 @@ The CLI command is `sap-adt`. Configuration lives in `~/.sap-adt-cli/config.json
 (non-secret fields) and the OS keystore (passwords) — identical across all
 channels and shared by all skills.
 
+## Credentials & precedence
+
+The CLI resolves the connection in this order (highest first):
+
+1. **Process environment variables** — `SAP_URL`, `SAP_USERNAME`,
+   `SAP_PASSWORD`, `SAP_CLIENT` (optionally `SAP_LANGUAGE`,
+   `SAP_VERIFY_SSL`, `SAP_ALLOW_WRITE`, `SAP_ALLOW_TRANSPORT`,
+   `SAP_ENVIRONMENT`).
+2. **Dotenv file declared by `SAP_ADT_DOTENV`** — merged per key with the
+   process environment (the shell value wins); this layer only applies when
+   all four required keys resolve.
+3. **Profile** in `~/.sap-adt-cli/config.json` + the OS keystore.
+
+A complete env/dotenv set overrides profiles entirely, and `--profile` is then
+ignored for connection data. The CLI never scans the current directory, a
+skill folder or a guessed install path for `.env` files. `sap-adt status`
+prints which source is active.
+
 ## Channels
 
 | Channel | When to use | Prerequisites | Command |

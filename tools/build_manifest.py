@@ -127,7 +127,9 @@ def main() -> int:
         ).stdout.strip().splitlines()[-1]
         npm_tarball = rel / Path(packed).name
     else:
-        npm_tarball = next(iter(sorted(rel.glob("sap-adt-cli-*.tgz"))), None)
+        # Bind to THIS CLI version — never pick an older tarball left in the dir.
+        candidate = rel / f"sap-adt-cli-{cli_version}.tgz"
+        npm_tarball = candidate if candidate.is_file() else None
     if npm_tarball is None or not npm_tarball.is_file():
         print("[build_manifest] npm tarball missing", file=sys.stderr)
         return 1

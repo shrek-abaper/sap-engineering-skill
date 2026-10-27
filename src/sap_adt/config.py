@@ -39,39 +39,6 @@ _OLD_CONFIG_FILE = _OLD_CONFIG_DIR / "config.json"
 # allow_transport) live OUTSIDE profiles and apply to every environment.
 _CONNECTION_FIELDS = ("url", "username", "password", "client", "language", "verify_ssl")
 
-SETUP_GUIDE = """\
-SAP credentials not configured.
-
-Credential lookup order (highest priority first):
-  1. Process environment variables
-  2. Explicit dotenv file (path declared via SAP_ADT_DOTENV)
-  3. Selected profile in ~/.sap-adt-cli/config.json, with its password
-     in the OS keystore (run `credentials doctor` to see the backend)
-
-To set up your SAP connection, run:
-  sap-adt configure
-
-This saves a profile named '{default_profile}' and activates it. Additional SAP
-environments can be added with `configure --profile NAME`; switch with
-`profile use NAME` or override per command with `--profile NAME` / SAP_PROFILE.
-
-Or set environment variables for a one-off single-environment override
-(or point SAP_ADT_DOTENV at a .env file holding them):
-  SAP_URL        - SAP system URL (e.g. https://my-sap.example.com:8000)
-  SAP_USERNAME   - SAP username
-  SAP_PASSWORD   - SAP password
-  SAP_CLIENT     - SAP client number (e.g. 100)
-
-Optional:
-  SAP_PROFILE    - Profile name from config.json to use (ignored when SAP_URL etc. are set)
-  SAP_LANGUAGE   - Language code (default: EN)
-  SAP_VERIFY_SSL - Set to 0 to disable SSL verification (default: 1)
-  SAP_ALLOW_WRITE - Set to 1 to enable source write commands (default: 0)
-  SAP_ALLOW_TRANSPORT - Set to 1 to enable transport write commands (default: 0)
-
-Per-profile keystore password (env backend): SAP_ADT_<PROFILE>_PASSWORD
-Encrypted-file backend master passphrase (non-interactive): SAP_ADT_MASTER_PASSPHRASE
-""".format(default_profile=DEFAULT_PROFILE_NAME)
 
 
 @dataclass

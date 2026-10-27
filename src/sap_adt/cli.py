@@ -279,9 +279,15 @@ def cli(profile, keystore, fmt, verbose):
     ~/.sap-adt-cli/config.json. Switch persistently with 'profile use NAME'
     or per command with '--profile NAME' (SAP_PROFILE env var also supported).
 
-    Credentials for the selected profile can additionally be overridden by
-    environment variables (SAP_URL, SAP_USERNAME, SAP_PASSWORD, SAP_CLIENT)
-    or the SKILL-local .env file.
+    Credential resolution (highest priority first):
+      1. Process environment variables (SAP_URL, SAP_USERNAME,
+         SAP_PASSWORD, SAP_CLIENT)
+      2. Dotenv file declared by SAP_ADT_DOTENV (explicit path)
+      3. Profile in ~/.sap-adt-cli/config.json + OS keystore
+
+    A complete env/dotenv set overrides profiles entirely (all four required
+    keys or none). The CLI never scans the current directory or a skill
+    folder for .env files.
 
     Run 'configure' on first use to save your connection settings.
     """

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.2 — 2026-10-28
+
+- `sap-adt --help` now documents the credential resolution order (process
+  env → `SAP_ADT_DOTENV` dotenv → profile + OS keystore), the all-or-nothing
+  rule, and that no `.env` is read from the CWD or a skill folder. The old
+  "SKILL-local .env" wording was stale.
+- Removed the unused `SETUP_GUIDE` constant from the config module.
+- No behavioral, output-contract or safety-gate changes.
+
+## Plugin/docs 1.1.11 — 2026-10-28
+
+- Added a "Credentials & precedence" section to the single-source install
+  guide; it now reaches every skill through `references/setup.md`.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.1.10 — 2026-10-28
 
 - Removed the skill-local `.env.example` templates: the CLI never reads a
