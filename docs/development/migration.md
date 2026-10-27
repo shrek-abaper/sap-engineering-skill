@@ -1,0 +1,42 @@
+# Migration notes — CLI 1.3.x → 1.4.0
+
+## What changed
+
+| Before | After |
+|---|---|
+| `python3 skills/sap-adt-cli/scripts/sap_adt_cli.py <cmd>` | `sap-adt <cmd>` (shim still forwards old invocations) |
+| First run pip-installed click/requests/urllib3 | No auto-install: install the CLI once (`pip install sap-adt`, npm, installer, portable) |
+| Skill-local `.env` located by walking up from `config.py` | Explicit `SAP_ADT_DOTENV=/path/to/.env`; the old shim sets it automatically |
+| `tr_collector.py collect/configure/ping` | `sap-adt transport collect/ping`; `configure` → `sap-adt configure` |
+| Collector stored a plaintext password in `~/.sap-transport-gate/config.json` | Profiles in `~/.sap-adt-cli/config.json` + OS keystore |
+| Program name `sap-adt-cli` | `sap-adt` (help, `--version`, hint text) |
+
+## Unchanged (by design)
+
+- Command names/options, JSON envelope kinds, `format_version=1`, the 18
+  error codes and exit tiers 0–4.
+- Safety gates: read-only default, profile-scoped capability flags, prd hard
+  refusal, per-operation `[y/N]`, non-interactive confirmation refusal
+  (`--yes` only skips the prompt — it cannot bypass capability/prd gates),
+  DML rejection.
+- Config directory `~/.sap-adt-cli`, keystore service IDs, env precedence.
+- Transport package layout (`manifest.json` + `sources/`).
+
+## Migrating a collector setup
+
+```bash
+sap-adt configure                      # profile + keystore
+sap-adt transport ping                 # verify connectivity
+# then stop using --legacy-config (and consider deleting the old
+# ~/.sap-transport-gate/config.json, which holds a plaintext password)
+```
+
+The old file is read only when `--legacy-config` is passed (or via the old
+`tr_collector.py` shim, which adds it). It is never an implicit fallback for
+a missing profile or a failed authentication.
+
+## Rollback
+
+Check out the previous release/commit; the old script entry points and
+config schema still exist there. User configuration is untouched by the
+upgrade either way.

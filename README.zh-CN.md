@@ -154,7 +154,7 @@ sap-engineering-skill/
 
 安装后四个 Skill 统一位于 `sap-engineering-skills` 命名空间下（如 `/sap-engineering-skills:sap-adt-cli`）。更新可在 `/plugin` 面板操作，或执行 `claude plugin update sap-engineering-skills@sap-engineering`。
 
-> 前置条件：`PATH` 中需有 Python 3；CLI 首次运行时会自动安装 `click`/`requests`/`urllib3`。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
+> 插件只分发 **Skill 文档**，不会安装 CLI。`sap-adt` 需单独安装（npm/npx、Windows 安装器、便携包或 Python）——见 [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md)。离线 Skill（`abap-code-review`、`sap-integration-wiki`）无需 CLI。维护者注意：插件在 `.claude-plugin/plugin.json` 中固定了 `version`，**每次发布必须 bump 版本号**，否则已安装用户收不到更新。
 
 ### Windows——sap-adt-cli 一键安装（opencode）
 
@@ -175,10 +175,14 @@ ln -s "$(pwd)/skills/abap-code-review"     ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"   ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
+# 安装 CLI（本仓库检出目录；也支持 npm/安装器/便携包）
+python3 -m pip install -e .
+
 # 配置 SAP 连接 Profile（交互式向导；密码进入操作系统密钥库）
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 # 可用 --profile dev/qas/prd 添加多个环境；检查当前生效的密钥库后端：
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+sap-adt credentials doctor
+# 离线知识/审查类 Skill 完全不需要 CLI——见各 Skill 的 references/setup.md
 ```
 
 例外：Amazon Kiro 只读取 `~/.kiro/skills/`（用其 "Import a skill" UI 导入），Cline 只读取 `~/.cline/skills/`，Trae 仅支持 UI 导入。

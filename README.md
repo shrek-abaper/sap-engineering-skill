@@ -154,7 +154,7 @@ This repository is a self-hosted Claude Code plugin marketplace. Inside Claude C
 
 All four skills are then available under the `sap-engineering-skills` namespace (e.g. `/sap-engineering-skills:sap-adt-cli`). Update with `/plugin` → Manage, or `claude plugin update sap-engineering-skills@sap-engineering`.
 
-> Prerequisite: Python 3 must be on `PATH`; the CLIs auto-install `click`/`requests`/`urllib3` on first run. Maintainer note: the plugin ships a pinned `version` in `.claude-plugin/plugin.json` — it **must be bumped on every release** or existing installations will not receive updates.
+> The plugin distributes **skill documentation only** — it does not install the CLI. Install `sap-adt` separately (npm/npx, Windows installer, portable archive, or Python) — see [`docs/installation/runtime-setup.md`](docs/installation/runtime-setup.md). Offline skills (`abap-code-review`, `sap-integration-wiki`) work without it. Maintainer note: the plugin ships a pinned `version` in `.claude-plugin/plugin.json` — it **must be bumped on every release** or existing installations will not receive updates.
 
 ### Windows — sap-adt-cli one-click installer (opencode)
 
@@ -175,10 +175,14 @@ ln -s "$(pwd)/skills/abap-code-review"    ~/.agents/skills/abap-code-review
 ln -s "$(pwd)/skills/sap-transport-gate"  ~/.agents/skills/sap-transport-gate
 ln -s "$(pwd)/skills/sap-integration-wiki" ~/.agents/skills/sap-integration-wiki
 
+# Install the CLI once (from this checkout; npm/installer/portable also available)
+python3 -m pip install -e .
+
 # Configure a SAP connection profile (interactive wizard; password goes to the OS keystore)
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure
+sap-adt configure
 # Add more environments with --profile dev/qas/prd; verify the active keystore backend:
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor
+sap-adt credentials doctor
+# Offline knowledge/review skills need no CLI at all — see each skill's references/setup.md
 ```
 
 Exceptions: Amazon Kiro only reads `~/.kiro/skills/` (use its "Import a skill" UI), Cline only reads `~/.cline/skills/`, and Trae requires UI import.
