@@ -1,5 +1,27 @@
 # Changelog
 
+## CLI 1.5.2 / plugin/docs 1.2.6 — 2026-10-28
+
+- Fixed `sap-adt install` hanging forever on proxied networks. The npm/npx
+  wizard downloaded with Node core `https.get`, which ignores
+  `HTTPS_PROXY`/`HTTP_PROXY` before Node 24 and had no timeout, so on a
+  corporate network that requires a proxy it sat at "fetching …" with zero
+  bytes. The wizard now resolves the proxy (`https_proxy`/`HTTPS_PROXY`,
+  `npm_config_*`, `http_proxy`/`HTTP_PROXY`, honoring `NO_PROXY`) and
+  tunnels through an HTTP proxy with `CONNECT`; TLS still verifies the real
+  artifact host and every redirect hop keeps the allow-list check.
+- Downloads report size and periodic progress and abort on a bounded
+  timeout with an actionable message instead of hanging.
+- Fixed `EXDEV: cross-device link not permitted` during install when
+  `os.tmpdir()` is a different filesystem from the npm prefix (tmpfs `/tmp`
+  on Linux/WSL): the staged tree is copied into place when `rename` cannot
+  cross devices.
+- Installer tests cover proxy/no-proxy resolution, refusal of non-`http`
+  proxies without echoing credentials, fast failure against an unreachable
+  or black-holed proxy, and the cross-device fallback (14 tests).
+- Install docs gained a "Proxied / restricted networks" section with a
+  manual fallback; plugin payload regenerated; marketplace digest updated.
+
 ## CLI 1.5.1 / plugin/docs 1.2.5 — 2026-10-28
 
 - Fixed `get-type-group` on S/4HANA 2021 / Basis 7.56: the command requested

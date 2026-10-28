@@ -34,6 +34,10 @@ artifact over HTTPS, verifies its SHA-256 (from the manifest bundled with
 the package — never from the download endpoint), extracts safely and swaps
 it in atomically, then self-tests with the absolute install path.
 
+On a proxied network, set `HTTPS_PROXY` (and `NO_PROXY` for hosts that go
+direct) before running `install`; the wizard tunnels through an `http://`
+proxy, reports download progress, and aborts on a timeout instead of hanging.
+
 ## Use
 
 ```bash

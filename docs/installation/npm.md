@@ -39,6 +39,10 @@ A normal `sap-adt` invocation never downloads or upgrades anything. The
 runtime lives inside the npm package directory; upgrading the package
 requires re-running `install`.
 
+Behind a proxy, set `HTTPS_PROXY` (and `NO_PROXY` for internal hosts) before
+`install` — see
+[Proxied / restricted networks](runtime-setup.md#proxied--restricted-networks).
+
 ## Local packaging tests (no registry, no network)
 
 ```bash

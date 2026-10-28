@@ -66,6 +66,34 @@ atomic install → self-test), not an npm built-in.
 > yet** — do not promise them until a real build and install smoke pass on
 > those systems.
 
+## Proxied / restricted networks
+
+The npm/npx `install` wizard downloads the runtime itself, so it needs egress
+to the GitHub release CDN. It honors the standard proxy variables — set them
+before running `sap-adt install`:
+
+| Variable | Example | Meaning |
+|---|---|---|
+| `HTTPS_PROXY` / `https_proxy` | `http://proxy.example.com:8080` | Proxy for the artifact download (CONNECT tunnel) |
+| `NO_PROXY` / `no_proxy` | `localhost,10.*,.example.com` | Hosts that go direct |
+
+- Only `http://` proxy URLs are supported; `https://` and `socks5://` are
+  refused with an error rather than half-working.
+- Proxy credentials go in the URL: `http://user:password@proxy:8080`.
+- The artifact certificate is still verified against the real host name. If
+  the proxy terminates TLS, point `NODE_EXTRA_CA_CERTS` at its CA bundle:
+  `NODE_EXTRA_CA_CERTS=/path/to/corporate-ca.pem sap-adt install`.
+- The wizard reports size/progress and aborts after a bounded timeout instead
+  of hanging. A timeout message means the network needs a proxy, or the proxy
+  blocks `CONNECT` to `github.com:443`.
+
+If the download still cannot work, install the runtime by hand: download
+`sap-adt-<ver>-linux-x86_64.tar.gz` from the release page, compare its
+sha256 with the one in the installed package's `runtime-manifest.json`,
+unpack it, and move the inner `sap-adt/` directory to
+`<npm prefix>/lib/node_modules/sap-adt-cli/runtime/<platform>/sap-adt/`
+(`npm prefix -g` prints the prefix on Linux/macOS).
+
 ## Post-install self-test (from the install location)
 
 ```bash
@@ -116,6 +144,7 @@ per-operation confirmation; the env layer only supplies the connection.
 | `command not found` | Not installed, or PATH not refreshed in this session | Restart terminal; if still missing, install per above (ask the user first) |
 | Works at absolute path, not by name | PATH stale in the running agent/terminal | Restart the agent; do NOT reinstall |
 | Version below the compatible range | Runtime too old for the skill | Upgrade via the same channel; confirm with the user |
+| `install` cannot reach the release CDN | The network requires a proxy and none is configured (or the proxy blocks `CONNECT`) | Set `HTTPS_PROXY`/`NO_PROXY` — see *Proxied / restricted networks* |
 | `no usable keystore backend` | No OS keystore available | See `credentials doctor` output; the encrypted-file fallback needs `cryptography` (bundled in the frozen runtime) |
 | Sandbox/container without the user's desktop tools | The CLI may exist on the desktop but not in your sandbox | Ask the user; never assume the desktop install is reachable |
 | No shell / no install permission / no network | Agent cannot install or run | Give the user the manual steps; continue offline work if the task allows |

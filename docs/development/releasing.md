@@ -77,9 +77,9 @@ Guidance:
 
 ## Versioning
 
-- CLI: `1.5.1` (single source: `pyproject.toml`; runtime/npm/installers
+- CLI: `1.5.2` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.2.5` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.2.6` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.
