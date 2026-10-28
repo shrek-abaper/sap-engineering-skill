@@ -1,5 +1,14 @@
 # Changelog
 
+## Plugin/docs 1.2.4 — 2026-10-28
+
+- Single-source licensing: removed the four per-skill LICENSE copies. The
+  repository root LICENSE is authoritative and the build injects it into
+  every published skill/plugin snapshot (verified after rebuild). README
+  license links now point at the repository URL; transport-gate's snapshot
+  license text standardizes to the repository line.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.2.3 — 2026-10-28
 
 - Removed redundant per-skill `.gitignore` files: the root rules cover them;

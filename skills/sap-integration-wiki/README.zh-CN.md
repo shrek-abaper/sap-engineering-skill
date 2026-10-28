@@ -259,7 +259,7 @@ python3 gen-idoc-template.py \
 
 ## 开源协议
 
-MIT 许可证 — 详见 [LICENSE](LICENSE)。
+MIT 许可证 — 详见 [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)。
 
 ---
 

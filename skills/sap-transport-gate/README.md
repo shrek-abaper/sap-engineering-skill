@@ -262,4 +262,4 @@ Each confirmation item specifies: who confirms, what they confirm, based on what
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
+MIT — see [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)

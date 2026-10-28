@@ -252,4 +252,4 @@ sap-transport-gate/
 
 ## 许可证
 
-MIT — 详见 [LICENSE](LICENSE)
+MIT — 详见 [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)

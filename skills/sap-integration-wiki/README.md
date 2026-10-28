@@ -270,7 +270,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE) for details.
 
 ---
 
