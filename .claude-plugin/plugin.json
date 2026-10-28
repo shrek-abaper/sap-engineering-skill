@@ -1,7 +1,7 @@
 {
   "name": "sap-engineering-skills",
   "displayName": "SAP ABAP Engineering Skills",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "SAP ABAP engineering skill suite: ADT CLI for read/write ABAP source, pre-release ABAP code review, Transport Request release gate, and SAP integration knowledge base (OData, RFC/JCo, IDoc, BAPI, BTP).",
   "author": {
     "name": "shrek-abaper",

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Single source of truth for the CLI version (spec §5: pyproject.toml is the
 # authority; runtime reads it via importlib.metadata, no second constant).
 name = "sap-adt-cli"
-version = "1.5.0"
+version = "1.5.1"
 description = "SAP ADT REST API CLI: read/write ABAP source and metadata, transport request collection (read-only)."
 readme = "README.md"
 license = "MIT"

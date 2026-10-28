@@ -1,13 +1,22 @@
 # Changelog
 
-## Unreleased
+## CLI 1.5.1 / plugin/docs 1.2.5 — 2026-10-28
 
+- Fixed `get-type-group` on S/4HANA 2021 / Basis 7.56: the command requested
+  `/sap/bc/adt/typegroups/groups/{name}/source/main` (404 on both DEV and
+  QAS). It now uses `/sap/bc/adt/ddic/typegroups/{name}/source/main`;
+  recorded as protocol fact 13 with a real fixture and regression tests.
+- Fixed `get-package` double-encoding of `parent_name`: `$TMP` became
+  `%2524TMP` and the server answered 200 with an empty body (surfaced as
+  `PARSE_FAILED`). The raw package name is now passed through and encoded
+  once; recorded as protocol fact 14.
 - Removed `setup-opencode-abap-cli.bat`. The opencode-specific one-click
   installer no longer matched the supported agent set (Claude Code, Codex,
   WorkBuddy, other `SKILL.md` agents). Windows users install the CLI from
   PyPI and copy the skill folders into their agent's skill directory; the
   self-contained Windows installer (`packaging/windows/setup.iss`) remains
   implemented but not yet built or verified.
+- Plugin payload regenerated; marketplace digest updated.
 
 ## Plugin/docs 1.2.4 — 2026-10-28
 
