@@ -43,7 +43,7 @@ prints which source is active.
 | npx (no global install) | Try it without changing PATH | Node.js ≥ 18 | `npx "sap-adt-cli@^1.5.0" install`, then prefix every call: `npx "sap-adt-cli@^1.5.0" <command>` |
 | PyPI (wheel/sdist) | Python ≥ 3.10 available | Python | `pip install "sap-adt-cli>=1.5.0,<2.0.0"` |
 | Portable archive (Linux) | No dev environment | Linux x86_64, glibc ≥ 2.39 build | download the newest 1.x `sap-adt-<ver>-linux-x86_64.tar.gz` from the release page and unpack it, run inside it `./sap-adt/sap-adt` |
-| Windows installer | No dev environment | Windows 10+ x64 | newest 1.x `sap-adt-<ver>-windows-x86_64-setup.exe` — **not built yet** (needs a Windows build host and a real install test) |
+| Windows installer | No dev environment | Windows 10+ x64 | newest compatible `sap-adt-<ver>-windows-x86_64-setup.exe` from CLI 1.5.3; unsigned, silent per-user lifecycle verified |
 | Python source | Developers, contributors | Python ≥ 3.10 | `pip install -e .` from the repo |
 
 The version ranges above are the skill's **compatible range** (declared in
@@ -56,15 +56,19 @@ All channels install the same runtime built from the same commit. `install`
 in the npm channel is this package's own wizard (fetch → SHA-256 verify →
 atomic install → self-test), not an npm built-in.
 
-> Channel status (2026-10-28): npm `sap-adt-cli` and PyPI `sap-adt-cli`
+> Channel status (CLI 1.5.3+, 2026-10-29): npm `sap-adt-cli` and PyPI `sap-adt-cli`
 > (renamed from `sap-adt`; the old project was removed from PyPI after the
 > rename) are live and the GitHub
-> Release carries the Linux x86_64 portable runtime, the plugin/skill zips
+> Release carries Linux x86_64 and Windows x86_64 runtimes, the Windows desktop
+> installer, the plugin/skill zips
 > and the checksums. To migrate from the old name run
 > `pip uninstall -y sap-adt` first, then install `sap-adt-cli` — do not use
-> `pip install -U sap-adt`. The Windows installer and the macOS runtime are **not built
-> yet** — do not promise them until a real build and install smoke pass on
-> those systems.
+> `pip install -U sap-adt`. On 2026-10-29 the Windows x64 runtime/npm channel
+> and the desktop installer's silent per-user lifecycle passed local
+> verification through WSL interop. Windows npm support requires 1.5.3 or
+> newer; older launchers may support only Linux. Graphical wizard clicks,
+> actual PATH mutation and elevated installs remain unverified. The macOS runtime is
+> **not built yet**.
 
 ## Proxied / restricted networks
 

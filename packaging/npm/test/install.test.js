@@ -1,8 +1,9 @@
 /* Error-path and happy-path tests for scripts/install.js.
  *
- * Fully offline: a fake runtime tar.gz (shell script printing a version) is
- * built with tar via argument arrays, manifests use file:// URLs, and every
- * invocation sets SAP_ADT_INSTALL_ALLOW_FILE=1 except the refusal test.
+ * Fully offline: a fake runtime (shell script on POSIX, Node executable on
+ * Windows) is archived with tar via argument arrays, manifests use file://
+ * URLs, and every invocation sets SAP_ADT_INSTALL_ALLOW_FILE=1 except the
+ * refusal test.
  *
  * Run: node --test packaging/npm/test/install.test.js
  */
@@ -19,6 +20,8 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
 const SCRIPTS = path.resolve(__dirname, "..", "scripts"); // source templates
+const WINDOWS = process.platform === "win32";
+const TEST_VERSION = WINDOWS ? process.version : "0.0.0-test";
 // Pure helpers; requiring the script does not run the wizard.
 const { moveTree, proxyForUrl } = require(path.join(SCRIPTS, "install.js"));
 // Tests always run the COPIED scripts inside the staged package: PKG_DIR is
@@ -44,11 +47,15 @@ function buildFakeRuntime(dir, payload) {
   // payload: { "sap-adt": <exe text>, ... } or { "evil": "../x" } variants
   const tree = path.join(dir, "tree", "sap-adt");
   fs.mkdirSync(tree, { recursive: true });
-  const exe = path.join(tree, "sap-adt");
-  fs.writeFileSync(exe, payload ?? "#!/bin/sh\necho 'sap-adt, version 0.0.0-test'\n");
-  fs.chmodSync(exe, 0o755);
-  const archive = path.join(dir, "runtime.tar.gz");
-  const r = spawnSync("tar", ["-czf", archive, "-C", path.join(dir, "tree"), "sap-adt"],
+  const exe = path.join(tree, WINDOWS ? "sap-adt.exe" : "sap-adt");
+  if (WINDOWS) {
+    fs.copyFileSync(process.execPath, exe);
+  } else {
+    fs.writeFileSync(exe, payload ?? "#!/bin/sh\necho 'sap-adt, version 0.0.0-test'\n");
+    fs.chmodSync(exe, 0o755);
+  }
+  const archive = path.join(dir, WINDOWS ? "runtime.zip" : "runtime.tar.gz");
+  const r = spawnSync("tar", [WINDOWS ? "-acf" : "-czf", archive, "-C", path.join(dir, "tree"), "sap-adt"],
     { encoding: "utf8" });
   assert.equal(r.status, 0, `tar failed: ${r.stderr}`);
   return archive;
@@ -73,7 +80,7 @@ function manifestFor(artifactPathOrUrl, overrides = {}) {
       [platformKey()]: {
         url,
         sha256: sha256(artifactPathOrUrl.includes("://") ? artifact : artifactPathOrUrl),
-        format: "tar.gz",
+        format: WINDOWS ? "zip" : "tar.gz",
         ...overrides,
       },
     },
@@ -114,7 +121,21 @@ test("happy path: install, then the bin runs the runtime", () => {
 
   const bin = runBin(["--version"]);
   assert.equal(bin.status, 0, bin.stderr);
-  assert.match(bin.stdout, /0\.0\.0-test/);
+  assert.ok(bin.stdout.includes(TEST_VERSION), bin.stdout);
+});
+
+test("file:// artifact with spaces and Unicode in its path: installs", () => {
+  const dir = path.join(work, "runtime space \u6d4b\u8bd5");
+  fs.mkdirSync(dir);
+  const encodedArtifact = path.join(dir, path.basename(artifact));
+  fs.copyFileSync(artifact, encodedArtifact);
+  stagePackage(manifestFor(encodedArtifact));
+
+  const result = runInstall();
+  assert.equal(result.status, 0, result.stderr);
+  const bin = runBin(["--version"]);
+  assert.equal(bin.status, 0, bin.stderr);
+  assert.ok(bin.stdout.includes(TEST_VERSION), bin.stdout);
 });
 
 test("sha256 mismatch: install refused, nothing installed", () => {
@@ -139,7 +160,7 @@ test("sha256 mismatch with existing runtime: old version preserved", () => {
 
   const bin = runBin(["--version"]);
   assert.equal(bin.status, 0);
-  assert.match(bin.stdout, /0\.0\.0-test/); // still the original
+  assert.ok(bin.stdout.includes(TEST_VERSION), bin.stdout); // still the original
 });
 
 test("unsupported platform: clear refusal", () => {
@@ -322,7 +343,8 @@ test("moveTree: falls back to a copy when rename crosses filesystems (EXDEV)", (
   assert.ok(!fs.existsSync(src), "staging must be removed after the copy");
 });
 
-test("archive with traversal entry: rejected, runtime untouched", () => {
+test("archive with traversal entry: rejected, runtime untouched",
+  { skip: WINDOWS && "fixture creation requires GNU tar --transform" }, () => {
   // Craft an archive whose member escapes the target dir.
   const evilDir = path.join(work, "evil");
   fs.mkdirSync(evilDir, { recursive: true });

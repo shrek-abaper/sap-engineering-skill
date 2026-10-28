@@ -49,9 +49,11 @@ the Requirements section, then load the skill with your agent:
 | Other `SKILL.md` agents | Use the agent's own skill directory or import UI |
 
 The agent drives the workflow; the `sap-adt` CLI performs the online ADT calls.
-On Windows, install the CLI with `pip install "sap-adt-cli>=1.5.0,<2.0.0"`
-(Python ≥ 3.10) and copy the skill folder into your agent's skill directory —
-no standalone Windows runtime installer is available yet.
+On Windows x64, CLI 1.5.3 or newer provides an npm runtime, portable ZIP
+and unsigned desktop installer; Python ≥ 3.10 users can also use PyPI.
+Copy the skill folder into your agent's skill directory separately.
+See the [Windows guide](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/windows.md)
+for the verified silent-install scope and remaining GUI/PATH/elevation gaps.
 
 > **Data compliance note:** ABAP source code may contain core business logic and sensitive data.
 > Before sending code to cloud-based AI services, confirm compliance with your organization's

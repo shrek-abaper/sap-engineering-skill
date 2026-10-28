@@ -70,7 +70,9 @@ sap-adt install
 sap-adt --version
 ```
 
-npm 包安装的是启动器，`sap-adt install` 负责下载、校验并安装对应平台的运行时。之后普通的 `sap-adt` 调用不会再下载或升级任何内容。自包含运行时目前只发布了 Linux x86_64 版本，Windows 安装器与 macOS 运行时尚未构建。
+npm 包安装的是启动器，`sap-adt install` 负责下载、校验并安装对应平台的运行时。之后普通的 `sap-adt` 调用不会再下载或升级任何内容。自包含运行时支持 Linux x86_64 和 Windows x86_64；Windows 需要 CLI 1.5.3 或更新版本。macOS 运行时尚未构建。
+
+Windows 上没有 Node.js 或 Python 时，可以从 [Releases](https://github.com/shrek-abaper/sap-engineering-skill/releases) 下载未签名的 `sap-adt-<ver>-windows-x86_64-setup.exe`。已验证范围和限制见 [Windows 安装指南](docs/installation/windows.md)。
 
 不想全局安装时，npx 不会在 `PATH` 上留下命令：先执行 `npx "sap-adt-cli@^1.5.0" install`，之后每次调用都要保留这个包前缀。
 
@@ -150,10 +152,10 @@ sap-adt credentials doctor   # 显示当前使用的密钥库后端，不输出�
 | 平台 | 当前可用 |
 |---|---|
 | Linux x86_64 | npm 运行时、便携包（glibc 2.39 构建已在 Ubuntu 24.04 验证）、PyPI |
-| Windows x86_64 | Python ≥ 3.10 时可用 PyPI；把 Skill 目录复制到 Agent 的 Skill 目录；尚无独立的 Windows 运行时安装器 |
+| Windows x86_64 | CLI 1.5.3 起提供 npm 运行时、便携 ZIP 和桌面安装器；Python ≥ 3.10 时也可用 PyPI |
 | macOS | Python ≥ 3.10 时可用 PyPI；尚无运行时构建 |
 
-Windows 的 Inno Setup 安装器已实现，但尚未在 Windows 主机上构建与验证；macOS 运行时仅在计划中。在出现真实的构建与安装测试之前，不要依赖这两项。
+已通过 WSL 调用 Windows 11 x64 宿主，验证 npm 安装以及桌面安装器的静默用户级安装、同版本覆盖安装和卸载。图形向导点击、实际 PATH 写入和提权安装尚未验证；安装器未签名。macOS 运行时仍在计划中。各平台的 Skill 目录均需与 CLI 分开安装。
 
 ### SAP 前提
 

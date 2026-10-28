@@ -43,17 +43,40 @@ Behind a proxy, set `HTTPS_PROXY` (and `NO_PROXY` for internal hosts) before
 `install` — see
 [Proxied / restricted networks](runtime-setup.md#proxied--restricted-networks).
 
+## Windows availability
+
+Windows x64 is supported starting with npm package **1.5.3**.
+Availability depends on the installed package's
+`runtime-manifest.json`: it must include `windows-x86_64`, with the matching
+ZIP uploaded to the release. A package that lists only `linux-x86_64` cannot
+install on Windows, even if `npm install -g` succeeds.
+
+To replace a Linux-only launcher on Windows:
+
+```powershell
+npm install -g "sap-adt-cli@^1.5.3"
+sap-adt install
+sap-adt --version
+```
+
+The Windows npm channel requires Node.js and the Windows `tar.exe` (included
+with current Windows 10/11), but no Python on the end user's machine.
+The separate Inno Setup desktop installer has a verified silent per-user
+lifecycle; see [Windows scope and limitations](windows.md).
+
 ## Local packaging tests (no registry, no network)
 
 ```bash
 python tools/build_runtime.py            # build the runtime for this platform
-python tools/build_npm.py --local-file-urls
-cd dist/npm && npm pack
-# in a scratch project:
-npm install <path>/sap-adt-cli-<ver>.tgz
-SAP_ADT_INSTALL_ALLOW_FILE=1 ./node_modules/.bin/sap-adt install
-./node_modules/.bin/sap-adt --version
+python tools/build_npm.py
+python tools/smoke_npm.py
 ```
+
+Run these with Windows Python to verify Windows, not with WSL's Linux Python.
+The smoke tool packs a temporary copy with a local artifact URL, uses an
+isolated global npm prefix and cache, runs `install`, `--version`, and
+`--help`, then removes its temporary files. It does not modify the
+publishable staging manifest, user npm installation, or SAP configuration.
 
 `file://` artifacts are refused unless `SAP_ADT_INSTALL_ALLOW_FILE=1` is set
 (test seam only). Error paths are covered by

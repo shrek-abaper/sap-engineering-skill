@@ -4,10 +4,10 @@
   "primary_target": "windows-x86_64",
   "targets": {
     "windows-x86_64": {
-      "status": "blocked-no-windows-host",
+      "status": "verified-local",
       "python_floor": "3.10",
       "installer": "packaging/windows/setup.iss (Inno Setup 6, per-user default)",
-      "notes": "Primary release target. Build requires a Windows host with Inno Setup; NOT verified in this workspace (WSL2/Linux only)."
+      "notes": "Windows x64 runtime built with Windows Python 3.12 via WSL interop; ZIP and real npm global-prefix install smoke verified locally on 2026-10-29. Inno Setup 6.7.4 desktop installer: silent per-user install, same-version upgrade, launch and uninstall verified in a Unicode/space path with the PATH task disabled; PATH cleanup helper tested separately. Interactive wizard, actual PATH mutation and elevated install are unverified. No Windows assets published by these checks."
     },
     "linux-x86_64": {
       "status": "verified-local",

@@ -257,11 +257,13 @@ tag, publish or switch the live marketplace without explicit approval.
 
 ### Windows
 
-Windows users install the CLI from PyPI
-(`pip install "sap-adt-cli>=1.5.0,<2.0.0"`, Python ≥ 3.10) and copy the
-skill folders into their agent's skill directory. The self-contained
-installer for users without Python is `packaging/windows/setup.iss`
-(implemented, not yet verified on Windows).
+Windows x64 has an npm runtime, portable ZIP and unsigned desktop installer
+from CLI 1.5.3; PyPI remains available with Python ≥ 3.10. Skill folders
+are installed separately. Native runtime/npm installation and the Inno Setup
+installer's silent per-user install, same-version upgrade and uninstall were
+verified via WSL interop. Graphical wizard clicks, actual PATH mutation,
+elevated installation and live SAP connectivity remain unverified.
+See `docs/installation/windows.md` for the precise scope.
 
 ---
 

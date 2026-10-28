@@ -5,7 +5,8 @@ authorization.** Remote publishing is a separate, human-approved step.
 
 ## Preconditions
 
-1. `tools/check_release.py` passes on a locally built candidate.
+1. `tools/check_release.py --skip-marketplace` passes on a locally built
+   candidate (an upgrade keeps the previous live marketplace archive).
 2. The working tree is clean and the commit recorded in
    `dist/release/release-manifest.json` is the intended source.
 3. Platform claims match `packaging/targets.json` (do not advertise
@@ -16,8 +17,13 @@ authorization.** Remote publishing is a separate, human-approved step.
 1. Commit/merge the release state; tag `sap-adt-v<cli_version>` (the CLI
    line) and optionally `plugin-v<plugin_version>`.
 2. Publish GitHub Release with the runtime archives, wheel/sdist, npm
-   tarball, plugin + skill zips, `SHA256SUMS`, `release-manifest.json`.
-3. `npm publish` the staged package (`dist/npm/`), then verify
+   tarball, Windows desktop installer, plugin + skill zips, `SHA256SUMS`,
+   `release-manifest.json`. Use the artifact list in the manifest, not a
+   wildcard over `dist/release/` that could include older releases.
+3. After the release exists, regenerate the manifest/npm staging with
+   `tools/build_manifest.py --release-state published`, upload the updated
+   npm tarball/checksums/manifest, and `npm publish` the staged package
+   (`dist/npm/`). Then verify
    `npx <pkg>@<version> install` on a clean machine (Node-only).
 4. Upload `PyPI` wheel/sdist, then verify a clean-venv install.
 
@@ -30,6 +36,8 @@ authorization.** Remote publishing is a separate, human-approved step.
    uploaded.
 6. Announce the minimum Claude Code version for archive sources
    (≥ 2.1.224, verified against the official marketplace reference).
+7. Run `tools/check_release.py` without `--skip-marketplace` against the
+   final published manifest and live marketplace.
 
 ## Local publishing credentials (maintainers)
 
@@ -77,9 +85,9 @@ Guidance:
 
 ## Versioning
 
-- CLI: `1.5.2` (single source: `pyproject.toml`; runtime/npm/installers
+- CLI: `1.5.3` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.2.6` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.2.7` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

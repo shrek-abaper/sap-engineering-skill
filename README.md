@@ -70,7 +70,9 @@ sap-adt install
 sap-adt --version
 ```
 
-The npm package installs a launcher; `sap-adt install` fetches, verifies and installs the platform runtime. A normal `sap-adt` call never downloads or upgrades anything. The self-contained runtime is currently published for Linux x86_64 only — the Windows installer and the macOS runtime are not built yet.
+The npm package installs a launcher; `sap-adt install` fetches, verifies and installs the platform runtime. A normal `sap-adt` call never downloads or upgrades anything. Linux x86_64 and Windows x86_64 runtimes are available; Windows requires CLI 1.5.3 or newer. The macOS runtime is not built yet.
+
+On Windows without Node.js or Python, download the unsigned `sap-adt-<ver>-windows-x86_64-setup.exe` from the [releases](https://github.com/shrek-abaper/sap-engineering-skill/releases). See the [Windows guide](docs/installation/windows.md) for verified scope and limitations.
 
 Without a global install, npx keeps nothing on `PATH`: run `npx "sap-adt-cli@^1.5.0" install` and keep that package prefix on every later call.
 
@@ -151,10 +153,10 @@ The repository is a single distribution point for the four skills and the CLI so
 | Platform | Available today |
 |---|---|
 | Linux x86_64 | npm runtime, portable archive (glibc 2.39 build verified on Ubuntu 24.04), PyPI |
-| Windows x86_64 | PyPI with Python ≥ 3.10; copy the skill folders into your agent's skill directory; no standalone Windows runtime installer yet |
+| Windows x86_64 | npm runtime, portable ZIP and desktop installer from CLI 1.5.3; PyPI with Python ≥ 3.10 |
 | macOS | PyPI with Python ≥ 3.10; no runtime build yet |
 
-The Windows Inno Setup installer is implemented but has not been built or verified on a Windows host, and the macOS runtime is planned only. Do not rely on either until a real build and install test exists.
+Windows npm installation and the desktop installer's silent per-user install, same-version upgrade and uninstall were verified on Windows 11 x64 through WSL interop. Graphical wizard clicks, actual PATH mutation and elevated installation remain unverified; the installer is unsigned. The macOS runtime remains planned only. Install the skill folders separately from the CLI on every platform.
 
 ### SAP prerequisites
 

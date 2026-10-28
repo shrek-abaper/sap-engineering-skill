@@ -2,7 +2,7 @@
   "schema_version": 1,
   "description": "Project-owned compatibility declaration (NOT a Claude Code manifest extension). Per-skill snapshots under skills/<name>/references/runtime-compatibility.json are GENERATED from this file by tools/sync_skill_runtime_docs.py — never edit the copies.",
   "plugin_name": "sap-engineering-skills",
-  "plugin_version": "1.2.6",
+  "plugin_version": "1.2.7",
   "marketplace": "sap-engineering",
   "cli": {
     "command": "sap-adt",

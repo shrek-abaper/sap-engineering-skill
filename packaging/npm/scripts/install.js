@@ -32,6 +32,7 @@ const path = require("node:path");
 const tls = require("node:tls");
 const { Transform } = require("node:stream");
 const { pipeline } = require("node:stream/promises");
+const { fileURLToPath } = require("node:url");
 
 const PKG_DIR = path.resolve(__dirname, "..");
 const MAX_REDIRECTS = 3;
@@ -255,7 +256,7 @@ function download(url, allowedHosts, dest, redirectsLeft) {
         return reject(new Error(
           "file:// artifacts are refused (test-only; set SAP_ADT_INSTALL_ALLOW_FILE=1 to allow)"));
       }
-      return fs.promises.copyFile(decodeURIComponent(parsed.pathname), dest)
+      return fs.promises.copyFile(fileURLToPath(parsed), dest)
         .then(resolve, reject);
     }
     if (parsed.protocol !== "https:") {

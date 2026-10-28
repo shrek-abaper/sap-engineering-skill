@@ -36,8 +36,10 @@
 | 其他 `SKILL.md` 智能体 | 使用各自的 Skill 目录或导入界面 |
 
 Agent 负责驱动工作流，`sap-adt` CLI 负责执行在线 ADT 调用。
-Windows 上使用 `pip install "sap-adt-cli>=1.5.0,<2.0.0"`（Python ≥ 3.10）安装 CLI，
-再把 Skill 目录复制到 Agent 的 Skill 目录；目前没有独立的 Windows 运行时安装器。
+Windows x64 从 CLI 1.5.3 起提供 npm 运行时、便携 ZIP 和未签名的桌面安装器；
+已有 Python ≥ 3.10 时也可用 PyPI。Skill 目录仍需单独复制到 Agent 的 Skill 目录。
+静默安装的已验证范围，以及 GUI、PATH 和提权安装的限制，见
+[Windows 安装指南](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/windows.md)。
 
 > **数据合规提示：** ABAP 源代码可能包含企业核心业务逻辑和敏感数据。
 > 将代码发送至公网 AI 服务前，请确认符合企业数据安全政策。

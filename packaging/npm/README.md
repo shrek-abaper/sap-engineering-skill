@@ -9,6 +9,12 @@ if Node.js is not an option, use the desktop installer / portable archive
 from the [repository releases](https://github.com/shrek-abaper/sap-engineering-skill)
 instead.
 
+Linux x86_64 and Windows x86_64 runtimes are provided. Windows support
+starts with package 1.5.3 and also requires `tar.exe` (included in current
+Windows 10/11). macOS has no self-contained runtime yet; use the Python
+package there. Upgrading an older Windows launcher requires reinstalling
+the npm package before running `sap-adt install` again.
+
 ## Install the runtime (once)
 
 The package is named `sap-adt-cli`; its bin is **`sap-adt`**.

@@ -1,5 +1,25 @@
 # Changelog
 
+## CLI 1.5.3 / plugin/docs 1.2.7 — 2026-10-29
+
+- Added native Windows x64 runtime ZIP and desktop installer to the
+  release alongside Linux. Windows builds run on the Windows host through
+  WSL interop; npm no longer has a Linux-only runtime manifest.
+- Fixed Windows `file://` artifact paths, including drive letters, UNC
+  shares, spaces and Unicode. Installer regressions now run with native
+  executable/ZIP fixtures on Windows as well as POSIX fixtures on Linux.
+- Fixed desktop silent-install dialogs, made the PATH task optional
+  (enabled by default), removed only installer-owned PATH entries on
+  uninstall, and made a failed runtime self-test fail setup.
+- Added isolated npm and Windows desktop smoke tools. Verified native npm
+  install, desktop silent per-user install, same-version upgrade, launch,
+  uninstall and synthetic configuration preservation. PATH cleanup is
+  tested separately without modifying the host PATH.
+- Reconciled English/Chinese READMEs, installation/build/release guides
+  and generated skill snapshots. Graphical wizard clicks, actual PATH
+  mutation, elevated installs and macOS runtimes remain unverified;
+  the Windows installer is unsigned.
+
 ## CLI 1.5.2 / plugin/docs 1.2.6 — 2026-10-28
 
 - Fixed `sap-adt install` hanging forever on proxied networks. The npm/npx

@@ -1,6 +1,5 @@
 @echo off
 rem Interactive configuration entry for the installed sap-adt runtime.
-rem STATUS: IMPLEMENTED, NOT VERIFIED (no Windows build host in workspace).
 rem Uses the absolute path of this very install (no PATH dependency) and
 rem never takes a password on the command line.
 setlocal
