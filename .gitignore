@@ -47,6 +47,11 @@ AGENTS.md
 # Sanitized fixtures are tracked; raw/ stays local only.
 tests/fixtures/sap_adt_cli/raw/
 
+# Runtime output from skill usage (may contain proprietary SAP source)
+reports/
+review_package/
+*.env.local
+
 # Test & coverage artifacts (the tests/ source tree is tracked; only caches are ignored)
 .pytest_cache/
 .coverage

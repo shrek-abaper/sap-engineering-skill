@@ -1,5 +1,16 @@
 # Changelog
 
+## Plugin/docs 1.2.3 — 2026-10-28
+
+- Removed redundant per-skill `.gitignore` files: the root rules cover them;
+  `reports/`, `review_package/` and `*.env.local` were added at the root.
+- Moved the stale standalone transport-gate changelog to
+  `docs/development/archive/sap-transport-gate/` and removed it from the
+  README tree; `evals/` is now marked source-only.
+- Added LICENSE files to the three skills that relied on the build-time root
+  fallback, so a manually copied source skill folder is complete too.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## Plugin/docs 1.2.2 — 2026-10-28
 
 - The old PyPI project `sap-adt` was removed after the rename; migration docs

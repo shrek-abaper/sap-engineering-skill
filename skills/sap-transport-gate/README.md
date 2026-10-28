@@ -210,13 +210,11 @@ Load this skill when users say:
 
 ```
 sap-transport-gate/
-├── .gitignore                        ← Git ignore rules
-├── changelog.md                      ← Version history and migration notes
 ├── LICENSE                           ← MIT License
 ├── README.md                         ← English documentation (this file)
 ├── README.zh-CN.md                   ← Chinese documentation
 ├── SKILL.md                          ← Agent instructions
-├── evals/
+├── evals/                            ← Source-only evaluation assets (not shipped)
 │   ├── evals.json                    ← Evaluation test cases (skill-creator format)
 │   └── golden-set.yaml               ← Q&A pairs for knowledge retrieval coverage
 ├── references/

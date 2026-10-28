@@ -202,13 +202,11 @@ sap-adt transport collect DEVK900123 --output-dir ./my-review
 
 ```
 sap-transport-gate/
-├── .gitignore                        ← Git 忽略规则
-├── changelog.md                      ← 版本历史与变更说明
 ├── LICENSE                           ← MIT 许可证
 ├── README.md                         ← English documentation
 ├── README.zh-CN.md                   ← 中文文档（本文件）
 ├── SKILL.md                          ← 智能体加载指令
-├── evals/
+├── evals/                            ← 仅源码保留的评测资产（不随发布）
 │   ├── evals.json                    ← 评测用例（skill-creator 格式）
 │   └── golden-set.yaml               ← 知识检索覆盖 Q&A 对
 ├── references/
