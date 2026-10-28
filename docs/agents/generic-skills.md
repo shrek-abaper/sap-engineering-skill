@@ -1,4 +1,4 @@
-# Generic SKILL.md agents (opencode, Cursor, WorkBuddy-class tools)
+# Generic SKILL.md agents (Codex, WorkBuddy-class tools, other agents)
 
 The skills are plain `SKILL.md` folders. Two supported ways to use them:
 
@@ -25,10 +25,15 @@ and `sap-engineering-skills-<plugin_version>.zip` (all four).
 - The agent's shell may be a sandbox that cannot see the user's desktop
   install — check, ask, and never reinstall blindly.
 
-## Verified environments
+## Supported agents
 
-| Environment | Status |
+| Agent | How to use it |
 |---|---|
-| Claude Code (plugin) | static validation done; real install/update needs a manual check |
-| opencode | documented flow only (no automated verification here) |
-| WorkBuddy-class agents | **unverified** — discovery, shell access and install permissions were not confirmed in this workspace |
+| Claude Code | Install the plugin from this repository's marketplace |
+| Codex | Copy the complete skill folders into the directory it scans |
+| WorkBuddy-class agents | Copy the complete skill folders into the directory it scans |
+| Other SKILL.md-compatible agents | Use the agent's own skill directory or import UI |
+
+Discovery paths differ between agents: some read `~/.agents/skills/`, others
+use a product-specific directory or an import UI. The copy steps above apply
+either way — confirm the directory your agent scans before copying.

@@ -245,10 +245,10 @@ def _md_reference_targets(text: str):
 
 
 # README files are monorepo presentation, not the agent contract: they may
-# link exactly two repository-root resources (which must still exist).
+# link the repository-root LICENSE (which must still exist).
 # Everything else — SKILL.md, references/, docs/, in-skill test docs — must
 # resolve inside the skill directory.
-_README_ROOT_ALLOWLIST = {"setup-opencode-abap-cli.bat", "LICENSE"}
+_README_ROOT_ALLOWLIST = {"LICENSE"}
 
 for md in SKILL_ROOT.rglob("*.md"):
     text = md.read_text(encoding="utf-8")

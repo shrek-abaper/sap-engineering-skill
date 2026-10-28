@@ -36,108 +36,25 @@ desktop OS vaults and the `file` extra (cryptography) for the encrypted-file fal
 
 ---
 
-## Windows Quick Setup — AI Agent Integration
+## Using this skill with an AI agent
 
-> **Example: [opencode](https://opencode.ai)** — a free, open-source AI agent — is used here as the reference setup.  
-> `sap-adt-cli` is packaged as a standard Agent Skill (`SKILL.md`) and works with any agent framework that supports custom tools/skills.
+`sap-adt-cli` is a standard Agent Skill (`SKILL.md`) folder. Install the CLI from
+the Requirements section, then load the skill with your agent:
 
-`setup-opencode-abap-cli.bat` is a Windows one-click installer that wires up opencode and this skill end-to-end.
+| Agent | How to use it |
+|-------|---------------|
+| Claude Code | Install the plugin from the [repository](https://github.com/shrek-abaper/sap-engineering-skill) |
+| Codex | Copy the complete skill folder into the directory Codex scans |
+| WorkBuddy | Same folder copy |
+| Other `SKILL.md` agents | Use the agent's own skill directory or import UI |
 
-### What the script does
+The agent drives the workflow; the `sap-adt` CLI performs the online ADT calls.
+On Windows, install the CLI with `pip install "sap-adt-cli>=1.5.0,<2.0.0"`
+(Python ≥ 3.10) and copy the skill folder into your agent's skill directory —
+no standalone Windows runtime installer is available yet.
 
-| Step | Action |
-|------|--------|
-| 1 | Checks Node.js ≥ v18, Python 3, and Git are installed (prints guided download links if any are missing) |
-| 2 | Adds Node.js bin and npm global package paths to the user-level `PATH` |
-| 3 | Installs `opencode-ai` globally via `npm install -g opencode-ai` |
-| 4 | Clones this repository to `%USERPROFILE%\.agents\sap-engineering-skill` and creates a directory junction at `%USERPROFILE%\.agents\skills\sap-adt-cli` pointing to the `skills\sap-adt-cli` subfolder |
-| 5 | Installs the `sap-adt` CLI from the clone (`python -m pip install "<clone>"`) and self-tests it via `python -m sap_adt --version` |
-
-### Prerequisites
-
-Install these before running the script:
-
-- **[Node.js v18 LTS or later](https://nodejs.org)** — use default installer options (PATH is checked by default)
-- **[Python 3.10+](https://www.python.org/downloads)** — check **"Add Python to PATH"** during setup
-- **[Git for Windows](https://git-scm.com/download/win)** — use default installer options
-
-### Run the installer
-
-Download [`setup-opencode-abap-cli.bat`](https://github.com/shrek-abaper/sap-engineering-skill/raw/main/setup-opencode-abap-cli.bat) and **double-click** it.  
-The script prints colored status messages and will stop with instructions if any prerequisite is missing.
-
-### Start analyzing SAP code with opencode
-
-After the script completes:
-
-```cmd
-REM Open CMD: press Win+R, type cmd, press Enter
-opencode
-```
-
-Inside opencode, connect to your preferred AI model provider:
-
-```
-/connect
-```
-
-Then start querying your SAP system directly in natural language:
-
-```
-Analyze class ZCL_PAYMENT_PROCESSOR for security vulnerabilities
-```
-
-```
-Read program ZREPORT_UPLOAD and check for SQL injection risks,
-missing authorization checks, and hardcoded credentials
-```
-
-```
-Scan the package ZMYPAYMENT and list all objects with potential security issues
-```
-
-opencode calls the `sap-adt` CLI to fetch ABAP source code from your SAP system via ADT,
-then passes it to the AI model for analysis — no copy-paste required.
-
-### SAP credentials setup (first run)
-
-Run the interactive wizard once (the agent will also suggest it when the CLI reports `CONFIG_MISSING`):
-
-```bash
-sap-adt configure
-```
-
-It prompts locally for:
-
-```
-SAP System URL    — e.g. https://my-sap.example.com:8000
-SAP Username      — dialog user (e.g. DEVELOPER)
-SAP Password      — SAP logon password (hidden input)
-SAP Client        — 3-digit client number (e.g. 100)
-Skip SSL check?   — yes for self-signed / internal certs
-```
-
-Connection details are stored per environment profile in
-`~/.sap-adt-cli/config.json` (non-secret fields only), while **passwords are
-stored in the operating system keystore** — never as plain text. Multiple SAP
-systems (DEV/QAS/PRD) are supported as named profiles — see
-[Credential storage](#credential-storage-keystore) and
-[Multiple SAP environments](#multiple-sap-environments-profiles).
-
-### Compatible AI agents
-
-opencode is one example. `sap-adt-cli` implements the standard Agent Skill interface (`SKILL.md`)
-and integrates with any agent framework that supports custom tools or skills:
-
-| Agent | Notes |
-|-------|-------|
-| [opencode](https://opencode.ai) | Free, open-source. Used in this example. Supports 30+ model providers. |
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Anthropic's official CLI agent — natively supports SKILL.md |
-| [Cursor](https://cursor.com) | Native Agent Skills support; discovers `~/.agents/skills/` |
-| Other agents | SKILL.md is natively supported by opencode and Claude Code; other frameworks may require adaptation |
-
-> ⚠️ **Data compliance note:** ABAP source code may contain core business logic and sensitive data.  
-> Before sending code to cloud-based AI services, confirm compliance with your organization's  
+> **Data compliance note:** ABAP source code may contain core business logic and sensitive data.
+> Before sending code to cloud-based AI services, confirm compliance with your organization's
 > data security policy. For sensitive environments, consider an internally-hosted model.
 
 ---

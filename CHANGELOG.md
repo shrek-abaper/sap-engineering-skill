@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Removed `setup-opencode-abap-cli.bat`. The opencode-specific one-click
+  installer no longer matched the supported agent set (Claude Code, Codex,
+  WorkBuddy, other `SKILL.md` agents). Windows users install the CLI from
+  PyPI and copy the skill folders into their agent's skill directory; the
+  self-contained Windows installer (`packaging/windows/setup.iss`) remains
+  implemented but not yet built or verified.
+
 ## Plugin/docs 1.2.4 — 2026-10-28
 
 - Single-source licensing: removed the four per-skill LICENSE copies. The

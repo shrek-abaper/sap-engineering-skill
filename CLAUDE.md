@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-`sap-engineering-skill` is a monorepo of AI agent skills for SAP ABAP engineering. Each skill follows the `SKILL.md` specification and works with compatible AI agent frameworks (opencode, Claude Code, Cursor).
+`sap-engineering-skill` is a monorepo of AI agent skills for SAP ABAP engineering. Each skill follows the `SKILL.md` specification and works with compatible AI agents (Claude Code, Codex, WorkBuddy).
 
 ### Skills
 
@@ -43,8 +43,7 @@ sap-engineering-skill/
 ├── tests/                        ← unittest suite (incl. distribution contracts)
 ├── compatibility.json            ← per-skill CLI requirement + compatible range
 ├── pyproject.toml                ← single CLI version source
-├── .claude-plugin/               ← marketplace.json + plugin.json (docs-only plugin)
-└── setup-opencode-abap-cli.bat   ← Windows one-click installer
+└── .claude-plugin/               ← marketplace.json + plugin.json (docs-only plugin)
 ```
 
 Generated outputs (`dist/`, per-skill `references/setup.md` +
@@ -256,13 +255,13 @@ See `docs/development/building.md` for the full order. In short:
 separate authorized step (`docs/development/releasing.md`); never push,
 tag, publish or switch the live marketplace without explicit approval.
 
-### Windows Installer
+### Windows
 
-`setup-opencode-abap-cli.bat` performs one-click setup of opencode + this
-skill suite. It installs opencode, clones the repo, `pip install`s the
-`sap-adt` CLI from the clone, and creates symlinks to `~/.agents/skills/`.
-The self-contained installer for users without Python is
-`packaging/windows/setup.iss` (implemented, not yet verified on Windows).
+Windows users install the CLI from PyPI
+(`pip install "sap-adt-cli>=1.5.0,<2.0.0"`, Python ≥ 3.10) and copy the
+skill folders into their agent's skill directory. The self-contained
+installer for users without Python is `packaging/windows/setup.iss`
+(implemented, not yet verified on Windows).
 
 ---
 

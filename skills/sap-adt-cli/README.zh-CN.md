@@ -23,98 +23,24 @@
 
 ---
 
-## Windows 一键安装 — AI 智能体快速上手
+## 与 AI Agent 配合使用
 
-> **示例：[opencode](https://opencode.ai)** — 免费开源的 AI 智能体 — 作为本文的参考配置。  
-> `sap-adt-cli` 以标准 Agent Skill 形式（`SKILL.md`）打包，可与任何支持自定义工具/技能的智能体框架配合使用。
+`sap-adt-cli` 是标准的 Agent Skill（`SKILL.md`）目录。先按“环境要求”安装 CLI，
+再把 Skill 加载到你的 Agent：
 
-`setup-opencode-abap-cli.bat` 是专为 Windows 用户设计的一键安装脚本，全自动完成 opencode 与本技能包的配置。
+| 智能体 | 使用方式 |
+|--------|----------|
+| Claude Code | 通过[本仓库](https://github.com/shrek-abaper/sap-engineering-skill)插件安装 |
+| Codex | 把完整的 Skill 目录复制到 Codex 扫描的位置 |
+| WorkBuddy | 同样复制完整的 Skill 目录 |
+| 其他 `SKILL.md` 智能体 | 使用各自的 Skill 目录或导入界面 |
 
-### 脚本执行内容
+Agent 负责驱动工作流，`sap-adt` CLI 负责执行在线 ADT 调用。
+Windows 上使用 `pip install "sap-adt-cli>=1.5.0,<2.0.0"`（Python ≥ 3.10）安装 CLI，
+再把 Skill 目录复制到 Agent 的 Skill 目录；目前没有独立的 Windows 运行时安装器。
 
-| 步骤 | 操作 |
-|------|------|
-| 1 | 检测 Node.js ≥ v18、Python 3、Git 是否已安装（缺失时打印下载指引） |
-| 2 | 将 Node.js 可执行目录和 npm 全局包路径添加到用户级 `PATH` |
-| 3 | 通过 `npm install -g opencode-ai` 全局安装 opencode |
-| 4 | 将本仓库克隆到 `%USERPROFILE%\.agents\sap-engineering-skill`，并在 `%USERPROFILE%\.agents\skills\sap-adt-cli` 创建目录联接（Junction），指向仓库内的 `skills\sap-adt-cli` 子目录 |
-| 5 | 从本地克隆安装 `sap-adt` CLI（`python -m pip install "<克隆目录>"`），并执行 `python -m sap_adt --version` 自检 |
-
-### 前置软件
-
-运行脚本前，请先安装：
-
-- **[Node.js v18 LTS 或更高版本](https://nodejs.org)** — 使用默认安装选项（默认已勾选添加 PATH）
-- **[Python 3.10+](https://www.python.org/downloads)** — 安装时务必勾选 **"Add Python to PATH"**
-- **[Git for Windows](https://git-scm.com/download/win)** — 使用默认安装选项
-
-### 运行安装脚本
-
-下载 [`setup-opencode-abap-cli.bat`](https://github.com/shrek-abaper/sap-engineering-skill/raw/main/setup-opencode-abap-cli.bat)，**双击运行**即可。  
-脚本将以彩色状态信息引导安装过程；如有前置软件缺失，会自动停止并给出安装提示。
-
-### 使用 opencode 分析 SAP 代码
-
-安装完成后：
-
-```cmd
-REM 打开 CMD：按 Win+R，输入 cmd，回车
-opencode
-```
-
-进入 opencode 后，配置 AI 模型提供商：
-
-```
-/connect
-```
-
-然后即可用自然语言直接查询 SAP 系统：
-
-```
-分析 ZCL_PAYMENT_PROCESSOR 类是否存在安全漏洞
-```
-
-```
-读取程序 ZREPORT_UPLOAD，检查 SQL 注入风险、缺失的权限检查和硬编码凭据
-```
-
-```
-扫描包 ZMYPAYMENT 下的所有对象，列出潜在的安全风险
-```
-
-opencode 会调用 `sap-adt` CLI 通过 ADT 接口从 SAP 系统获取 ABAP 源代码，再交给 AI 模型分析——无需手动复制粘贴。
-
-### SAP 凭据配置（首次使用）
-
-首次使用请运行一次交互式向导（当 CLI 报 `CONFIG_MISSING` 时 Agent 也会提示你执行）：
-
-```bash
-sap-adt configure
-```
-
-向导会逐项询问（密码输入不回显）：
-
-```
-SAP System URL    — 例如 https://my-sap.example.com:8000
-SAP Username      — 对话用户（例如 DEVELOPER）
-SAP Password      — SAP 登录密码
-SAP Client        — 3 位客户端编号（例如 100）
-Skip SSL check?   — 自签名/内部证书选择是
-```
-
-### 支持的 AI 智能体
-
-opencode 仅作为示例。`sap-adt-cli` 实现了标准 Agent Skill 接口（`SKILL.md`），可与任何支持自定义工具或技能的智能体框架集成：
-
-| 智能体 | 说明 |
-|--------|------|
-| [opencode](https://opencode.ai) | 免费开源，本文示例，支持 30+ 模型提供商 |
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Anthropic 官方 CLI 智能体，原生支持 SKILL.md |
-| [Cursor](https://cursor.sh) | AI 代码编辑器，可通过 MCP 工具适配器集成 |
-| 其他智能体 | SKILL.md 为 opencode 和 Claude Code 的原生格式；其他框架可能需要适配 |
-
-> ⚠️ **数据合规提示：** ABAP 源代码可能包含企业核心业务逻辑和敏感数据。  
-> 将代码发送至公网 AI 服务前，请确认符合企业数据安全政策。  
+> **数据合规提示：** ABAP 源代码可能包含企业核心业务逻辑和敏感数据。
+> 将代码发送至公网 AI 服务前，请确认符合企业数据安全政策。
 > 对于敏感环境，建议优先使用公司内网部署的模型底座。
 
 ---
