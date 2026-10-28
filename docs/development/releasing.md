@@ -21,14 +21,6 @@ authorization.** Remote publishing is a separate, human-approved step.
    `npx <pkg>@<version> install` on a clean machine (Node-only).
 4. Upload `PyPI` wheel/sdist, then verify a clean-venv install.
 
-   For the 1.5.0 rename transition only: also build and upload the
-   metadata-only stub for the old `sap-adt` name (it depends on the matching
-   `sap-adt-cli` version, so `pip install -U sap-adt` migrates once):
-
-   ```bash
-   python tools/build_deprecation_stub.py
-   .venv/bin/twine upload dist/release/sap_adt-<cli-version>-py3-none-any.whl
-   ```
 5. Only after the artifacts exist and are verified: point the live
    `.claude-plugin/marketplace.json` at the new archive
    (`source: archive`, real URL + sha256 from
@@ -87,7 +79,7 @@ Guidance:
 
 - CLI: `1.5.0` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.2.0` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.2.1` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

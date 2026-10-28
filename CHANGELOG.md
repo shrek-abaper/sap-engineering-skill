@@ -1,11 +1,22 @@
 # Changelog
 
+## Plugin/docs 1.2.1 — 2026-10-28
+
+- Corrected the migration guidance: the old PyPI name is frozen at 1.4.2 and
+  must be uninstalled before installing `sap-adt-cli`; the 1.5.0
+  deprecation-stub approach was withdrawn because a cross-project
+  `pip install -U sap-adt` deletes the shared package files.
+- Plugin payload regenerated; marketplace digest updated.
+
 ## 1.5.0 — 2026-10-28
 
 - **PyPI distribution renamed** from `sap-adt` to `sap-adt-cli`, matching the
-  npm package. PyPI cannot rename projects, so `sap-adt` stays as a
-  metadata-only deprecation stub (`sap-adt==1.5.0`) that depends on
-  `sap-adt-cli==1.5.0`, giving `pip install -U sap-adt` a one-step migration.
+  npm package. PyPI cannot rename projects, so the old name stays frozen at
+  `1.4.2`. A cross-project `pip install -U sap-adt` is NOT safe: pip installs
+  the new distribution before uninstalling the old one, and the old RECORD
+  then deletes the shared `sap_adt` files and the `sap-adt` script. Migrate
+  with `pip uninstall -y sap-adt` followed by
+  `pip install "sap-adt-cli>=1.5.0,<2.0.0"`.
 - Unchanged: the command is still `sap-adt`, the import package is `sap_adt`,
   configuration stays in `~/.sap-adt-cli`, and every command/output/safety
   contract is identical.
