@@ -3,8 +3,10 @@
 ## PyPI distribution rename — 1.4.x → 1.5.0
 
 The PyPI project was renamed from `sap-adt` to **`sap-adt-cli`** (the npm
-package was already `sap-adt-cli`). PyPI cannot rename a project, so the old
-name remains frozen at **1.4.2**.
+package was already `sap-adt-cli`). PyPI cannot rename a project, and the old
+project was **removed from PyPI** after the rename — `pip install sap-adt`
+now fails with "no matching distribution". Existing 1.4.x installations keep
+working until you uninstall them.
 
 **Do not run `pip install -U sap-adt`.** Both projects provide the same
 import package (`sap_adt`); pip installs the new distribution before

@@ -57,7 +57,8 @@ in the npm channel is this package's own wizard (fetch → SHA-256 verify →
 atomic install → self-test), not an npm built-in.
 
 > Channel status (2026-10-28): npm `sap-adt-cli` and PyPI `sap-adt-cli`
-> (renamed from `sap-adt`, now frozen at 1.4.2) are live and the GitHub
+> (renamed from `sap-adt`; the old project was removed from PyPI after the
+> rename) are live and the GitHub
 > Release carries the Linux x86_64 portable runtime, the plugin/skill zips
 > and the checksums. To migrate from the old name run
 > `pip uninstall -y sap-adt` first, then install `sap-adt-cli` — do not use
