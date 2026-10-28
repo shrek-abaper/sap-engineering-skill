@@ -17,8 +17,8 @@ works from an installed (also editable) package.
 ## From a built artifact
 
 ```bash
-python -m build                      # dist/sap_adt-<ver>-py3-none-any.whl + .tar.gz
-python -m pip install dist/sap_adt-<ver>-py3-none-any.whl
+python -m build                      # dist/sap_adt_cli-<ver>-py3-none-any.whl + .tar.gz
+python -m pip install dist/sap_adt_cli-<ver>-py3-none-any.whl
 ```
 
 The wheel carries the same implementation as the frozen runtime; both read

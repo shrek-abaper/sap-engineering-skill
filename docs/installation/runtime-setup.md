@@ -31,9 +31,9 @@ prints which source is active.
 
 | Channel | When to use | Prerequisites | Command |
 |---|---|---|---|
-| npm (global) | Node.js ≥ 18 is available; you want the `sap-adt` command on PATH | Node.js only (no Python) | `npm install -g "sap-adt-cli@^1.4.0"`, then `sap-adt install` |
-| npx (no global install) | Try it without changing PATH | Node.js ≥ 18 | `npx "sap-adt-cli@^1.4.0" install`, then prefix every call: `npx "sap-adt-cli@^1.4.0" <command>` |
-| PyPI (wheel/sdist) | Python ≥ 3.10 available | Python | `pip install "sap-adt>=1.4.0,<2.0.0"` |
+| npm (global) | Node.js ≥ 18 is available; you want the `sap-adt` command on PATH | Node.js only (no Python) | `npm install -g "sap-adt-cli@^1.5.0"`, then `sap-adt install` |
+| npx (no global install) | Try it without changing PATH | Node.js ≥ 18 | `npx "sap-adt-cli@^1.5.0" install`, then prefix every call: `npx "sap-adt-cli@^1.5.0" <command>` |
+| PyPI (wheel/sdist) | Python ≥ 3.10 available | Python | `pip install "sap-adt-cli>=1.5.0,<2.0.0"` |
 | Portable archive (Linux) | No dev environment | Linux x86_64, glibc ≥ 2.39 build | download the newest 1.x `sap-adt-<ver>-linux-x86_64.tar.gz` from the release page and unpack it, run inside it `./sap-adt/sap-adt` |
 | Windows installer | No dev environment | Windows 10+ x64 | newest 1.x `sap-adt-<ver>-windows-x86_64-setup.exe` — **not built yet** (needs a Windows build host and a real install test) |
 | Python source | Developers, contributors | Python ≥ 3.10 | `pip install -e .` from the repo |
@@ -48,9 +48,10 @@ All channels install the same runtime built from the same commit. `install`
 in the npm channel is this package's own wizard (fetch → SHA-256 verify →
 atomic install → self-test), not an npm built-in.
 
-> Channel status (2026-10-28): npm and PyPI are live and the GitHub Release
-> carries the Linux x86_64 portable runtime, the plugin/skill zips and the
-> checksums. The Windows installer and the macOS runtime are **not built
+> Channel status (2026-10-28): npm `sap-adt-cli` and PyPI `sap-adt-cli`
+> (renamed from `sap-adt`, which remains as a deprecation stub) are live and
+> the GitHub Release carries the Linux x86_64 portable runtime, the
+> plugin/skill zips and the checksums. The Windows installer and the macOS runtime are **not built
 > yet** — do not promise them until a real build and install smoke pass on
 > those systems.
 
@@ -67,8 +68,8 @@ sap-adt status               # local configuration state — this does NOT
 
 If you installed through **npx** instead of a global/local install, there is
 no `sap-adt` entry on PATH — prefix the commands:
-`npx "sap-adt-cli@^1.4.0" <command>`, or switch to
-`npm install -g "sap-adt-cli@^1.4.0"` for the bare `sap-adt` command. npx caches the
+`npx "sap-adt-cli@^1.5.0" <command>`, or switch to
+`npm install -g "sap-adt-cli@^1.5.0"` for the bare `sap-adt` command. npx caches the
 package and the runtime you installed under `~/.npm/_npx/`; clearing that
 cache requires running `install` again.
 

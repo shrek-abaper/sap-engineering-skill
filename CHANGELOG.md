@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.5.0 — 2026-10-28
+
+- **PyPI distribution renamed** from `sap-adt` to `sap-adt-cli`, matching the
+  npm package. PyPI cannot rename projects, so `sap-adt` stays as a
+  metadata-only deprecation stub (`sap-adt==1.5.0`) that depends on
+  `sap-adt-cli==1.5.0`, giving `pip install -U sap-adt` a one-step migration.
+- Unchanged: the command is still `sap-adt`, the import package is `sap_adt`,
+  configuration stays in `~/.sap-adt-cli`, and every command/output/safety
+  contract is identical.
+- Compatible range is now `>=1.5.0,<2.0.0`; install docs use
+  `pip install "sap-adt-cli>=1.5.0,<2.0.0"` and `npm ... "sap-adt-cli@^1.5.0"`.
+
+## Plugin/docs 1.2.0 — 2026-10-28
+
+- Install guidance, compatibility snapshots and the migration notes reflect
+  the PyPI rename; plugin payload regenerated and marketplace digest updated.
+
 ## 1.4.2 — 2026-10-28
 
 - `sap-adt --help` now documents the credential resolution order (process

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import importlib.metadata
 
-_DIST_NAME = "sap-adt"
+_DIST_NAME = "sap-adt-cli"
 _FALLBACK = "0.0.0+uninstalled"
 
 

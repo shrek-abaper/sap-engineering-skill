@@ -16,7 +16,7 @@ The package is named `sap-adt-cli`; its bin is **`sap-adt`**.
 **Global command (recommended):**
 
 ```bash
-npm install -g "sap-adt-cli@^1.4.0"
+npm install -g "sap-adt-cli@^1.5.0"
 sap-adt install
 ```
 
@@ -24,8 +24,8 @@ sap-adt install
 `sap-adt` to PATH):
 
 ```bash
-npx "sap-adt-cli@^1.4.0" install
-npx "sap-adt-cli@^1.4.0" --version
+npx "sap-adt-cli@^1.5.0" install
+npx "sap-adt-cli@^1.5.0" --version
 ```
 
 `install` is this package's own wizard (not an npm/npx built-in): it matches
@@ -43,7 +43,7 @@ sap-adt configure            # interactive; password goes to the OS keystore
 sap-adt credentials doctor   # backend diagnostics (no secrets shown)
 ```
 
-With npx, prefix each command: `npx "sap-adt-cli@^1.4.0" <command>`.
+With npx, prefix each command: `npx "sap-adt-cli@^1.5.0" <command>`.
 
 Configuration and credentials live in `~/.sap-adt-cli/` and the OS keystore —
 never inside this package. Upgrading the npm package requires re-running

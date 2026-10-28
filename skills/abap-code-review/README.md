@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED cli-setup -->
 <!-- GENERATED from docs/installation/runtime-setup.md + compatibility.json by tools/sync_skill_runtime_docs.py — do not edit; run the tool to refresh -->
 
-This skill needs **no CLI** — it works fully offline. Compatible CLI range: `>=1.4.0,<2.0.0`.
+This skill needs **no CLI** — it works fully offline. Compatible CLI range: `>=1.5.0,<2.0.0`.
 Install/readiness guide: [`references/setup.md`](references/setup.md).
 <!-- END GENERATED cli-setup -->
 

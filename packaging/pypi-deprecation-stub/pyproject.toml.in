@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Metadata-only stub for the OLD PyPI project name. PyPI cannot rename a
+# project, so publishing this stub makes `pip install -U sap-adt` pull the
+# renamed distribution. The CLI command remains `sap-adt`.
+name = "sap-adt"
+version = "{{version}}"
+description = "DEPRECATED: renamed to sap-adt-cli. This package only pulls the new distribution."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "shrek-abaper" }]
+requires-python = ">=3.10"
+dependencies = ["sap-adt-cli=={{version}}"]
+
+[tool.setuptools]
+packages = []

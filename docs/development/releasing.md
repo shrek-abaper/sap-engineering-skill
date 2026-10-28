@@ -20,6 +20,15 @@ authorization.** Remote publishing is a separate, human-approved step.
 3. `npm publish` the staged package (`dist/npm/`), then verify
    `npx <pkg>@<version> install` on a clean machine (Node-only).
 4. Upload `PyPI` wheel/sdist, then verify a clean-venv install.
+
+   For the 1.5.0 rename transition only: also build and upload the
+   metadata-only stub for the old `sap-adt` name (it depends on the matching
+   `sap-adt-cli` version, so `pip install -U sap-adt` migrates once):
+
+   ```bash
+   python tools/build_deprecation_stub.py
+   .venv/bin/twine upload dist/release/sap_adt-<cli-version>-py3-none-any.whl
+   ```
 5. Only after the artifacts exist and are verified: point the live
    `.claude-plugin/marketplace.json` at the new archive
    (`source: archive`, real URL + sha256 from
@@ -66,19 +75,19 @@ Guidance:
   (plus *Bypass 2FA* for unattended publishing), set an expiry, and scope it
   to `sap-adt-cli` once the package exists.
 - PyPI: the first upload of a new project needs an account-scoped token;
-  replace it with a **project-scoped** token (`sap-adt`) afterwards.
+  replace it with a **project-scoped** token (`sap-adt-cli`) afterwards.
 - Rotate the tokens on a schedule and immediately after any exposure
   (chat, logs, screenshots). Files must stay 600 and outside the repo.
 - The OS keyring is not usable in this WSL2 setup (`keyring.backends.fail`),
   and twine's keyring integration therefore falls back to prompting.
 - After setup, `npm publish` (from `dist/npm/`) and
-  `.venv/bin/twine upload dist/release/sap_adt-<ver>*` work non-interactively.
+  `.venv/bin/twine upload dist/release/sap_adt_cli-<ver>*` work non-interactively.
 
 ## Versioning
 
-- CLI: `1.4.2` (single source: `pyproject.toml`; runtime/npm/installers
+- CLI: `1.5.0` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.1.11` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.2.0` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

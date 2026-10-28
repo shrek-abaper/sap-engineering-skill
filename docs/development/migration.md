@@ -1,4 +1,20 @@
-# Migration notes — CLI 1.3.x → 1.4.0
+# Migration notes
+
+## PyPI distribution rename — 1.4.x → 1.5.0
+
+The PyPI project was renamed from `sap-adt` to **`sap-adt-cli`** (the npm
+package was already `sap-adt-cli`). PyPI cannot rename a project, so:
+
+- Install/upgrade with `pip install "sap-adt-cli>=1.5.0,<2.0.0"`.
+- The old `sap-adt` name stays as a metadata-only **deprecation stub**
+  (`sap-adt==1.5.0`) that depends on `sap-adt-cli==1.5.0`; `pip install -U
+  sap-adt` therefore migrates once, but new installs should use the new name.
+- Nothing else changes: the command is still **`sap-adt`**, the import
+  package is still `sap_adt`, and configuration stays in `~/.sap-adt-cli`.
+
+---
+
+## CLI 1.3.x → 1.4.0
 
 ## What changed
 

@@ -24,7 +24,7 @@ _SRC = os.path.join(_REPO_ROOT, "src")
 
 block_cipher = None
 
-_datas = copy_metadata("sap-adt")
+_datas = copy_metadata("sap-adt-cli")
 
 a = Analysis(
     [os.path.join(_SRC, "sap_adt", "__main__.py")],

@@ -95,8 +95,8 @@ def main() -> int:
     artifacts: list[dict] = []
 
     # --- Python package + runtime archives ---------------------------------
-    wheels = sorted((ROOT / "dist").glob("sap_adt-*.whl"))
-    sdists = sorted((ROOT / "dist").glob("sap_adt-*.tar.gz"))
+    wheels = sorted((ROOT / "dist").glob("sap_adt_cli-*.whl"))
+    sdists = sorted((ROOT / "dist").glob("sap_adt_cli-*.tar.gz"))
     if not wheels or not sdists:
         print("[build_manifest] run `python -m build` first (wheel/sdist missing)",
               file=sys.stderr)

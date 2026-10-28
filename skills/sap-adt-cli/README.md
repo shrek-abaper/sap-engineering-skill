@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED cli-setup -->
 <!-- GENERATED from docs/installation/runtime-setup.md + compatibility.json by tools/sync_skill_runtime_docs.py — do not edit; run the tool to refresh -->
 
-Online operations need the `sap-adt` CLI. Compatible CLI range: `>=1.4.0,<2.0.0`.
+Online operations need the `sap-adt` CLI. Compatible CLI range: `>=1.5.0,<2.0.0`.
 Install/readiness guide: [`references/setup.md`](references/setup.md).
 <!-- END GENERATED cli-setup -->
 
@@ -22,8 +22,8 @@ explicit capability flags and per-operation confirmation.
 ## Requirements
 
 - The `sap-adt` CLI, installed once (see [references/setup.md](references/setup.md)):
-  - npm: `npm install -g "sap-adt-cli@^1.4.0"` (provides the `sap-adt` command) — Node.js ≥ 18, no Python. npx also works (`npx "sap-adt-cli@^1.4.0" install`) but keeps no PATH command, so prefix later calls with `npx "sap-adt-cli@^1.4.0"`
-  - PyPI: `pip install "sap-adt>=1.4.0,<2.0.0"` — Python ≥ 3.10
+  - npm: `npm install -g "sap-adt-cli@^1.5.0"` (provides the `sap-adt` command) — Node.js ≥ 18, no Python. npx also works (`npx "sap-adt-cli@^1.5.0" install`) but keeps no PATH command, so prefix later calls with `npx "sap-adt-cli@^1.5.0"`
+  - PyPI: `pip install "sap-adt-cli>=1.5.0,<2.0.0"` — Python ≥ 3.10
   - Linux portable archive from the release page (no Python/Node)
 - A SAP system (on-premise ECC / S/4HANA, or BTP ABAP) with ADT services activated
 - A SAP dialog user with the `SAP_ADT_BASE` role (or equivalent)
@@ -146,9 +146,9 @@ and integrates with any agent framework that supports custom tools or skills:
 
 ```bash
 # 1. Install the CLI once (pick one channel; details in references/setup.md)
-pip install "sap-adt>=1.4.0,<2.0.0"            # Python ≥ 3.10
-# or: npm install -g "sap-adt-cli@^1.4.0" && sap-adt install   # Node.js ≥ 18, no Python
-#     (npx: npx "sap-adt-cli@^1.4.0" install, then npx "sap-adt-cli@^1.4.0" <command>)
+pip install "sap-adt-cli>=1.5.0,<2.0.0"            # Python ≥ 3.10
+# or: npm install -g "sap-adt-cli@^1.5.0" && sap-adt install   # Node.js ≥ 18, no Python
+#     (npx: npx "sap-adt-cli@^1.5.0" install, then npx "sap-adt-cli@^1.5.0" <command>)
 
 # 2. Configure credentials (interactive wizard — password is not echoed and is
 #    saved to the OS keystore; add more systems later with: configure --profile qas / prd)

@@ -41,11 +41,11 @@ Decide the task mode first:
        absolute install path from references/setup.md. Do not blindly
        reinstall. Only after confirming absence, guide the install and ASK
        before running anything:
-       * Node.js ≥ 18 available → preferred: `npx "sap-adt-cli@^1.4.0" install`
+       * Node.js ≥ 18 available → preferred: `npx "sap-adt-cli@^1.5.0" install`
          (the caret range is the compatible range from
          references/runtime-compatibility.json and resolves to the newest
          compatible release; never use an unbounded `@latest`).
-       * No Node.js → `pip install "sap-adt>=1.4.0,<2.0.0"` (Python ≥ 3.10) or the
+       * No Node.js → `pip install "sap-adt-cli>=1.5.0,<2.0.0"` (Python ≥ 3.10) or the
          newest 1.x portable archive from the release page.
        Never install silently. After installing, re-run `sap-adt --version`
        via the absolute install path (PATH may not have refreshed yet).

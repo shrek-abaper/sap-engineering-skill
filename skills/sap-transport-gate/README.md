@@ -3,7 +3,7 @@
 <!-- BEGIN GENERATED cli-setup -->
 <!-- GENERATED from docs/installation/runtime-setup.md + compatibility.json by tools/sync_skill_runtime_docs.py — do not edit; run the tool to refresh -->
 
-Offline review works without it; online collection needs the `sap-adt` CLI. Compatible CLI range: `>=1.4.0,<2.0.0`.
+Offline review works without it; online collection needs the `sap-adt` CLI. Compatible CLI range: `>=1.5.0,<2.0.0`.
 Install/readiness guide: [`references/setup.md`](references/setup.md).
 <!-- END GENERATED cli-setup -->
 
@@ -109,9 +109,9 @@ In all modes: No AI-side SAP login; AI never holds or requests credentials. In O
 ### 1. Install the CLI once
 
 ```bash
-pip install "sap-adt>=1.4.0,<2.0.0"            # Python ≥ 3.10
-# or: npm install -g "sap-adt-cli@^1.4.0" && sap-adt install   # Node.js ≥ 18, no Python
-#     (npx: npx "sap-adt-cli@^1.4.0" install, then prefix calls)
+pip install "sap-adt-cli>=1.5.0,<2.0.0"            # Python ≥ 3.10
+# or: npm install -g "sap-adt-cli@^1.5.0" && sap-adt install   # Node.js ≥ 18, no Python
+#     (npx: npx "sap-adt-cli@^1.5.0" install, then prefix calls)
 ```
 
 There is no auto-install of dependencies; see `references/setup.md` for all channels.

@@ -24,8 +24,8 @@ check (see `skills/<name>/references/setup.md`):
 
 ## Compatibility
 
-- Plugin/docs: 1.1.11.
-- CLI range: `>=1.4.0,<2.0.0`.
+- Plugin/docs: 1.2.0.
+- CLI range: `>=1.5.0,<2.0.0`.
 - The live marketplace entry uses the `archive` source
   (`sap-engineering-skills-<ver>.zip` + SHA-256), which requires Claude Code
   ≥ 2.1.224 (verified against the official marketplace reference). Older
