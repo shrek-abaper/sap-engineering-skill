@@ -36,7 +36,7 @@ Tests: **293** (2026-09-17; was 232 at batch 5). CI also runs
 `python tests/check_contract.py` (18 codes / 36 commands / 8 kinds /
 21 command→kind declarations).
 
-## Twelve verified ADT protocol facts (not in SAP's public documentation)
+## Fourteen verified ADT protocol facts (not in SAP's public documentation)
 
 Capture system: S/4HANA 2021 / SAP_BASIS 7.56, client 400.
 Canonical copy: `skills/sap-adt-cli/references/adt_api.md` (dated old→new table plus the
@@ -138,6 +138,19 @@ could only be learned by probing a live system.
     while the user owned that D request. CLI fixed 2026-09-17
     (`--package`/`--ref` required, `--category` removed); whether REF is
     truly mandatory and how real packages behave remain unverified.
+13. **Type group source** — GET `/sap/bc/adt/typegroups/groups/{name}/source/main`
+    → 404 `ExceptionResourceNotFound` on both DEV and QAS (Basis 7.56);
+    the served resource is `/sap/bc/adt/ddic/typegroups/{name}/source/main`
+    (`text/plain`), matching the discovery root `/sap/bc/adt/ddic/typegroups`.
+    `doctor --coverage` declared the command "available" because it checks
+    the root, not the sub-path. The command had no fixture or test before,
+    so 327 offline tests stayed green. CLI fixed 2026-10-28 (fact added then).
+14. **Package contents** — `parent_name` was pre-encoded with
+    `quote(name, safe="")` and then passed through the params dict, which
+    encodes again: `$TMP` → `%2524TMP`. The server answers **200 with an
+    empty body** (reported as `PARSE_FAILED`) even though the package has
+    29 KB of contents. Pass the raw name and let the HTTP client encode it
+    once. Reproduced on DEV and QAS. CLI fixed 2026-10-28.
 
 ## Command × real-machine verification matrix (34 commands)
 

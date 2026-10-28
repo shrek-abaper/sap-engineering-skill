@@ -78,7 +78,7 @@ _LIST_KEY = {"fields":"fields","objects":"objects","rows":"rows",
 36 Click commands, 8 parser modules, 18 error codes. `check_contract.py`
 asserts all four tables stay aligned with SKILL.md and fails CI on drift.
 
-## 3. Twelve verified protocol facts (S/4HANA 2021 / Basis 7.56)
+## 3. Fourteen verified protocol facts (S/4HANA 2021 / Basis 7.56)
 
 Canonical copy in `skills/sap-adt-cli/references/adt_api.md` (dated old→new table, with the
 write-side "2xx ≠ completed" and read-side "empty ≠ absent" rules) and
@@ -96,6 +96,8 @@ write-side "2xx ≠ completed" and read-side "empty ≠ absent" rules) and
 10. Unlock: `POST {obj}?_action=UNLOCK&lockHandle=`. 200 empty ≠ released: foreign-context unlock is a silent no-op; same-session `finally` release was confirmed by a fresh-process re-lock 200; cross-process recovery needs the original cookie jar.
 11. Activation: `POST /activation?method=activate&preauditRequested=true` (bare POST → 400); no lock/shared session needed; verify by inactiveobjects/`version` readback, not 200.
 12. Create transport: ASX `CreateCorrectionRequest` at `POST /cts/transports` (`DATA{DEVCLASS,REQUEST_TEXT,REF,OPERATION=I}`, Accept text/plain); the old `cts.transport.request+xml` document → 400. CLI `--package`/`--ref` required; REF mandatory-ness and real-package behavior unprobed.
+13. Type group source: `GET /sap/bc/adt/typegroups/groups/{name}/source/main` → 404 on DEV and QAS; `GET /sap/bc/adt/ddic/typegroups/{name}/source/main` → 200 text/plain (matches discovery root). Coverage checked only the root, and no fixture/test existed; fixed 2026-10-28.
+14. Package contents: pre-encoding `parent_name` with `quote(name, safe="")` and then passing it through the params dict double-encodes it (`$TMP` → `%2524TMP`); the server returns 200 with an empty body (seen as PARSE_FAILED). Pass the raw name and let the HTTP client encode once. Fixed 2026-10-28.
 
 ## 4. Remaining engineering backlog (three items)
 

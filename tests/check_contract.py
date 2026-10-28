@@ -302,7 +302,7 @@ def _section(text: str, heading: str) -> str:
 # Protocol fact count: adt_api.md table vs handoff §3 list vs summary list,
 # plus the word-number in the two headings.
 _NUM_WORDS = {"six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-              "eleven": 11, "twelve": 12, "thirteen": 13}
+              "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14}
 
 adt_api_text = ADT_API.read_text(encoding="utf-8")
 fact_rows = [int(n) for n in re.findall(

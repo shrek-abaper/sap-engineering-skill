@@ -151,7 +151,7 @@ def get_package(package_name: str) -> AdtResult:
             method="POST",
             params={
                 "parent_type": "DEVC/K",
-                "parent_name": _enc(package_name),
+                "parent_name": package_name,
                 "withShortDescriptions": "true",
             },
         )
@@ -540,7 +540,7 @@ def get_cds_view(name: str) -> AdtResult:
 def get_type_group(name: str) -> AdtResult:
     try:
         resp = make_adt_request(
-            f"{_base()}/sap/bc/adt/typegroups/groups/{_enc(name)}/source/main"
+            f"{_base()}/sap/bc/adt/ddic/typegroups/{_enc(name)}/source/main"
         )
         return _source_result(resp, "type-group", name)
     except Exception as e:

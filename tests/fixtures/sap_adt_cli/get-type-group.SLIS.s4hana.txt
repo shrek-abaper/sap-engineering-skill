@@ -1,0 +1,540 @@
+type-pool slis .
+
+types: slis_list_type(1) type n,
+       slis_char_1(1) type c,
+       slis_text40(40) type c.
+
+types: slis_tabname(30) type c,
+       slis_fieldname(30) type c,
+       slis_sel_tab_field(60) type c,
+       slis_formname(30) type c,
+       slis_entry(60) type c,
+       slis_edit_mask(60) type c,
+       slis_coldesc(4) type c.
+
+*Accessibility
+types: slis_qinfo_alv type alv_s_qinf,
+       slis_t_qinfo_alv type slis_qinfo_alv occurs 0.
+
+*types: begin of slis_filtered_entries,
+*         index type i,
+*       end of slis_filtered_entries.
+types: slis_t_filtered_entries type i occurs 0.
+
+*--- Structure for additional fieldcat
+types: begin of slis_add_fieldcat,
+         fieldname type slis_fieldname,
+         web_field type slis_fieldname,
+         href_hndl type i,
+       end of slis_add_fieldcat.
+types: slis_t_add_fieldcat type slis_add_fieldcat occurs 0.
+
+*--- Structure for reprep-initialization
+types: begin of slis_reprep_id,
+         tool(2) type c,
+         appl(4) type c,
+         subc(2) type c,
+         onam(54) type c,
+       end of slis_reprep_id.
+
+types: begin of slis_reprep_communication,
+         stop(1) type c,
+       end of slis_reprep_communication.
+
+*** Structure for colors
+types: begin of slis_color,
+         col type i,
+         int type i,
+         inv type i,
+       end of slis_color.
+
+types: begin of slis_coltypes,
+         heacolfir      type slis_color, " heading_cols_first
+         heacolnex      type slis_color, " heading_cols_nex
+         hearowfir      type slis_color, " heading_rows_first
+         hearownex      type slis_color, " heading_rows_next
+         lisbodfir      type slis_color, " list_body_first
+         lisbodnex      type slis_color, " list_body_next
+         lisbod         type slis_color, " list_body
+         higcolkey      type slis_color, " highlight_col_key
+         higcol         type slis_color, " highlight_col
+         higrow         type slis_color, " highlight_row
+         higsum         type slis_color, " highlight_sum
+         higsumhig      type slis_color, " highlight_sum_high
+         higsumlow      type slis_color, " highlight_sum_low
+         higins         type slis_color, " highlight_inserted
+         higpos         type slis_color, " highlight_positive
+         higneg         type slis_color, " highlight_negative
+         hig            type slis_color, " highlight
+         heahie         type slis_color, " heading_hier
+         lisbodhie      type slis_color, " list_body_hierinfo
+       end of slis_coltypes.
+
+*** Fieldcat
+types: begin of slis_fieldcat_main0,
+         row_pos        like sy-curow, " output in row
+         col_pos        like sy-cucol, " position of the column
+         fieldname      type slis_fieldname,
+         tabname        type slis_tabname,
+         currency(5)    type c,
+         cfieldname     type slis_fieldname, " field with currency unit
+         ctabname       type slis_tabname,   " and table
+         ifieldname     type slis_fieldname, " initial column
+         quantity(3)    type c,
+         qfieldname     type slis_fieldname, " field with quantity unit
+         qtabname       type slis_tabname,   " and table
+         round          type i,        " round in write statement
+         exponent(3)       type c,     " exponent for floats
+         key(1)         type c,        " column with key-color
+         icon(1)        type c,        " as icon
+         symbol(1)      type c,        " as symbol
+         checkbox(1)    type c,        " as checkbox
+         just(1)        type c,        " (R)ight (L)eft (C)ent.
+         lzero(1)       type c,        " leading zero
+         no_sign(1)     type c,        " write no-sign
+         no_zero(1)     type c,        " write no-zero
+         no_convext(1)  type c,
+         edit_mask      type slis_edit_mask,                "
+         emphasize(4)   type c,        " emphasize
+         fix_column(1)   type c,       " Spalte fixieren
+         do_sum(1)      type c,        " sum up
+         no_out(1)      type c,        " (O)blig.(X)no out
+         tech(1)        type c,        " technical field
+         outputlen      like dd03p-outputlen,
+         offset         type dd03p-outputlen,     " offset
+         seltext_l      like dd03p-scrtext_l, " long key word
+         seltext_m      like dd03p-scrtext_m, " middle key word
+         seltext_s      like dd03p-scrtext_s, " short key word
+         ddictxt(1)     type c,        " (S)hort (M)iddle (L)ong
+         rollname       like dd03p-rollname,
+         datatype       like dd03p-datatype,
+         inttype        like dd03p-inttype,
+         intlen         like dd03p-intlen,
+         lowercase      like dd03p-lowercase,
+         decfloat_style type outputstyle,          " B20K8A2GF0
+         parameter0     type char30,
+         parameter1     type char30,
+         parameter2     type char30,
+         parameter3     type char30,
+         parameter4     type char30,
+         parameter5     type int4,
+         parameter6     type int4,
+         parameter7     type int4,
+         parameter8     type int4,
+         parameter9     type int4,
+       end of slis_fieldcat_main0.
+
+types: begin of slis_fieldcat_main1,
+         ref_fieldname  like dd03p-fieldname,
+         ref_tabname    like dd03p-tabname,
+         roundfieldname type slis_fieldname,
+         roundtabname   type slis_tabname,
+         decimalsfieldname type slis_fieldname,
+         decimalstabname   type slis_tabname,
+         decimals_out(6)   type c,     " decimals in write statement
+         text_fieldname type slis_fieldname,
+         reptext_ddic   like dd03p-reptext,   " heading (ddic)
+         ddic_outputlen like dd03p-outputlen,
+       end of slis_fieldcat_main1.
+
+types: begin of slis_fieldcat_main.
+include type slis_fieldcat_main0.
+include type slis_fieldcat_main1.
+types: end of slis_fieldcat_main.
+
+types: begin of slis_fieldcat_alv_spec,
+         key_sel(1)     type c,        " field not obligatory
+         no_sum(1)      type c,        " do not sum up
+         sp_group(4)    type c,        " group specification
+         reprep(1)      type c,        " selection for rep/rep
+         input(1)       type c,        " input
+         edit(1)        type c,        " internal use only
+         hotspot(1)     type c,        " hotspot
+       end of slis_fieldcat_alv_spec.
+
+types: begin of slis_fieldcat_alv.
+include type slis_fieldcat_main.
+include type slis_fieldcat_alv_spec.
+types: end of slis_fieldcat_alv.
+
+types: begin of slis_fieldcat_alv1.
+include type slis_fieldcat_main1.
+types: end of slis_fieldcat_alv1.
+
+types: slis_t_fieldcat_alv type slis_fieldcat_alv occurs 1.
+
+* Events for Callback
+types: begin of slis_event_exit.
+types:   ucomm like sy-ucomm,
+         before(1) type c,
+         after(1) type c,
+       end of slis_event_exit.
+types: slis_t_event_exit type slis_event_exit occurs 1.
+
+* Callback Interface structure for non display subtotals text
+types: begin of slis_subtot_text,
+         criteria type slis_fieldname,
+         keyword  like dd03p-reptext,
+         criteria_text(255) type c,
+         max_len  like dd03p-outputlen,
+         display_text_for_subtotal(255) type c,
+       end of slis_subtot_text.
+
+*** Layout
+types: begin of slis_print_alv0,
+         print(1) type c,              " print to spool
+         prnt_title(1) type c,         " moment to print the title
+       end of slis_print_alv0.
+
+types: begin of slis_print_alv1,
+         no_print_selinfos(1) type c,  " display no selection infos
+         no_coverpage(1) type c,                            "
+         no_new_page(1) type c,                             "
+         reserve_lines type i,         " lines reserved for end of page
+         no_print_listinfos(1) type c, " display no listinfos
+         no_change_print_params(1) type c,  " don't change linesize
+         no_print_hierseq_item(1) type c,  "don't expand item
+         print_ctrl type ALV_S_Pctl,
+       end of slis_print_alv1.
+
+types: begin of slis_print_alv.
+include type alv_s_prnt.
+include type slis_print_alv1.
+types: end of slis_print_alv.
+
+types: begin of slis_layout_main,
+         dummy,
+       end of slis_layout_main.
+
+types: begin of slis_layout_alv_spec0,
+         no_colhead(1) type c,         " no headings
+         no_hotspot(1) type c,         " headings not as hotspot
+         zebra(1) type c,              " striped pattern
+         no_vline(1) type c,           " columns separated by space
+         no_hline(1) type c,        "rows separated by space B20K8A0N5D
+         cell_merge(1) type c,         " not suppress field replication
+         edit(1) type c,               " for grid only
+         edit_mode(1) type c,          " for grid only
+         numc_sum(1)     type c,       " totals for NUMC-Fields possib.
+         no_input(1) type c,           " only display fields
+         f2code like sy-ucomm,                              "
+         reprep(1) type c,             " report report interface active
+         no_keyfix(1) type c,          " do not fix keycolumns
+         expand_all(1) type c,         " Expand all positions
+         no_author(1) type c,          " No standard authority check
+*        PF-status
+         def_status(1) type c,         " default status  space or 'A'
+         item_text(20) type c,         " Text for item button
+         countfname type lvc_fname,
+       end of slis_layout_alv_spec0.
+
+types: begin of slis_layout_alv_spec1,
+*        Display options
+         colwidth_optimize(1) type c,
+         no_min_linesize(1) type c,    " line size = width of the list
+         min_linesize like sy-linsz,   " if initial min_linesize = 80
+         max_linesize like sy-linsz,   " Default 250
+         window_titlebar like sy-title,
+         no_uline_hs(1) type c,
+*        Exceptions
+         lights_fieldname type slis_fieldname," fieldname for exception
+         lights_tabname type slis_tabname, " fieldname for exception
+         lights_rollname like dfies-rollname," rollname f. exceptiondocu
+         lights_condense(1) type c,    " fieldname for exception
+*        Sums
+         no_sumchoice(1) type c,       " no choice for summing up
+         no_totalline(1) type c,       " no total line
+         no_subchoice(1) type c,       " no choice for subtotals
+         no_subtotals(1) type c,       " no subtotals possible
+         no_unit_splitting type c,     " no sep. tot.lines by inh.units
+         totals_before_items type c,   " diplay totals before the items
+         totals_only(1) type c,        " show only totals
+         totals_text(60) type c,       " text for 1st col. in total line
+         subtotals_text(60) type c,    " text for 1st col. in subtotals
+*        Interaction
+         box_fieldname type slis_fieldname, " fieldname for checkbox
+         box_tabname type slis_tabname," tabname for checkbox
+         box_rollname like dd03p-rollname," rollname for checkbox
+         expand_fieldname type slis_fieldname, " fieldname flag 'expand'
+         hotspot_fieldname type slis_fieldname, " fieldname flag hotspot
+         confirmation_prompt,          " confirm. prompt when leaving
+         key_hotspot(1) type c,        " keys as hotspot " K_KEYHOT
+         flexible_key(1) type c,       " key columns movable,...
+         group_buttons(1) type c,      " buttons for COL1 - COL5
+         get_selinfos(1) type c,       " read selection screen
+         group_change_edit(1) type c,  " Settings by user for new group
+         no_scrolling(1) type c,       " no scrolling
+*        Detailed screen
+         detail_popup(1) type c,       " show detail in popup
+         detail_initial_lines(1) type c, " show also initial lines
+         detail_titlebar like sy-title," Titlebar for detail
+*        Display variants
+         header_text(20) type c,       " Text for header button
+         default_item(1) type c,       " Items as default
+*        colour
+         info_fieldname type slis_fieldname, " infofield for listoutput
+         coltab_fieldname type slis_fieldname, " colors
+*        others
+         list_append(1) type c,       " no call screen
+         xifunckey type aqs_xikey,    " eXtended interaction(SAPQuery)
+         xidirect type flag,          " eXtended INTeraction(SAPQuery)
+         dtc_layout type dtc_s_layo,  "Layout for configure the Tabstip
+         allow_switch_to_list(1) type c, "ACC: Switch from FullGrid to List
+       end of slis_layout_alv_spec1.
+
+types: begin of slis_layout_alv_spec.
+include type slis_layout_alv_spec0.
+include type slis_layout_alv_spec1.
+types: end of slis_layout_alv_spec.
+
+types: begin of slis_layout_alv.
+include type slis_layout_main.
+include type slis_layout_alv_spec.
+types: end of slis_layout_alv.
+
+types: begin of slis_layout_alv1.
+include type slis_layout_main.
+include type slis_layout_alv_spec1.
+types: end of slis_layout_alv1.
+
+*--- Structure for the excluding table (function codes)
+types: begin of slis_extab,
+         fcode like rsmpe-func,
+       end of slis_extab.
+*--- Lineinfo before output
+types: begin of slis_lineinfo,
+         tabname type slis_tabname,
+         tabindex like sy-tabix,
+         subtot(1) type c,
+         subtot_level(2) type n,
+         endsum(1) type c,
+         sumindex like sy-tabix,
+         linsz like sy-linsz,
+         linno like sy-linno,
+       end of slis_lineinfo.
+*--- Structure for scrolling in list
+types: begin of slis_list_scroll,
+         lsind like sy-lsind,
+         cpage like sy-cpage,
+         staro like sy-staro,
+         staco like sy-staco,
+         cursor_line like sy-curow,
+         cursor_offset like sy-cucol,
+       end of slis_list_scroll.
+* information cursor position ALV
+types: begin of slis_selfield,
+         tabname type slis_tabname,
+         tabindex like sy-tabix,
+         sumindex like sy-tabix,
+         endsum(1) type c,
+         sel_tab_field type slis_sel_tab_field,
+         value type slis_entry,
+         before_action(1) type c,
+         after_action(1) type c,
+         refresh(1) type c,
+         ignore_multi(1) type c, " ignore selection by checkboxes (F2)
+         col_stable(1) type c,
+         row_stable(1) type c,
+*        colwidth_optimize(1) type c,
+         exit(1) type c,
+         fieldname type slis_fieldname,
+         grouplevel type i,
+         collect_from type i,
+         collect_to type i,
+       end of slis_selfield.
+
+*--- excluding table
+types: slis_t_extab type slis_extab occurs 1.
+* special groups for column selection
+types: begin of slis_sp_group_alv,
+         sp_group(4) type c,
+         text(40) type c,
+       end of slis_sp_group_alv.
+types: slis_t_sp_group_alv type slis_sp_group_alv occurs 1.
+
+* information for sort and subtotals
+types: begin of slis_sortinfo_alv,
+*        spos(2) type n,
+         spos like alvdynp-sortpos,
+         fieldname type slis_fieldname,
+         tabname type slis_fieldname,
+*        up(1) type c,
+*        down(1) type c,
+*        group(2) type c,
+*        subtot(1) type c,
+         up like alvdynp-sortup,
+         down like alvdynp-sortdown,
+         group like alvdynp-grouplevel,
+         subtot like alvdynp-subtotals,
+         comp(1) type c,
+         expa(1) type c,
+         obligatory(1) type c,
+       end of slis_sortinfo_alv.
+types: slis_t_sortinfo_alv type slis_sortinfo_alv occurs 1.
+* information for selections
+types: begin of slis_seldis1_alv,
+         field like dfies-fieldname,
+         table like dfies-tabname,
+         stext(40),
+         valuf(80),
+         valut(80),
+         sign0(1),
+         optio(2),
+         ltext(40),
+         stype(1),
+         length type p,
+         no_text(1),
+         inttype like dfies-inttype,
+         fieldname type slis_fieldname,
+         tabname type slis_tabname,
+         org_selname type rsscr_name,  "introduced this FO 09.01.00
+       end of slis_seldis1_alv.
+
+types: slis_seldis_alv type slis_seldis1_alv occurs 1.
+
+* filter
+types: begin of slis_filter_alv0,
+         fieldname type slis_fieldname,
+         tabname type slis_tabname,
+         seltext(40),
+         valuf(80),
+         valut(80),
+         valuf_int(80),
+         valut_int(80),
+         sign0(1),
+         sign_icon(4),
+         optio(2),
+         stype(1),
+         decimals like dfies-decimals,
+         intlen like dfies-intlen,
+         convexit like dfies-convexit,
+         edit_mask type slis_edit_mask,
+         lowercase like dfies-lowercase,
+         inttype like dfies-inttype,
+         datatype like dfies-datatype,
+         exception(1) type c,
+         no_sign(1) type c,
+         or(1) type c,
+         order type order,
+         cqvalue(5) type c,
+       end of slis_filter_alv0.
+
+types: begin of slis_filter_alv1,
+         ref_fieldname like dfies-fieldname,
+         ref_tabname like dfies-tabname,
+         ddic_outputlen like dfies-outputlen,
+       end of slis_filter_alv1.
+
+types: begin of slis_filter_alv.
+include type slis_filter_alv0.
+include type slis_filter_alv1.
+types: end of slis_filter_alv.
+types: slis_t_filter_alv type slis_filter_alv occurs 1.
+
+* delete or add an entry in the select-option info
+types: begin of slis_selentry_hide_alv,
+         mode(1) type c,               "(D)elete (A)dd
+         selname like rsparams-selname.
+include type slis_seldis1_alv.
+types  end of slis_selentry_hide_alv.
+types: slis_t_selentry_hide_alv type slis_selentry_hide_alv occurs 1.
+
+* delete or add an entry in the select-option info
+types: begin of slis_sel_hide_alv,
+         mode(1) type c,               "(R)eplace or (C)hange
+         t_entries type slis_t_selentry_hide_alv,
+       end of slis_sel_hide_alv.
+* Header table for top of page
+types: begin of slis_listheader,
+         typ(1) type c,   " H = Header, S = Selection, A = Action
+         key(20) type c,
+         info type slis_entry,
+       end of slis_listheader.
+types: slis_t_listheader type slis_listheader occurs 1.
+*--- Structure for specific color settings
+types: begin of slis_specialcol_alv,
+         fieldname type slis_fieldname,
+         color     type slis_color,
+         nokeycol(1) type c,
+       end of slis_specialcol_alv.
+types: slis_t_specialcol_alv type slis_specialcol_alv occurs 1.
+*--- Structure for event handling
+types: begin of slis_alv_event,
+        name(30),
+        form(30),
+      end of slis_alv_event.
+types: slis_t_event type slis_alv_event occurs 0.
+*--- Structure for key information
+types: begin of slis_keyinfo_alv,
+         header01 type slis_fieldname,
+         item01 type slis_fieldname,
+         header02 type slis_fieldname,
+         item02 type slis_fieldname,
+         header03 type slis_fieldname,
+         item03 type slis_fieldname,
+         header04 type slis_fieldname,
+         item04 type slis_fieldname,
+         header05 type slis_fieldname,
+         item05 type slis_fieldname,
+       end of slis_keyinfo_alv.
+*--- Structure for callback CALLER_EXIT and REUSE_ALV_POPUP_TO_SELECT
+types: begin of slis_data_caller_exit,
+        dummy like sy-repid,
+        without_load_variant(1),
+        callback_header_transport type slis_formname,
+        columnopt(1),
+      end of slis_data_caller_exit.
+
+types: begin of slis_status,
+         callback_program like sy-repid,
+         callback_pf_status_set type slis_formname,
+         callback_user_command  type slis_formname,
+         counter_of_lists_added type i,
+         actual_list_to_display type i,
+         flg_to_be_refreshed,
+         it_excluding type slis_t_extab,
+         print type slis_print_alv,
+         flg_checkboxes_active,
+         flg_overview_active,
+         flg_intcheck(1) type c,
+       end of slis_status.
+* Exporting structure
+types: begin of slis_exit_by_user,
+         back(1) type c,
+         exit(1) type c,
+         cancel(1) type c,
+       end of slis_exit_by_user.
+
+constants:
+* Events
+slis_ev_item_data_expand   type slis_formname value 'ITEM_DATA_EXPAND',
+slis_ev_reprep_sel_modify  type slis_formname value 'REPREP_SEL_MODIFY',
+slis_ev_caller_exit_at_start type slis_formname value 'CALLER_EXIT',
+slis_ev_user_command       type slis_formname value 'USER_COMMAND',
+slis_ev_top_of_page        type slis_formname value 'TOP_OF_PAGE',
+slis_ev_data_changed       type slis_formname value 'DATA_CHANGED',
+slis_ev_top_of_coverpage   type slis_formname value 'TOP_OF_COVERPAGE',
+slis_ev_end_of_coverpage   type slis_formname value 'END_OF_COVERPAGE',
+slis_ev_foreign_top_of_page type slis_formname
+                                       value 'FOREIGN_TOP_OF_PAGE',
+slis_ev_foreign_end_of_page type slis_formname
+                                       value 'FOREIGN_END_OF_PAGE',
+slis_ev_pf_status_set      type slis_formname value 'PF_STATUS_SET',
+slis_ev_list_modify        type slis_formname value 'LIST_MODIFY',
+slis_ev_top_of_list        type slis_formname value 'TOP_OF_LIST',
+slis_ev_end_of_page        type slis_formname value 'END_OF_PAGE',
+slis_ev_end_of_list        type slis_formname value 'END_OF_LIST',
+slis_ev_after_line_output  type slis_formname value 'AFTER_LINE_OUTPUT',
+slis_ev_before_line_output type slis_formname value
+                                                   'BEFORE_LINE_OUTPUT',
+slis_ev_subtotal_text      type slis_formname value 'SUBTOTAL_TEXT',
+slis_ev_grouplevel_change  type slis_formname value 'GROUPLEVEL_CHANGE',
+slis_ev_context_menu       type slis_formname value 'CONTEXT_MENU'.
+
+*lowercase for DDIC_SCAN
+types: slis_fieldinfo type fieldinfo.
+types: begin of slis_fieldinfo2.
+types: lowercase type c.
+       include type slis_fieldinfo.
+types: end of slis_fieldinfo2.
+types: slis_t_fieldinfo2 type standard table of slis_fieldinfo2.

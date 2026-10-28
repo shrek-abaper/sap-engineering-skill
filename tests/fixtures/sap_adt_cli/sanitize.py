@@ -45,6 +45,9 @@ FILE_MAP = {
     "get-table.REPOSRC.xml": "get-table.REPOSRC.s4hana.xml",
     "get-structure.VBAKKOM.xml": "get-structure.VBAKKOM.s4hana.xml",
     "get-class.source.abap": "get-class.CL_GUI_FRONTEND_SERVICES.abap",
+    # type group source (ddic root) + legacy path 404 evidence
+    "get-type-group.SLIS.raw.txt": "get-type-group.SLIS.s4hana.txt",
+    "error.404-typegroup-legacy.txt": "error.404-typegroup-legacy.txt",
     # type info (current-CLI dataelement outputs + true domain v2 payload)
     "get-type-info.dataelement.xml": "get-type-info.MATNR.dtel.xml",
     "get-type-info.domain.xml": "get-type-info.MATNR18.dtel.xml",

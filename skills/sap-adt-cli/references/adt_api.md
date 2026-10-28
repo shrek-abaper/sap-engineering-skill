@@ -70,6 +70,8 @@ real DEV system (old value → new value; fixtures under `tests/fixtures/`):
 | 10 | Unlock (dequeue) | `POST {object}?method=unlock` with the handle header (never worked live) | `POST {object}?_action=UNLOCK&lockHandle=<urlencoded handle>`. **200 empty is not proof of release** (see write-side rule): cross-process without the original stateful cookie = silent no-op (next LOCK still 403); measured real only inside the owning stateful session (same-process `finally` path confirmed by an independent fresh-process re-lock 200) or cross-process replaying the original cookie jar | 2026-09-16/17 |
 | 11 | Activation | Bare `POST /activation` (no parameters) → **400** `ExceptionParameterNotFound` "Parameter method could not be found" | `POST /sap/bc/adt/activation?method=activate&preauditRequested=true` with the same `objectReferences` body; success verified by readback (`/activation/inactiveobjects`, `adtcore:version`), not by 200 alone | 2026-09-16 |
 | 12 | Create transport | `POST /cts/transports` with CT `application/vnd.sap.cts.transport.request+xml` and a `<cts:transportRequest><cts:attributes>` (category/owner/description/target) body → **400** `ExceptionDataTypeNotFound` "No data type found in content type …" | `POST /cts/transports`, CT `application/vnd.sap.as+xml; charset=UTF-8; dataname=com.sap.adt.CreateCorrectionRequest`, Accept `text/plain`, ASX body `DATA{DEVCLASS,REQUEST_TEXT,REF,OPERATION=I}`; 200 body `/com.sap.cts/object_record/<TRKORR>`; read back `GET /cts/transportrequests/<TRKORR>` (`tm:status` D). CLI fixed 2026-09-17 (`create-transport --package/--description/--ref`, all required; `--category` removed) | 2026-09-17 |
+| 13 | Type group source | GET `/typegroups/groups/{name}/source/main` → **404** `ExceptionResourceNotFound` (both DEV and QAS, Basis 7.56) | GET `/ddic/typegroups/{name}/source/main` → **200** `text/plain`; discovery declares the resource root as `/sap/bc/adt/ddic/typegroups`. `doctor --coverage` checked the correct root but not the sub-path, so it masked this. CLI fixed 2026-10-28 (handler + this table); the command had no fixture/test before | 2026-10-28 |
+| 14 | Package contents | `parent_name` pre-encoded with `quote(name, safe="")` and then sent through the params dict → double-encoded (`$TMP` → `%2524TMP`); server answers **200 with an empty body**, which surfaced as `PARSE_FAILED` for a package with 29 KB of contents | Pass the raw package name as the `parent_name` param and let the HTTP client encode it once; `POST /repository/nodestructure` then returns the ASX tree. Measured on DEV and QAS (the same empty-body response was reproduced with the pre-encoded name on both). CLI fixed 2026-10-28 | 2026-10-28 |
 
 Also verified: `/ddic/tables/{n}/source/main` and
 `/ddic/structures/{n}/source/main` return CDS-style DDL
@@ -87,7 +89,7 @@ Also verified: `/ddic/tables/{n}/source/main` and
 | Function Module | GET | `/sap/bc/adt/functions/groups/{fg_name}/fmodules/{fm_name}/source/main` |
 | Include | GET | `/sap/bc/adt/programs/includes/{name}/source/main` |
 | CDS View (DDL) | GET | `/sap/bc/adt/ddic/ddl/sources/{name}/source/main` |
-| Type Group | GET | `/sap/bc/adt/typegroups/groups/{name}/source/main` |
+| Type Group | GET | `/sap/bc/adt/ddic/typegroups/{name}/source/main` (legacy `…/typegroups/groups/{name}/source/main` → 404 on 7.56) |
 | DDIC Table | GET | `/sap/bc/adt/ddic/tables/{name}/source/main` |
 | DDIC Structure | GET | `/sap/bc/adt/ddic/structures/{name}/source/main` |
 | Domain | GET | `/sap/bc/adt/ddic/domains/{name}` (legacy `…/source/main` → 404 on 7.56) |
