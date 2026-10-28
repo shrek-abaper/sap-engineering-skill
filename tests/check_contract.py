@@ -143,7 +143,7 @@ for node in ast.walk(handler_tree):
 # helpers like _source_result/_fields_result call _structured indirectly via
 # being the one returning it; the loop above already captures them.
 
-# Parse sap_adt_cli.py: command -> handler functions it calls.
+# Parse cli.py: command -> handler functions it calls.
 cli_src = (SRC / "sap_adt" / "cli.py").read_text(encoding="utf-8")
 cli_tree = ast.parse(cli_src)
 command_handler: dict[str, set[str]] = {}

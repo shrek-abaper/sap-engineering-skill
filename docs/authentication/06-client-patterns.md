@@ -195,8 +195,8 @@ def _jwt_claim(jwt_text: str, name: str):
 
 **【已验证】** 两个真实泄漏路径及对策：
 
-1. **traceback 打印凭据对象**：`Credentials`/配置对象必须在 `__repr__`/`__str__` 掩码口令（本仓库 ADT CLI：`skills/sap-adt-cli/scripts/lib/credentials.py:56-67` 与 `skills/sap-adt-cli/scripts/lib/config.py:102-108` 的 `SapConfig.__repr__`）。
-2. **requests 的 `PreparedRequest` repr 带 Authorization 头**：异常链中若保留原始 `RequestException`，链上对象会暴露头部。捕获后重写异常并丢弃原链（`raise ... from None`），并用实时口令做日志正文脱敏（sap-adt-cli `lib/client.py:65-71` 是参考实现）。
+1. **traceback 打印凭据对象**：`Credentials`/配置对象必须在 `__repr__`/`__str__` 掩码口令（本仓库 ADT CLI：`src/sap_adt/credentials.py` 与 `src/sap_adt/config.py` 的 `SapConfig.__repr__`）。
+2. **requests 的 `PreparedRequest` repr 带 Authorization 头**：异常链中若保留原始 `RequestException`，链上对象会暴露头部。捕获后重写异常并丢弃原链（`raise ... from None`），并用实时口令做日志正文脱敏（`src/sap_adt/adt/client.py` 的 `raise ... from None` 是参考实现）。
 
 其他纪律：
 
@@ -264,7 +264,7 @@ MCP Server 进程
    stderr ── 唯一可写日志的通道
    │ shell out
    ▼
-<cli>.py call ...     # 如 sap_adt_cli.py 或业务技能自带 CLI
+<cli>.py call ...     # 如 sap-adt 或业务技能自带 CLI
 ```
 
 三条硬限制：

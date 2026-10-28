@@ -23,7 +23,8 @@ verification is local — `python -m unittest discover -s tests -v` and
 
 `gitleaks` runs as a pre-commit hook (`.pre-commit-config.yaml`), using
 `.gitleaks.toml` (built-in rules plus a hardcoded-secret rule; `tests/`,
-`references/`, docs and `.env.example` are allowlisted placeholder zones).
+`references/`, docs and placeholder templates such as `.env.example` are
+allowlisted zones).
 
 ```bash
 pre-commit install

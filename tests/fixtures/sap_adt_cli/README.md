@@ -26,7 +26,7 @@ Prerequisites: a connected profile that is **DEV only** (a profile whose name
 contains `prd`/`prod`/`qas` must never be captured). Check first:
 
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py status
+sap-adt status
 # Verify: profile name, Write mode DISABLED, Transport write DISABLED
 ```
 
@@ -38,7 +38,7 @@ Never run `write-source`, `activate`, `create-transport`, `release-transport`,
 ```bash
 FX=tests/fixtures/sap_adt_cli/raw
 mkdir -p "$FX"
-CLI="python3 skills/sap-adt-cli/scripts/sap_adt_cli.py"
+CLI="sap-adt"
 $CLI get-table VBAK > "$FX/get-table.VBAK.xml" ; echo "get-table.VBAK.xml $?" >> "$FX/_exit_codes.txt"
 # ... repeat per command; record BOTH stdout payload and stderr (errors)
 ```
@@ -46,7 +46,7 @@ $CLI get-table VBAK > "$FX/get-table.VBAK.xml" ; echo "get-table.VBAK.xml $?" >>
 For endpoints the current CLI cannot call correctly yet (newer ADT protocol),
 raw payloads may be captured with equivalent **read-only** requests (GET or
 read-only POST such as `checkruns`/`nodestructure`) using the CLI's own
-`lib.client.make_adt_request` for auth/CSRF. Mark those files `*.raw.xml` and
+`sap_adt.adt.client.make_adt_request` for auth/CSRF. Mark those files `*.raw.xml` and
 explain how they were captured in `raw/_system.md`.
 
 ## Sanitizing

@@ -61,10 +61,11 @@ pairs:
       What is the credential resolution order for Online Transport Mode and how does the
       skill handle a connection failure?
     expected: >
-      Credential resolution order: (1) <skill_dir>/.env file, (2)
-      ~/.sap-transport-gate/config.json, (3) process environment variables.
-      If no credentials are found, the skill guides setup via .env.example or the
-      interactive tr_collector.py configure command. If credentials exist but connection
+      Credential resolution order: (1) process environment variables, (2) the
+      dotenv file declared by SAP_ADT_DOTENV, (3) the ADT profile in
+      ~/.sap-adt-cli/config.json plus the OS keystore.
+      If no credentials are found, the skill guides setup via references/setup.md or
+      the interactive `sap-adt configure` command. If credentials exist but connection
       fails (HTTP 401, 403, connection refused, SSL error), the skill falls back to
       Offline Local Mode and directs the user to references/sap-connectivity.md §11 for
       the manual SE01 → SE38/SE24/SE37 export guide.
@@ -90,6 +91,6 @@ pairs:
       Offline Local Mode: user provides only partial materials such as source files
       without a manifest or full TR context. Evidence Level is typically LOW to MEDIUM.
       Online Transport Mode: user provides a TR ID and SAP credentials are available;
-      the skill guides the user to run tr_collector.py collect <TR_ID> to export a
+      the skill guides the user to run `sap-adt transport collect <TR_ID>` to export a
       structured package, which is then reviewed as Offline Package Mode. The AI never
       logs in to SAP directly in any mode.

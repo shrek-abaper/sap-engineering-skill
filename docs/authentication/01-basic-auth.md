@@ -56,7 +56,7 @@ client=<sap-client>，个人账号 <sap-user>，TLS 校验关闭
 
 ### 4.1 参考实现（已验证）
 
-本仓库的 ADT CLI 在 `skills/sap-adt-cli/scripts/lib/client.py:97-157`（`make_adt_request`，写操作前另含 CSRF fetch）。核心调用形态：
+本仓库的 ADT CLI 在 `src/sap_adt/adt/client.py`（`make_adt_request`，写操作前另含 CSRF fetch）。核心调用形态：
 
 ```python
 resp = requests.post(
@@ -79,10 +79,10 @@ if resp.status_code in (401, 403):
 
 ### 4.2 凭据库体系（已验证）
 
-本仓库 ADT CLI 的 `skills/sap-adt-cli/scripts/lib/keystore/` 实现可插拔后端，**按能力探测选择，不按操作系统选择**（WSL 报告 Linux 但实际可用后端是 Windows DPAPI）：
+本仓库 ADT CLI 的 `src/sap_adt/keystore/` 实现可插拔后端，**按能力探测选择，不按操作系统选择**（WSL 报告 Linux 但实际可用后端是 Windows DPAPI）：
 
 ```text
-env（REST2RFC_PASSWORD） → keyring → dpapi（WSL） → pass → file（scrypt+Fernet）
+env（SAP_ADT_<PROFILE>_PASSWORD） → keyring → dpapi（WSL） → pass → file（scrypt+Fernet）
 ```
 
 设计纪律：
@@ -115,9 +115,9 @@ resp.raise_for_status()
 ### 4.4 用户配置动作（当前形态）
 
 ```bash
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials set <profile>  # getpass 无回显
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py credentials doctor         # 后端诊断
-python3 skills/sap-adt-cli/scripts/sap_adt_cli.py configure                  # 向导式建档
+sap-adt credentials set <profile>  # getpass 无回显
+sap-adt credentials doctor         # 后端诊断
+sap-adt configure                  # 向导式建档
 ```
 
 ## 5. 用户映射与授权
