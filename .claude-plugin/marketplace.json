@@ -10,8 +10,8 @@
       "name": "sap-engineering-skills",
       "source": {
         "source": "archive",
-        "url": "https://github.com/shrek-abaper/sap-engineering-skill/releases/download/sap-adt-v1.5.3/sap-engineering-skills-1.2.7.zip",
-        "sha256": "1aefd75c763d9de30baad61759bf3975bd31cdab58b4efaddea59af5c1e91a58"
+        "url": "https://github.com/shrek-abaper/sap-engineering-skill/releases/download/sap-adt-v1.6.0/sap-engineering-skills-1.3.0.zip",
+        "sha256": "32c8fc15a0800b645a60417d5e95b63245c7e1a85f7bfa62cecaa7d019e279cf"
       },
       "description": "ADT CLI, ABAP code review, Transport Request release gate, and SAP integration wiki."
     }
