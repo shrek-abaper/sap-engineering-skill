@@ -101,6 +101,32 @@ test("registry proxy environment is retained across every staged and commit step
   }
 });
 
+test("global prefix aliases resolve to the owned installation", (t) => {
+  const { root, plan, work } = fixture(t);
+  const alias = path.join(work, "global-alias");
+  fs.symlinkSync(path.dirname(root), alias, "junction");
+  const manager = fakeManager(root, []);
+  applyUpdate(root, "/tools/npm-cli.js", plan, (node, args, options) =>
+    args.includes("root") ? { status: 0, stdout: alias } : manager(node, args, options));
+  assert.equal(fs.readFileSync(path.join(root, "runtime", "new"), "utf8"), "verified runtime");
+});
+
+test("a concurrent package upgrade is not overwritten after staging", (t) => {
+  const { root, plan } = fixture(t);
+  const calls = [];
+  const manager = fakeManager(root, calls);
+  assert.throws(() => applyUpdate(root, "/tools/npm-cli.js", plan, (node, args, options) => {
+    if (args.includes("root")) {
+      fs.writeFileSync(path.join(root, "package.json"),
+        JSON.stringify({ name: "sap-adt-cli", version: "1.7.0" }));
+    }
+    return manager(node, args, options);
+  }), /changed during staging/);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, "package.json"))).version, "1.7.0");
+  assert.ok(fs.existsSync(path.join(root, "runtime", "old")));
+  assert.ok(!calls.some(call => call.args.includes("--global") && call.args.includes("install")));
+});
+
 for (const failure of ["artifact", "version", "scope"]) {
   test(`preflight ${failure} failure leaves the existing package and runtime untouched`, (t) => {
     const { root, plan } = fixture(t);
@@ -144,7 +170,7 @@ test("locate npm-cli.js without running shell scripts", (t) => {
   const { work } = fixture(t);
   const npm = path.join(work, "npm-cli.js");
   fs.writeFileSync(npm, "// fixture");
-  assert.equal(findNpm({ npm_execpath: npm, PATH: "" }), npm);
+  assert.equal(findNpm({ npm_execpath: npm, PATH: "" }), fs.realpathSync(npm));
 });
 
 test("launcher consumes a read-only runtime response and propagates refusal", (t) => {

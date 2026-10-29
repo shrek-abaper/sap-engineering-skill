@@ -15,9 +15,11 @@ root). Required packages: `click`, `requests`, `urllib3`, plus the optional
 `keyring` and `cryptography` (backends are exercised through injected seams,
 but the `file` backend uses the real `cryptography` package).
 
-There is no cloud CI: hosted runners cannot reach real SAP systems, so
-verification is local — `python -m unittest discover -s tests -v` and
-`python tests/check_contract.py`. Run them before pushing.
+Run `python -m unittest discover -s tests -v` and
+`python tests/check_contract.py` locally before pushing. The manually
+dispatched macOS workflow also runs offline tests and verifies native
+runtime/npm installation. Hosted runners never connect to SAP; real-system
+verification remains local.
 
 ## Secret scanning
 

@@ -63,7 +63,7 @@ non-interactive `configure`: read **references/credentials.md**.
 Multiple systems/profiles (`--profile`, `SAP_PROFILE`, PRD danger of global flags):
 read **references/profiles.md**.
 For feeds/history/diff tasks, first confirm the new command is listed in
-`sap-adt --help`; these source additions are not yet in published runtimes.
+`sap-adt --help`; these commands require CLI 1.6.0 or newer.
 Read **references/diagnostics-history.md** before interpreting transport
 diffs. Missing snapshots or baselines are evidence gaps, not "no changes".
 
@@ -80,8 +80,9 @@ are in **references/examples.md**. Keep the requested profile on every call.
 
 - Confirm `transport diff --help` for the nested command, not just
   `sap-adt --help`. If the installed CLI lacks a command, explain that the
-  source feature is unpublished; do not loop through registry reinstalls
-  or silently replace the user's runtime.
+  feature requires CLI 1.6.0 or newer and ask before upgrading through the
+  original install channel; do not loop through reinstalls or silently
+  replace the user's runtime.
 - Feed schemas differ by system. Build FQL only from advertised attributes,
   operators and query variants. Use `--page-uri` for an explicitly requested
   next page, without adding `--query`; deduplicate combined pages by `id`.
@@ -232,4 +233,4 @@ Layers: this file = operational contract; `references/` = task detail. Project h
 - `references/examples.md` — all command examples and workflows
 - `references/adt_api.md` — endpoint reference incl. verified S/4HANA 2021 protocol facts (old→new, dated)
 - `references/diagnostics-history.md` — feeds, per-part history, version and transport diffs; baseline semantics, limits and live verification scope (new commands require CLI source with these additions)
-- `references/updating.md` — explicit update/check, install-channel detection, confirmation and failure recovery (source-only until published)
+- `references/updating.md` — explicit update/check, install-channel detection, confirmation and failure recovery (CLI 1.6.0+)

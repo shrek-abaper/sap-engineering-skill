@@ -5,7 +5,7 @@ Authentication is HTTP Basic Auth with the `X-SAP-Client` header for client sele
 
 ## Diagnostic feeds and historical comparisons (read-only)
 
-These source additions are not yet published in npm/PyPI runtimes. See
+These commands require CLI 1.6.0 or newer. See
 **diagnostics-history.md** for the complete workflow, comparison semantics
 and 2026-10-29 QAS verification scope.
 

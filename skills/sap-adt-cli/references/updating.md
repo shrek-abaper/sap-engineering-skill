@@ -1,6 +1,6 @@
 # Updating the CLI
 
-The `update` command is implemented in source but not yet published.
+The `update` command requires CLI 1.6.0 or newer.
 Check `sap-adt update --help` first. Older versions require one manual
 package-manager upgrade to obtain it; repeatedly running their `install`
 command does not upgrade the npm package.

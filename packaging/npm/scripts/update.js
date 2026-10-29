@@ -63,8 +63,19 @@ function applyUpdate(root, npm, plan, run = spawnSync, environment = process.env
     // Check scope again immediately before the first change to the live install.
     const globalRoot = checked(run, process.execPath, [npm, "root", "--global"],
       { env, encoding: "utf8", timeout: 60_000 }).stdout.trim();
-    if (path.resolve(globalRoot, "sap-adt-cli") !== root) {
+    let canonicalGlobalRoot;
+    try {
+      canonicalGlobalRoot = fs.realpathSync(globalRoot);
+    } catch {
+      throw new Error("npm global root could not be verified; no update was committed.");
+    }
+    // Resolve prefix aliases, but do not authorize a symlinked package.
+    if (path.join(canonicalGlobalRoot, "sap-adt-cli") !== fs.realpathSync(root)) {
       throw new Error("npm global root changed; the installed package was not changed.");
+    }
+    const live = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+    if (live.name !== "sap-adt-cli" || live.version !== plan.current) {
+      throw new Error("The installed npm package changed during staging; no update was committed.");
     }
     committing = true;
     checked(run, process.execPath, [npm, "install", "--global", "--ignore-scripts",

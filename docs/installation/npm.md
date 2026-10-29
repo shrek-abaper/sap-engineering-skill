@@ -39,7 +39,7 @@ A normal `sap-adt` invocation never downloads or upgrades anything. The
 runtime lives inside the npm package directory; upgrading the package
 requires re-running `install`.
 
-## Explicit updates (source-only until the next publication)
+## Explicit updates (CLI 1.6.0+)
 
 ```bash
 sap-adt update --check     # query versions; do not change the installation
@@ -56,12 +56,12 @@ Local/workspace/linked packages and npx caches are not self-modified: update
 through their owning project/lockfile or an explicit npx selector instead.
 SAP configuration and credentials are not read or changed.
 
-Older published versions have no `update` command. Bootstrap once with
-`npm install -g "sap-adt-cli@^1"` followed by `sap-adt install` after a
-release containing this command is published. `--major` explicitly allows
+Versions before 1.6.0 have no `update` command. Bootstrap once with
+`npm install -g "sap-adt-cli@^1.6.0"` followed by `sap-adt install`.
+`--major` explicitly allows
 crossing major versions and can exceed a skill's compatible range.
 
-The source installer (not yet published) discovers proxies in this order:
+From 1.6.0, the installer discovers proxies in this order:
 environment variables, npm's persistent `https-proxy`/`proxy` configuration,
 then Windows current-user manual proxy settings. Windows bypass rules are
 honored unless explicit `NO_PROXY` overrides them. It reports the selected
@@ -70,7 +70,7 @@ after 60 seconds of inactivity. PAC/WPAD, SOCKS and automatic integrated proxy
 authentication are not supported; explicit HTTP CONNECT proxy configuration
 is required for those environments. No system proxy setting is changed.
 
-The source `update` launcher also passes discovered Windows manual proxy
+The `update` launcher also passes discovered Windows manual proxy
 settings to npm's registry checks and both package-install steps. This
 does not make the initial external `npm install -g` command import system
 proxies: configure npm or `HTTPS_PROXY` for that bootstrap step.
@@ -82,10 +82,10 @@ with `SAP_ADT_INSTALL_EXTRACT_TIMEOUT_MS` and
 `SAP_ADT_INSTALL_SELFTEST_TIMEOUT_MS`. Errors include proxy/TLS, disk,
 permissions, platform and startup recovery hints. Unsupported platforms
 receive Python virtual-environment commands instead of an install loop.
-See [failure recovery](runtime-setup.md#installationupdate-failure-recovery-source-only-improvements).
+See [failure recovery](runtime-setup.md#installationupdate-failure-recovery).
 
-For already-published installers, set `HTTPS_PROXY` (and `NO_PROXY` for
-internal hosts) before `install` — see
+For older installers or Linux/macOS desktop-only proxies, set `HTTPS_PROXY`
+(and `NO_PROXY` for internal hosts) before `install` — see
 [Proxied / restricted networks](runtime-setup.md#proxied--restricted-networks).
 
 ## Windows availability
@@ -108,6 +108,19 @@ The Windows npm channel requires Node.js and the Windows `tar.exe` (included
 with current Windows 10/11), but no Python on the end user's machine.
 The separate Inno Setup desktop installer has a verified silent per-user
 lifecycle; see [Windows scope and limitations](windows.md).
+
+## macOS availability (experimental, 1.6.0+)
+
+macOS 15+ Intel (`darwin-x86_64`) and Apple Silicon (`darwin-aarch64`) use
+the same npm/npx commands above. Both targets must pass native GitHub
+Actions builds, offline tests and isolated npm installation before release.
+No Python is needed for the installed runtime.
+
+This is not verification on a personal Mac. Older macOS, Keychain,
+Gatekeeper/quarantine, signing/notarization and live SAP on macOS remain
+unverified. If a desktop proxy is enabled only in macOS settings, explicitly
+configure npm or `HTTPS_PROXY`; only Windows manual system proxies are
+auto-imported. Python >=3.10 in a venv remains an alternative.
 
 ## Local packaging tests (no registry, no network)
 

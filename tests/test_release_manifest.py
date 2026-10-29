@@ -60,6 +60,19 @@ class DesktopInstallerManifestTests(unittest.TestCase):
             manifest = self.run_manifest(root)
             self.assertFalse(any(a["kind"] == "installer" for a in manifest["artifacts"]))
 
+    def test_native_ci_verification_is_distinct_from_unverified_targets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.build_fixture(root, with_installer=False)
+            (root / "packaging" / "targets.json").write_text(json.dumps({"targets": {
+                "darwin-aarch64": {"status": "verified-ci"},
+                "linux-x86_64": {"status": "verified-local"},
+                "linux-aarch64": {"status": "planned-unverified"},
+                "future-target": {"status": "unknown"},
+            }}))
+            self.assertEqual(self.run_manifest(root)["unverified_targets"],
+                             ["linux-aarch64", "future-target"])
+
 
 if __name__ == "__main__":
     unittest.main()

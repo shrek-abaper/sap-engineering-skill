@@ -1,5 +1,31 @@
 # Changelog
 
+## CLI 1.6.0 / plugin/docs 1.3.0 — 2026-10-29
+
+- Added read-only ADT Feeds, per-part object history, version source/diffs,
+  transport detail and transport object diffs. Real QAS checks covered
+  diagnostics, history and modifiable/released transport comparisons;
+  incomplete evidence remains explicit and partial comparisons exit 1.
+- Added explicit, channel-aware `sap-adt update` with same-major stable
+  selection, confirmation and final version verification. npm stages its
+  package/runtime first; unsupported ownership gets original-channel
+  guidance instead of replacement. Package-manager failures report the
+  inspection-required state and scoped repair commands.
+- Grouped root help into setup/maintenance followed by ADT commands.
+- Fixed Windows manual proxy discovery for runtime installation and the
+  whole npm update. Python checks now honor pip proxy configuration.
+  Added bounded network/extraction/self-test stages, validation-before-
+  replacement cleanup, recovery backups and redacted actionable errors.
+- Added manually dispatched native macOS 15 Intel/Apple Silicon build,
+  offline-test and isolated npm install gates. macOS remains experimental:
+  no personal Mac, older macOS, Keychain, Gatekeeper/quarantine,
+  signing/notarization or macOS live-SAP verification is claimed.
+  Framework links are flattened into safe regular archive members.
+- Updated skill workflows, examples, compatibility snapshots and
+  cross-platform installation/recovery guidance.
+- Fixed the Python `all` extra to resolve `sap-adt-cli` rather than the
+  removed legacy `sap-adt` distribution.
+
 ## CLI 1.5.3 / plugin/docs 1.2.7 — 2026-10-29
 
 - Added native Windows x64 runtime ZIP and desktop installer to the

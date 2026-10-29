@@ -32,7 +32,7 @@ dependencies = [
 # report unavailable/fail-closed when the extra is missing.
 keystore = ["keyring>=24.0.0"]
 file = ["cryptography>=41.0.0"]
-all = ["sap-adt[keystore,file]"]
+all = ["sap-adt-cli[keystore,file]"]
 
 [project.scripts]
 sap-adt = "sap_adt.cli:main"

@@ -114,8 +114,9 @@ python tests/check_contract.py               # SKILL.md ↔ code contract
 node --test packaging/npm/test/install.test.js
 ```
 
-There is **no cloud CI** (hosted runners cannot reach real SAP); these local
-runs are the verification baseline. Each skill's evals live in `evals/`.
+These local runs are the verification baseline. A manually dispatched macOS
+workflow runs offline tests, native builds and isolated npm install checks;
+hosted runners never connect to SAP. Each skill's evals live in `evals/`.
 
 ---
 

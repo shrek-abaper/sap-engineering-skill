@@ -17,14 +17,14 @@ packages, transactions, SQL queries, where-used analysis, syntax checks, and tra
 all from the terminal or from within an AI agent workflow. Write and transport operations require
 explicit capability flags and per-operation confirmation.
 
-The source also provides **ADT diagnostic feeds, per-part object history,
-version differences and transport object differences**. These additions are
-not yet published to npm/PyPI: confirm command availability with `sap-adt --help`
+CLI 1.6.0 adds **ADT diagnostic feeds, per-part object history,
+version differences and transport object differences**.
+Confirm command availability with `sap-adt --help`
 and `sap-adt transport diff --help`. They are read-only and need no write flags.
 See [diagnostics and change analysis](references/diagnostics-history.md) for
 comparison baselines, evidence gaps and the real-system verification scope.
-Source also adds explicit CLI updates: see [updating](references/updating.md).
-The command is unpublished; it never silently changes installation channels.
+CLI 1.6.0 also adds explicit CLI updates: see [updating](references/updating.md).
+The command never silently changes installation channels.
 
 ---
 
@@ -63,6 +63,10 @@ and unsigned desktop installer; Python ≥ 3.10 users can also use PyPI.
 Copy the skill folder into your agent's skill directory separately.
 See the [Windows guide](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/windows.md)
 for the verified silent-install scope and remaining GUI/PATH/elevation gaps.
+CLI 1.6.0 adds experimental macOS 15+ npm/portable runtimes for Intel and
+Apple Silicon, gated by native CI build/install checks. Personal Macs,
+older macOS, Keychain, Gatekeeper/signing and live SAP on macOS remain
+unverified; see [references/setup.md](references/setup.md).
 
 > **Data compliance note:** ABAP source code may contain core business logic and sensitive data.
 > Before sending code to cloud-based AI services, confirm compliance with your organization's

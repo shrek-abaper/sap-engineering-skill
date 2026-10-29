@@ -2,13 +2,13 @@
 
 All examples use the installed `sap-adt` command (see `setup.md` for install
 channels).
-Feed/history/diff examples require the new source commands, not yet published
-in npm/PyPI runtimes. Confirm `sap-adt --help` and `sap-adt transport diff --help`
+Feed/history/diff examples require CLI 1.6.0 or newer.
+Confirm `sap-adt --help` and `sap-adt transport diff --help`
 first; do not assume the compatible version range alone proves availability.
 
 ## CLI updates (no SAP connection)
 
-The new source-only `update` command follows the original install channel:
+The `update` command (CLI 1.6.0+) follows the original install channel:
 
 ```bash
 sap-adt update --check

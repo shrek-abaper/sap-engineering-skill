@@ -35,6 +35,7 @@ prints which source is active.
 | npx (no global install) | Try it without changing PATH | Node.js ≥ 18 | `npx "sap-adt-cli@^1.5.0" install`, then prefix every call: `npx "sap-adt-cli@^1.5.0" <command>` |
 | PyPI (wheel/sdist) | Python ≥ 3.10 available | Python | `pip install "sap-adt-cli>=1.5.0,<2.0.0"` |
 | Portable archive (Linux) | No dev environment | Linux x86_64, glibc ≥ 2.39 build | download the newest 1.x `sap-adt-<ver>-linux-x86_64.tar.gz` from the release page and unpack it, run inside it `./sap-adt/sap-adt` |
+| Portable archive (macOS, experimental) | No dev environment | macOS 15+ Intel / Apple Silicon | from CLI 1.6.0, unpack `sap-adt-<ver>-darwin-x86_64.tar.gz` / `sap-adt-<ver>-darwin-aarch64.tar.gz`, then run `./sap-adt/sap-adt` |
 | Windows installer | No dev environment | Windows 10+ x64 | newest compatible `sap-adt-<ver>-windows-x86_64-setup.exe` from CLI 1.5.3; unsigned, silent per-user lifecycle verified |
 | Python source | Developers, contributors | Python ≥ 3.10 | `pip install -e .` from the repo |
 
@@ -48,10 +49,11 @@ All channels install the same runtime built from the same commit. `install`
 in the npm channel is this package's own wizard (fetch → SHA-256 verify →
 atomic install → self-test), not an npm built-in.
 
-> Channel status (CLI 1.5.3+, 2026-10-29): npm `sap-adt-cli` and PyPI `sap-adt-cli`
+> Channel status (CLI 1.6.0, 2026-10-29): npm `sap-adt-cli` and PyPI `sap-adt-cli`
 > (renamed from `sap-adt`; the old project was removed from PyPI after the
 > rename) are live and the GitHub
-> Release carries Linux x86_64 and Windows x86_64 runtimes, the Windows desktop
+> Release carries Linux x86_64, Windows x86_64 and experimental macOS 15+
+> Intel / Apple Silicon runtimes, the Windows desktop
 > installer, the plugin/skill zips
 > and the checksums. To migrate from the old name run
 > `pip uninstall -y sap-adt` first, then install `sap-adt-cli` — do not use
@@ -59,15 +61,17 @@ atomic install → self-test), not an npm built-in.
 > and the desktop installer's silent per-user lifecycle passed local
 > verification through WSL interop. Windows npm support requires 1.5.3 or
 > newer; older launchers may support only Linux. Graphical wizard clicks,
-> actual PATH mutation and elevated installs remain unverified. The macOS runtime is
-> **not built yet**.
+> actual PATH mutation and elevated installs remain unverified. macOS artifacts
+> require native CI build, offline test and isolated npm install gates.
+> Personal Macs, older macOS, Keychain, Gatekeeper/quarantine,
+> signing/notarization and live SAP on macOS remain unverified.
 
 ## Proxied / restricted networks
 
 The npm/npx `install` wizard downloads the runtime itself, so it needs egress
 to the GitHub release CDN.
 
-**Source-only improvement (not yet published):** proxy selection is explicit
+**From CLI 1.6.0:** proxy selection is explicit
 environment variables → persistent npm proxy configuration → Windows current-user
 manual Internet Settings → direct connection. Thus enabling a Windows manual
 system proxy no longer also requires setting terminal environment variables.
@@ -75,8 +79,8 @@ The installer prints the selected route without credentials and never changes
 the system's proxy settings. Windows per-protocol `https=host:port` and manual
 bypass rules are supported; explicit `NO_PROXY` takes precedence.
 
-Published versions still need the standard proxy variables set before
-running `sap-adt install`:
+Older installers, and Linux/macOS users with desktop-only proxy settings,
+need explicit npm configuration or proxy variables before `sap-adt install`:
 
 | Variable | Example | Meaning |
 |---|---|---|
@@ -92,34 +96,37 @@ running `sap-adt install`:
 - The artifact certificate is still verified against the real host name. If
   the proxy terminates TLS, point `NODE_EXTRA_CA_CERTS` at its CA bundle:
   `NODE_EXTRA_CA_CERTS=/path/to/corporate-ca.pem sap-adt install`.
-- Source now bounds DNS/TCP/proxy/TLS connection setup to 30 seconds; receiving
+- The installer bounds DNS/TCP/proxy/TLS connection setup to 30 seconds; receiving
   data has a 60-second inactivity timeout, not a total download deadline.
   Stalled or dripping CONNECT responses cannot extend setup indefinitely.
   `SAP_ADT_INSTALL_CONNECT_TIMEOUT_MS` and `SAP_ADT_INSTALL_IDLE_TIMEOUT_MS`
   can override these limits for diagnostics. A timeout can indicate an
   unreachable proxy, a blocked `CONNECT`, TLS interception or a stalled CDN.
-- Source also bounds extraction to 120 seconds and the runtime self-test to
+- It also bounds extraction to 120 seconds and the runtime self-test to
   60 seconds (`SAP_ADT_INSTALL_EXTRACT_TIMEOUT_MS` /
   `SAP_ADT_INSTALL_SELFTEST_TIMEOUT_MS`). These are per-stage limits, not a
   single deadline for the whole installation.
-- The source npm `update` launcher passes discovered Windows manual proxy
+- The npm `update` launcher passes discovered Windows manual proxy
   settings to its registry checks and package downloads as child-process
   environment variables. User npm/system settings are not changed. The
   initial external `npm install` command still needs npm proxy configuration
   or standard proxy environment variables.
 
 If the download still cannot work, install the runtime by hand: download
-the matching Linux x86_64 `.tar.gz` or Windows x86_64 `.zip` from the release
+the matching Linux/macOS `.tar.gz` or Windows x86_64 `.zip` from the release
 page and compare its SHA-256 with the installed package's
 `runtime-manifest.json`. For a **global** npm install, unpack the inner
 `sap-adt/` directory into
 `<npm root -g>/sap-adt-cli/runtime/<platform>/sap-adt/`; `npm root -g` prints
-the package root on both Linux and Windows. Close running CLI processes
+the package root on Linux, macOS and Windows. Close running CLI processes
 first. Do not copy global instructions into an npx cache or project-local
-installation. macOS has no published native runtime: use Python >=3.10 in
-a virtual environment instead.
+installation. On macOS, `<platform>` is `darwin-aarch64` for Apple Silicon
+or `darwin-x86_64` for Intel. Python >=3.10 in a virtual environment is an
+alternative when a matching native runtime is unavailable.
 
-## Installation/update failure recovery (source-only improvements)
+## Installation/update failure recovery
+
+The safeguards below require CLI/npm package 1.6.0 or newer.
 
 The runtime installer retains the previous runtime until its replacement
 passes `--version`. Validation failure restores the old runtime; if restoration

@@ -193,7 +193,7 @@ def main() -> int:
             name for name, t in json.loads(
                 (ROOT / "packaging" / "targets.json").read_text(encoding="utf-8")
             )["targets"].items()
-            if t["status"] != "verified-local"
+            if t["status"] not in ("verified-local", "verified-ci")
         ],
     }
     (rel / "release-manifest.json").write_text(

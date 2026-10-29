@@ -26,7 +26,7 @@ the version from package metadata, and none of them installs dependencies at
 run time. Missing optional backends (`keyring`, `cryptography`) degrade the
 keystore selection — `sap-adt credentials doctor` shows what is available.
 
-## Explicit updates (source-only until published)
+## Explicit updates (CLI 1.6.0+)
 
 `sap-adt update --check` checks the newest stable release in the installed
 major. For a recognized registry pip install, `sap-adt update` previews and
@@ -54,8 +54,7 @@ discovery and direct-connection behavior. Frozen standalone checks do not
 try to run pip. Proxy credentials are not included in error messages, and
 TLS verification remains enabled; use `REQUESTS_CA_BUNDLE` when metadata
 checks need a corporate CA. Package installation still uses pip/pipx's own
-network and certificate settings. This improvement is source-only until
-the next publication.
+network and certificate settings. These behaviors require CLI 1.6.0 or newer.
 
 ### Failed installations and updates
 
@@ -63,7 +62,7 @@ Initial `python -m pip install` failures are reported by pip itself; see the
 [diagnostics matrix](runtime-setup.md#diagnostics-matrix) for proxy, CA,
 permissions, disk and externally-managed Python remedies.
 
-The source updater classifies proxy authentication, TLS, connectivity,
+The updater classifies proxy authentication, TLS, connectivity,
 permissions/file locks, disk space and unsupported tool/version failures.
 Its error envelope includes a specific hint without dumping package-manager
 output or credentials. A potentially modifying failure remains exit 3:

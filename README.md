@@ -70,7 +70,7 @@ sap-adt install
 sap-adt --version
 ```
 
-The npm package installs a launcher; `sap-adt install` fetches, verifies and installs the platform runtime. A normal `sap-adt` call never downloads or upgrades anything. Linux x86_64 and Windows x86_64 runtimes are available; Windows requires CLI 1.5.3 or newer. The macOS runtime is not built yet.
+The npm package installs a launcher; `sap-adt install` fetches, verifies and installs the platform runtime. A normal `sap-adt` call never downloads or upgrades anything. Linux x86_64 and Windows x86_64 runtimes are available; Windows requires CLI 1.5.3 or newer. CLI 1.6.0 adds experimental macOS 15+ runtimes for Intel and Apple Silicon.
 
 On Windows without Node.js or Python, download the unsigned `sap-adt-<ver>-windows-x86_64-setup.exe` from the [releases](https://github.com/shrek-abaper/sap-engineering-skill/releases). See the [Windows guide](docs/installation/windows.md) for verified scope and limitations.
 
@@ -154,9 +154,9 @@ The repository is a single distribution point for the four skills and the CLI so
 |---|---|
 | Linux x86_64 | npm runtime, portable archive (glibc 2.39 build verified on Ubuntu 24.04), PyPI |
 | Windows x86_64 | npm runtime, portable ZIP and desktop installer from CLI 1.5.3; PyPI with Python ≥ 3.10 |
-| macOS | PyPI with Python ≥ 3.10; no runtime build yet |
+| macOS 15+ Intel / Apple Silicon | Experimental npm runtime and portable archive from CLI 1.6.0; PyPI with Python ≥ 3.10 |
 
-Windows npm installation and the desktop installer's silent per-user install, same-version upgrade and uninstall were verified on Windows 11 x64 through WSL interop. Graphical wizard clicks, actual PATH mutation and elevated installation remain unverified; the installer is unsigned. The macOS runtime remains planned only. Install the skill folders separately from the CLI on every platform.
+Windows npm installation and the desktop installer's silent per-user install, same-version upgrade and uninstall were verified on Windows 11 x64 through WSL interop. Graphical wizard clicks, actual PATH mutation and elevated installation remain unverified; the installer is unsigned. macOS releases are gated by native GitHub Actions builds, offline tests and isolated npm install checks on both architectures. Personal Macs, older macOS, Keychain, Gatekeeper/quarantine, signing/notarization and live SAP on macOS remain unverified. Install the skill folders separately from the CLI on every platform.
 
 ### SAP prerequisites
 
@@ -203,7 +203,7 @@ Each skill also has its own README and references: [`sap-adt-cli`](skills/sap-ad
 
 ## Contributing and license
 
-Contributions are welcome. The test suite is plain `unittest` and runs locally. There is no cloud CI — hosted runners cannot reach real SAP systems, so the meaningful verification is done on a machine with system access. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome. The test suite is plain `unittest` and runs locally; a manually dispatched macOS workflow also runs offline tests and native packaging checks. Hosted runners never connect to SAP, so real-system verification remains local. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
 [MIT](LICENSE)
 

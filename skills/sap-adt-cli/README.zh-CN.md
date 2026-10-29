@@ -6,13 +6,13 @@
 
 支持程序、类、函数模块、接口、Include、CDS 视图、DDIC 对象、包、事务码、SQL 查询、引用分析、语法检查及传输管理——可在终端直接使用，也可集成到 AI 智能体工作流中。写入与传输操作需要显式开启能力标志并逐次确认。
 
-源码还新增了 **ADT 诊断 Feeds、对象分文件版本历史、版本差异和传输请求对象差异**。
-这些能力尚未发布到 npm/PyPI；先用 `sap-adt --help` 和
+CLI 1.6.0 新增了 **ADT 诊断 Feeds、对象分文件版本历史、版本差异和传输请求对象差异**。
+先用 `sap-adt --help` 和
 `sap-adt transport diff --help` 确认当前运行时是否具备对应命令。
 新增命令均为只读，不需要开启写入能力。比较基线、证据缺口和真实系统验证范围见
 [诊断与变更分析指引](references/diagnostics-history.md)，操作示例见
 [references/examples.md](references/examples.md)。
-源码也新增了显式的 `sap-adt update` 升级命令，尚未发布；支持检查、逐次确认和
+CLI 1.6.0 也新增了显式的 `sap-adt update` 升级命令；支持检查、逐次确认和
 安装渠道识别，不会擅自切换安装方式。详见[升级指引](references/updating.md)。
 
 ---
@@ -49,6 +49,10 @@ Windows x64 从 CLI 1.5.3 起提供 npm 运行时、便携 ZIP 和未签名的�
 已有 Python ≥ 3.10 时也可用 PyPI。Skill 目录仍需单独复制到 Agent 的 Skill 目录。
 静默安装的已验证范围，以及 GUI、PATH 和提权安装的限制，见
 [Windows 安装指南](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/windows.md)。
+CLI 1.6.0 新增 macOS 15+ 的 Intel / Apple Silicon 实验性 npm 运行时和便携包，
+发布须通过原生 CI 构建和安装检查。个人 Mac、旧版 macOS、Keychain、
+Gatekeeper/签名以及 macOS 真实 SAP 连接尚未验证，详见
+[references/setup.md](references/setup.md)。
 
 > **数据合规提示：** ABAP 源代码可能包含企业核心业务逻辑和敏感数据。
 > 将代码发送至公网 AI 服务前，请确认符合企业数据安全政策。

@@ -1,7 +1,7 @@
 # Diagnostic feeds, versions and transport diffs
 
-These are read-only additions to the CLI source, not yet published to npm
-or PyPI. Check command availability with `sap-adt --help`; do not assume an
+These read-only commands require CLI 1.6.0 or newer from npm or PyPI.
+Check command availability with `sap-adt --help`; do not assume an
 older installed runtime has them. Never publish or upgrade the user's
 runtime without approval.
 

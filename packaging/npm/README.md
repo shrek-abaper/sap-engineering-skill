@@ -11,8 +11,12 @@ instead.
 
 Linux x86_64 and Windows x86_64 runtimes are provided. Windows support
 starts with package 1.5.3 and also requires `tar.exe` (included in current
-Windows 10/11). macOS has no self-contained runtime yet; use the Python
-package there. Upgrading an older Windows launcher requires reinstalling
+Windows 10/11). From 1.6.0, experimental macOS 15+ runtimes cover Intel
+(`darwin-x86_64`) and Apple Silicon (`darwin-aarch64`). Native CI builds and
+isolated npm installations gate publication; personal Macs, older macOS,
+Keychain, Gatekeeper/quarantine, signing/notarization and live SAP on macOS
+remain unverified. The Python package is an alternative.
+Upgrading an older launcher requires reinstalling
 the npm package before running `sap-adt install` again.
 
 ## Install the runtime (once)
@@ -40,7 +44,7 @@ artifact over HTTPS, verifies its SHA-256 (from the manifest bundled with
 the package — never from the download endpoint), extracts safely and swaps
 it in atomically, then self-tests with the absolute install path.
 
-The source installer (not yet published) selects an explicit proxy environment
+From 1.6.0, the installer selects an explicit proxy environment
 variable first, then npm's persistent proxy settings, then Windows current-user
 manual proxy settings. It respects `NO_PROXY` and Windows manual bypass rules.
 It prints the selected route without credentials, bounds connection setup
@@ -48,17 +52,18 @@ to 30 seconds, and aborts stalled downloads after 60 seconds of inactivity.
 System settings are never modified. PAC/WPAD scripts, SOCKS and integrated
 NTLM/Kerberos proxy authentication are not evaluated or enabled automatically.
 
-For published versions, set `HTTPS_PROXY` (and `NO_PROXY` for hosts that go
-direct) before `install`. An `http://` CONNECT proxy is required; interception
+For older installers or Linux/macOS desktop-only proxies, set `HTTPS_PROXY`
+(and `NO_PROXY` for hosts that go direct) before `install`.
+An `http://` CONNECT proxy is required; interception
 proxies need their CA configured with `NODE_EXTRA_CA_CERTS`, not disabled TLS.
 
-The source installer retains the previous runtime until the new self-test
+The installer retains the previous runtime until the new self-test
 succeeds, restores it on failure and reports a retained backup if recovery
 is blocked. Extraction/self-test are limited to 120/60 seconds, configurable
 through `SAP_ADT_INSTALL_EXTRACT_TIMEOUT_MS` /
 `SAP_ADT_INSTALL_SELFTEST_TIMEOUT_MS`. Failures include actionable network,
 CA, permission, disk and OS-runtime hints; unsupported platforms get Python
-venv instructions. The source update launcher passes discovered Windows
+venv instructions. The update launcher passes discovered Windows
 manual proxies to npm's registry/package steps too, without changing user
 configuration. Bootstrap `npm install` remains npm's own operation.
 
@@ -75,10 +80,10 @@ With npx, prefix each command: `npx "sap-adt-cli@^1.5.0" <command>`.
 
 Configuration and credentials live in `~/.sap-adt-cli/` and the OS keystore —
 never inside this package. Upgrading the npm package requires re-running
-`install` (the runtime slot lives next to the launcher). Once published,
+`install` (the runtime slot lives next to the launcher). From 1.6.0,
 `sap-adt update` handles both steps for a confirmed global npm installation.
 
-## Explicit updates (not yet published)
+## Explicit updates (1.6.0+)
 
 ```bash
 sap-adt update --check

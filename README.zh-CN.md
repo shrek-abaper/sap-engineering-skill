@@ -70,7 +70,7 @@ sap-adt install
 sap-adt --version
 ```
 
-npm 包安装的是启动器，`sap-adt install` 负责下载、校验并安装对应平台的运行时。之后普通的 `sap-adt` 调用不会再下载或升级任何内容。自包含运行时支持 Linux x86_64 和 Windows x86_64；Windows 需要 CLI 1.5.3 或更新版本。macOS 运行时尚未构建。
+npm 包安装的是启动器，`sap-adt install` 负责下载、校验并安装对应平台的运行时。之后普通的 `sap-adt` 调用不会再下载或升级任何内容。自包含运行时支持 Linux x86_64 和 Windows x86_64；Windows 需要 CLI 1.5.3 或更新版本。CLI 1.6.0 新增 macOS 15+ 的 Intel 和 Apple Silicon 实验性运行时。
 
 Windows 上没有 Node.js 或 Python 时，可以从 [Releases](https://github.com/shrek-abaper/sap-engineering-skill/releases) 下载未签名的 `sap-adt-<ver>-windows-x86_64-setup.exe`。已验证范围和限制见 [Windows 安装指南](docs/installation/windows.md)。
 
@@ -153,9 +153,9 @@ sap-adt credentials doctor   # 显示当前使用的密钥库后端，不输出�
 |---|---|
 | Linux x86_64 | npm 运行时、便携包（glibc 2.39 构建已在 Ubuntu 24.04 验证）、PyPI |
 | Windows x86_64 | CLI 1.5.3 起提供 npm 运行时、便携 ZIP 和桌面安装器；Python ≥ 3.10 时也可用 PyPI |
-| macOS | Python ≥ 3.10 时可用 PyPI；尚无运行时构建 |
+| macOS 15+ Intel / Apple Silicon | CLI 1.6.0 起提供实验性 npm 运行时和便携包；Python ≥ 3.10 时也可用 PyPI |
 
-已通过 WSL 调用 Windows 11 x64 宿主，验证 npm 安装以及桌面安装器的静默用户级安装、同版本覆盖安装和卸载。图形向导点击、实际 PATH 写入和提权安装尚未验证；安装器未签名。macOS 运行时仍在计划中。各平台的 Skill 目录均需与 CLI 分开安装。
+已通过 WSL 调用 Windows 11 x64 宿主，验证 npm 安装以及桌面安装器的静默用户级安装、同版本覆盖安装和卸载。图形向导点击、实际 PATH 写入和提权安装尚未验证；安装器未签名。macOS 发布须通过两种架构的 GitHub Actions 原生构建、离线测试和隔离 npm 安装检查；个人 Mac、旧版 macOS、Keychain、Gatekeeper/隔离属性、签名/公证和 macOS 上的真实 SAP 连接尚未验证。各平台的 Skill 目录均需与 CLI 分开安装。
 
 ### SAP 前提
 
@@ -202,7 +202,7 @@ sap-adt credentials doctor   # 显示当前使用的密钥库后端，不输出�
 
 ## 参与贡献与许可证
 
-欢迎贡献。测试套件基于标准库 `unittest`，在本地运行。本仓库不使用云端 CI——托管 runner 无法连接真实 SAP 系统，有意义的验证需要在能访问系统的机器上完成。请从 [CONTRIBUTING.md](CONTRIBUTING.md) 开始。
+欢迎贡献。测试套件基于标准库 `unittest`，在本地运行；手动触发的 macOS 工作流也会执行离线测试和原生打包检查。托管 runner 不连接 SAP，真实系统验证仍在本地完成。请从 [CONTRIBUTING.md](CONTRIBUTING.md) 开始。
 
 [MIT](LICENSE)
 

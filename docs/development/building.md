@@ -101,7 +101,7 @@ gh workflow run build-macos-runtime.yml --ref main
 ```
 
 The workflow uses macOS 15 Intel and Apple Silicon runners with Python
-3.12 and Node.js 22. Each job checks its native target, runs offline tests,
+3.14 and Node.js 22. Each job checks its native target, runs offline tests,
 builds the runtime and tests `npm pack` through runtime installation in a
 temporary global prefix/cache. Only successful jobs upload versioned
 archives and build metadata; download them before assembling the release.
@@ -138,7 +138,7 @@ Publishing and signing remain separate authorized steps.
 ```bash
 .venv/bin/python -m unittest discover -s tests -v   # unit/contract/distribution
 .venv/bin/python tests/check_contract.py            # SKILL.md vs code
-node --test packaging/npm/test/install.test.js      # installer error paths
+node --test packaging/npm/test/*.test.js             # installer/update error paths
 gitleaks protect --staged --config .gitleaks.toml    # pre-commit secret scan
 ```
 
