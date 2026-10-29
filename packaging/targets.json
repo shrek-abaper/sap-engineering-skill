@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Declared platform matrix for the self-contained sap-adt runtime. 'status' is maintained explicitly: a target is 'verified-local' only after a real build + install smoke on that OS/arch. Never mark a target verified from a script's existence alone.",
+  "description": "Declared platform matrix for the self-contained sap-adt runtime. 'status' is maintained explicitly: 'verified-local' and 'verified-ci' require a real native build + install smoke on that OS/arch, locally or in CI respectively. Never mark a target verified from a script's existence alone.",
   "primary_target": "windows-x86_64",
   "targets": {
     "windows-x86_64": {
@@ -16,16 +16,16 @@
       "notes": "Verified on Ubuntu 24.04 glibc 2.39 (WSL2). glibc floor applies to other distros; do not generalize to musl/older glibc without a real build there."
     },
     "darwin-aarch64": {
-      "status": "planned-unverified",
+      "status": "verified-ci",
       "python_floor": "3.10",
       "installer": "portable tar.gz",
-      "notes": "Apple Silicon native build and isolated npm install smoke are pending the manually dispatched macOS workflow. No personal Mac, live SAP, Keychain or notarization verification."
+      "notes": "Experimental macOS 15+ Apple Silicon runtime. Native macos-15 CI with Python 3.14 passed the full offline Python/npm suites, runtime build and isolated npm runtime installation: Actions run 40881012113, source e1e0bb056fc0c2b3e25989e8e02996d292f8605d. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
     },
     "darwin-x86_64": {
-      "status": "planned-unverified",
+      "status": "verified-ci",
       "python_floor": "3.10",
       "installer": "portable tar.gz",
-      "notes": "Intel native build and isolated npm install smoke are pending the manually dispatched macOS workflow. No personal Mac, live SAP, Keychain or notarization verification."
+      "notes": "Experimental macOS 15+ Intel runtime. Native macos-15-intel CI with Python 3.14 passed the full offline Python/npm suites, runtime build and isolated npm runtime installation: Actions run 40881012113, source e1e0bb056fc0c2b3e25989e8e02996d292f8605d. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
     }
   }
 }
