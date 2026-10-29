@@ -3,6 +3,11 @@
 **Nothing in this document is executed by an agent without explicit
 authorization.** Remote publishing is a separate, human-approved step.
 
+The planned CLI **1.6.1** / plugin/docs **1.3.1** release is on hold until
+batch two (advanced debugging) is complete. Batch-one implementation and
+local verification do not authorize tagging or publication. Rebuild and
+verify the combined candidate, then obtain explicit release approval.
+
 ## Preconditions
 
 1. `tools/check_release.py --skip-marketplace` passes on a locally built
@@ -85,9 +90,9 @@ Guidance:
 
 ## Versioning
 
-- CLI: `1.6.0` (single source: `pyproject.toml`; runtime/npm/installers
+- Planned CLI: `1.6.1`, unreleased (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.3.0` (`.claude-plugin/plugin.json`; must equal
+- Planned plugin/docs: `1.3.1`, unreleased (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

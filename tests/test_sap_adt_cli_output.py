@@ -5,6 +5,8 @@ Batch 1 contract: every command is kind="raw" and its output stays
 byte-for-byte identical regardless of --format / SAP_ADT_FORMAT.
 """
 import os
+import json
+import subprocess
 import sys
 import unittest
 from unittest.mock import patch
@@ -136,6 +138,28 @@ class OutputCliPassthroughTests(unittest.TestCase):
             r = CliRunner().invoke(self.cli.cli, ["get-class", "ZCL_FOO"])
         self.assertEqual(r.exit_code, 1)
         self.assertIn("HTTP 404 ...", r.output)
+
+    def test_redirected_success_and_error_are_utf8_under_legacy_encoding(self):
+        for error in (False, True):
+            script = f"""
+from unittest.mock import patch
+from sap_adt.cli import main
+from sap_adt.adt.handlers import AdtResult
+text = '\\u4e0a\\u6d77'
+result = AdtResult(text=text, is_error={error!r}, kind='source',
+                   data={{'source': text, 'line_count': 1}})
+with patch('sap_adt.cli.handlers.get_class', return_value=result), \\
+     patch('sap_adt.cli._profile_name', return_value=None):
+    main(args=['--format', 'json', 'get-class', 'ZCL_DEMO'])
+"""
+            with self.subTest(error=error):
+                result = subprocess.run(
+                    [sys.executable, "-c", script], capture_output=True,
+                    env={**os.environ, "PYTHONIOENCODING": "cp1252"}, timeout=30,
+                )
+                self.assertEqual(result.returncode, int(error), result.stderr)
+                payload = json.loads((result.stderr if error else result.stdout).decode("utf-8"))
+                self.assertEqual(payload["error"]["message"] if error else payload["data"]["source"], "上海")
 
 
 if __name__ == "__main__":

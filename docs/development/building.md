@@ -138,9 +138,31 @@ Publishing and signing remain separate authorized steps.
 ```bash
 .venv/bin/python -m unittest discover -s tests -v   # unit/contract/distribution
 .venv/bin/python tests/check_contract.py            # SKILL.md vs code
+.venv/bin/python tools/smoke_diagnostics.py "$PWD/.venv/bin/python" -m sap_adt
 node --test packaging/npm/test/*.test.js             # installer/update error paths
 gitleaks protect --staged --config .gitleaks.toml    # pre-commit secret scan
 ```
+
+`smoke_diagnostics.py` starts a loopback-only synthetic HTTP server and checks
+Unit failure evidence, the empty-run gate, a source line window, dump details
+and partial-evidence exits through the actual CLI process. It removes SAP
+connection variables and uses a temporary home. Pass an absolute installed
+CLI path to check a wheel or native runtime instead of the source checkout.
+`smoke_npm.py` runs the same checks after packing and isolated installation;
+the existing native macOS workflow therefore checks these primitives too.
+Redirected stdout/stderr must remain UTF-8 even when Windows Python starts
+with a legacy code page.
+
+Batch-one code was checked locally using Linux and Windows npm runtimes
+and clean Python wheel installations. Release packaging for the planned
+1.6.1 candidate is deferred until batch two is complete; rebuild and repeat
+the installation checks for the combined candidate before publishing.
+Current-source macOS native builds
+still require the authorized hosted workflow; previous macOS verification
+does not validate a new candidate. Live QAS checked dump metadata/formatted
+details and test-include reads. That system returned empty Unit runs for
+the inspected standard classes, so executed-method pass/failure parsing is
+covered by synthetic fixtures, not claimed as live-verified.
 
 Before publishing an upgrade, `--skip-marketplace` leaves the previous
 published plugin archive live. After publication and the marketplace

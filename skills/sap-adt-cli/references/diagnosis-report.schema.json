@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SAP evidence-based diagnosis report",
+  "type": "object",
+  "required": ["status", "scope", "root_cause_guess", "evidence", "evidence_gaps", "next_actions"],
+  "additionalProperties": false,
+  "properties": {
+    "status": {"enum": ["passed", "diagnosed", "needs_evidence", "blocked"]},
+    "scope": {
+      "type": "object",
+      "required": ["profile", "object"],
+      "properties": {
+        "profile": {"type": ["string", "null"]},
+        "object": {"type": "string"},
+        "time_window": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "root_cause_guess": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["description", "confidence", "evidence_ids"],
+          "properties": {
+            "description": {"type": "string"},
+            "confidence": {"enum": ["low", "medium", "high"]},
+            "evidence_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "command", "location", "observation"],
+        "properties": {
+          "id": {"type": "string"},
+          "command": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+          "location": {"type": ["string", "null"]},
+          "observation": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence_gaps": {"type": "array", "items": {"type": "string"}},
+    "next_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["reason", "argv", "manual_action"],
+        "properties": {
+          "reason": {"type": "string"},
+          "argv": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "array", "minItems": 2, "items": {"type": "string"}}
+            ]
+          },
+          "manual_action": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false,
+        "oneOf": [
+          {"properties": {"argv": {"type": "array"}, "manual_action": {"type": "null"}}},
+          {"properties": {"argv": {"type": "null"}, "manual_action": {"type": "string", "minLength": 1}}}
+        ]
+      }
+    }
+  }
+}

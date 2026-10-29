@@ -22,6 +22,7 @@ _DDL = ["/sap/bc/adt/ddic/ddl/sources"]
 COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("get-program", _PROG),
     ("get-class", _OO),
+    ("get-source", _OO + _PROG + _FUGR + _DDL),
     ("get-function-group", _FUGR),
     ("get-function", _FUGR),
     ("get-include", ["/sap/bc/adt/programs/includes"]),
@@ -48,6 +49,7 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("transport diff", ["/sap/bc/adt/cts/transportrequests"]),
     ("list-feeds", ["/sap/bc/adt/feeds"]),
     ("query-feed", ["/sap/bc/adt/feeds"]),
+    ("get-dump", ["/sap/bc/adt/runtime/dumps"]),
     # Discovery only proves object roots, not historical subresources.
     ("get-versions", _OO + _PROG + _FUGR + _DDL),
     ("get-version-source", _OO + _PROG + _FUGR + _DDL),

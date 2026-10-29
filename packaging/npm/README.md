@@ -16,6 +16,11 @@ Windows 10/11). From 1.6.0, experimental macOS 15+ runtimes cover Intel
 isolated npm installations gate publication; personal Macs, older macOS,
 Keychain, Gatekeeper/quarantine, signing/notarization and live SAP on macOS
 remain unverified. The Python package is an alternative.
+From 1.6.1, both channels expose richer ABAP Unit evidence,
+`run-unit-test --require-tests`, `get-source` for test include locations and
+`get-dump` for bounded dump details with explicit ST22 fallback. The Skill
+composes these read primitives into diagnosis; no debugger or automatic fix
+is involved. Redirected CLI output is UTF-8, including on Windows.
 Upgrading an older launcher requires reinstalling
 the npm package before running `sap-adt install` again.
 

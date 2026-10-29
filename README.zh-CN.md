@@ -34,6 +34,7 @@
 | 上线前评估传输请求 | [`sap-transport-gate`](skills/sap-transport-gate/) | 提供审查包或源文件时不需要；在线采集需要 CLI |
 | 查询 SAP 与 Java、Python、.NET、Node.js、BTP 的集成方式 | [`sap-integration-wiki`](skills/sap-integration-wiki/) | 不需要 |
 | 在真实系统上读写 ABAP 对象与传输请求 | [`sap-adt-cli`](skills/sap-adt-cli/) | 需要：已安装的 CLI、连接 Profile 与相应权限 |
+| 诊断 ABAP Unit 失败与运行时 Dump | [`sap-adt-cli`](skills/sap-adt-cli/) | 已有证据可离线分析；采集新证据需要 CLI 1.6.1+ 与 SAP 连接 |
 
 `abap-code-review` 覆盖 9 个审查维度，`sap-transport-gate` 覆盖 10 个。各维度的检查项、支持的对象类型和报告契约写在对应 Skill 的 README 与 `references/` 中，本页不重复。
 
@@ -128,6 +129,20 @@ sap-adt credentials doctor   # 显示当前使用的密钥库后端，不输出�
 ```
 
 预期输出：结合你的 SAP 版本与场景给出推荐技术、SAP 侧前置配置、带可用代码片段的实施步骤，以及 2–3 个常见坑。
+
+**诊断 Unit 失败（CLI 1.6.1+）：**
+
+```text
+请诊断 qas 上 ZCL_EXAMPLE 的这份 Unit 失败结果，读取返回的测试 include
+位置；只有能关联到本次运行时，才读取 Dump 详情。输出证据、缺口和下一步，
+不要改代码，也不要提高风险等级或执行时长后重跑。
+```
+
+Skill 通过 `run-unit-test --require-tests`、`get-source` 和 `get-dump`
+编排诊断，不引入工作流引擎。未执行测试不算通过；Dump 详情不可用时明确降级到
+ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升级前请查看
+[诊断说明](skills/sap-adt-cli/references/test-failure-diagnosis.md)与
+[发布状态](CHANGELOG.md)。
 
 审查输出是上线流程的输入，而不是审批本身。开发、技术负责人或发布经理仍需完成签字、测试与导入。
 

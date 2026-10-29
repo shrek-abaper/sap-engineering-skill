@@ -17,6 +17,7 @@ import tempfile
 from pathlib import Path
 
 from build_runtime import target_id
+from smoke_diagnostics import check_cli
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -75,13 +76,15 @@ def main() -> int:
         ).stdout
         for command in ("configure", "update", "list-feeds", "query-feed",
                         "get-versions", "get-version-source", "diff-versions",
-                        "get-transport", "Setup and maintenance", "ADT commands"):
+                        "get-transport", "get-dump", "get-source",
+                        "Setup and maintenance", "ADT commands"):
             if command not in help_text:
                 raise SystemExit(f"Runtime --help does not list {command}.")
         subprocess.run(
             [str(bin_path), "transport", "diff", "--help"], cwd=work,
             capture_output=True, text=True, check=True,
         )
+        check_cli([str(bin_path)])
         print(f"[smoke_npm] OK: {target}: npm pack -> global install -> runtime install -> {actual}")
     return 0
 

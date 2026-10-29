@@ -26,6 +26,7 @@ from __future__ import annotations
 
 from . import (
     capabilities,
+    dumps,
     fields,
     feeds,
     findings,
@@ -39,6 +40,7 @@ from . import (
 
 __all__ = [
     "capabilities",
+    "dumps",
     "fields",
     "feeds",
     "findings",

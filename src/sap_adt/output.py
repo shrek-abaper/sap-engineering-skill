@@ -31,7 +31,7 @@ RAW_KIND = "raw"
 STRUCTURED_KINDS = (
     "source", "fields", "objects", "rows", "records", "findings", "scalar",
     "capabilities",
-    "feeds", "versions", "diff",
+    "feeds", "versions", "diff", "dumps",
 )
 
 # data key holding the list whose length is the row_count for that kind.
@@ -188,6 +188,10 @@ def _text_findings(data: dict) -> str:
     for f in data.get("findings", []):
         line = f"[{(f.get('severity') or '').upper():7}] line {f.get('line')}: {f.get('text') or ''}"
         lines.append(line)
+    if data.get("summary"):
+        lines.insert(0, "ABAP Unit: " + json.dumps(data["summary"], ensure_ascii=False))
+    for gap in data.get("evidence_gaps", []):
+        lines.append("EVIDENCE_GAP: " + json.dumps(gap, ensure_ascii=False))
     return "\n".join(lines)
 
 
@@ -237,6 +241,7 @@ _TEXT_RENDERERS = {
     "feeds": _text_diagnostics,
     "versions": _text_diagnostics,
     "diff": _text_diff,
+    "dumps": _text_diagnostics,
 }
 
 

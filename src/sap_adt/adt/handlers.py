@@ -12,6 +12,7 @@ import requests
 from . import coverage as coverage_lib
 from .client import AdtHttpError, config_override, make_adt_request
 from .parsers import capabilities as parse_capabilities
+from .parsers import dumps as parse_dumps
 from .parsers import fields as parse_fields
 from .parsers import feeds as parse_feeds
 from .parsers import findings as parse_findings
@@ -681,7 +682,9 @@ def _adt_uri(href: str, resource: str = "/sap/bc/adt/") -> str:
         or not decoded.startswith("/sap/bc/adt/")
         or "\\" in decoded
         or any(p in (".", "..") for p in decoded.split("/"))
-        or posixpath.normpath(decoded) != decoded.rstrip("/")
+        # Encoded namespace delimiters may decode to doubled slashes.
+        or posixpath.normpath(decoded) != re.sub(r"/+", "/", decoded).rstrip("/")
+        or posixpath.normpath(target.path) != target.path.rstrip("/")
     ):
         raise ValueError("Expected a same-system ADT URI without traversal or fragment")
     return urlunsplit(("", "", target.path, target.query, ""))
@@ -689,6 +692,143 @@ def _adt_uri(href: str, resource: str = "/sap/bc/adt/") -> str:
 
 def _read_adt(uri: str, **kwargs) -> requests.Response:
     return make_adt_request(_base().rstrip("/") + _adt_uri(uri), **kwargs)
+
+
+def _navigation_target(uri: str) -> str:
+    """ADT navigation names a logical system; network I/O stays on the profile."""
+    parsed = urlsplit(uri)
+    if parsed.scheme == "adt":
+        if not parsed.netloc or parsed.username or parsed.password:
+            raise ValueError("Invalid ADT navigation URI")
+        parsed = parsed._replace(scheme="", netloc="")
+    return urlunsplit(parsed)
+
+
+def get_source(uri: str, start_line: int = 1,
+               end_line: Optional[int] = None) -> AdtResult:
+    """GET a repository source link, including test includes; slice locally."""
+    try:
+        if start_line < 1 or (end_line is not None and end_line < start_line):
+            raise ValueError("Expected 1 <= start-line <= end-line")
+        parsed = urlsplit(_navigation_target(uri))
+        target = _adt_uri(urlunsplit(parsed._replace(fragment="")))
+        if urlsplit(target).query:
+            raise ValueError("Source URI must not contain query parameters")
+        path = urlsplit(target).path
+        roots = (
+            r"oo/(?:classes|interfaces)/[^/]+/(?:source/main|includes/(?:testclasses|definitions|implementations|macros))",
+            r"programs/(?:programs|includes)/[^/]+/source/main",
+            r"functions/groups/[^/]+/(?:source/main|fmodules/[^/]+/source/main)",
+            r"ddic/(?:ddl/sources|typegroups)/[^/]+/source/main",
+        )
+        if not re.fullmatch(r"/sap/bc/adt/(?:" + "|".join(roots) + ")", path):
+            raise ValueError("Expected a repository source URI returned by SAP")
+        resp = _read_adt(target, extra_headers={"Accept": "text/plain"})
+        data = parse_source.parse(resp.content)
+        lines = data["source"].splitlines(keepends=True)
+        if start_line > max(1, len(lines)):
+            raise ValueError("start-line is beyond the source document")
+        end = min(end_line if end_line is not None else len(lines), len(lines))
+        data.update({
+            "source": "".join(lines[start_line - 1:end]),
+            "line_count": max(0, end - start_line + 1),
+            "uri": target, "start_line": start_line, "end_line": end,
+            "total_lines": len(lines),
+        })
+        return _structured("source", data, {"type": "source", "uri": target})
+    except Exception as e:
+        return _err(e)
+
+
+def _dump_uri(value: str) -> str:
+    if "/" in value:
+        target = _adt_uri(_navigation_target(value))
+        parsed = urlsplit(target)
+        match = re.fullmatch(r"/sap/bc/adt/runtime/dump/([^/]+)(?:/formatted|/summary)?",
+                             parsed.path)
+        if not match or parsed.query:
+            raise ValueError("Expected a dump ID or same-system runtime dump URI")
+        identifier = unquote(match[1])
+    else:
+        identifier = unquote(value)
+    if (not identifier or len(identifier) > 512 or identifier in (".", "..")
+            or not re.fullmatch(r"[A-Za-z0-9_ .:-]+", identifier)):
+        raise ValueError("Invalid runtime dump ID")
+    return "/sap/bc/adt/runtime/dump/" + _enc(identifier)
+
+
+def get_dump(identifier: str, max_chars: int = 20000) -> AdtResult:
+    """GET one dump's metadata and formatted evidence, with explicit ST22 fallback."""
+    try:
+        _limit(max_chars, 200000)
+        uri = _dump_uri(identifier)
+        data = {
+            "id": unquote(uri.rsplit("/", 1)[1]), "uri": uri,
+            "detail_available": False, "fallback": "ST22", "header": {},
+            "termination": {"uri": None, "line": None},
+            "sections": [], "text": None, "source": [], "stack": [],
+            "evidence_gaps": [],
+        }
+        raw = None
+        try:
+            resp = _read_adt(uri, extra_headers={
+                "Accept": "application/vnd.sap.adt.runtime.dump.v1+xml",
+            })
+            raw = resp.text
+            metadata = parse_dumps.parse(resp.content)
+        except AdtHttpError as e:
+            if e.status not in (404, 405, 406, 415, 501):
+                raise
+            data["evidence_gaps"].append({
+                "code": "DUMP_DETAIL_UNAVAILABLE", "http_status": e.status,
+                "message": "Dump metadata is unavailable (unsupported endpoint or expired dump); inspect ST22.",
+            })
+        else:
+            data["header"] = metadata["header"]
+            data["termination"] = metadata["termination"]
+            try:
+                resp = _read_adt(uri + "/formatted",
+                                 extra_headers={"Accept": "text/plain"})
+                if not resp.text.strip():
+                    raise ParseError("Empty formatted dump document")
+                if resp.text.lstrip().lower().startswith(("<html", "<!doctype html")):
+                    raise ParseError("Expected formatted dump text, received HTML")
+                evidence = parse_dumps.evidence(metadata, resp.text, max_chars)
+                data.update({k: v for k, v in evidence.items()
+                             if k not in ("truncated", "chapter_layout_known", "unmapped_chapters")})
+                data["detail_available"] = True
+                data["fallback"] = None
+                if evidence["truncated"]:
+                    data["evidence_gaps"].append({
+                        "code": "DUMP_TEXT_TRUNCATED", "message": "Diagnostic text exceeded --max-chars.",
+                    })
+                if not evidence["chapter_layout_known"]:
+                    data["evidence_gaps"].append({
+                        "code": "DUMP_LAYOUT_UNKNOWN",
+                        "message": "Chapter layout could not be mapped; inspect the returned bounded text or ST22.",
+                    })
+                elif evidence["unmapped_chapters"]:
+                    data["evidence_gaps"].append({
+                        "code": "DUMP_CHAPTERS_UNMAPPED",
+                        "chapters": evidence["unmapped_chapters"],
+                        "message": "Some diagnostic chapter offsets are missing or outside the formatted document.",
+                    })
+            except AdtHttpError as e:
+                if e.status not in (404, 405, 406, 415, 501):
+                    raise
+                data["evidence_gaps"].append({
+                    "code": "DUMP_FORMATTED_UNAVAILABLE", "http_status": e.status,
+                    "message": "Formatted dump is unavailable; metadata is retained. Inspect ST22.",
+                })
+            except ParseError as e:
+                data["evidence_gaps"].append({
+                    "code": "DUMP_FORMATTED_INVALID", "message": str(e),
+                })
+        return _structured("dumps", data, {"type": "dump", "uri": uri}, raw=raw, meta={
+            "partial": bool(data["evidence_gaps"]), "max_chars": max_chars,
+        })
+    except Exception as e:
+        return _err(e)
 
 
 def _limit(value: int, maximum: int = 500) -> None:

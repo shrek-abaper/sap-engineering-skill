@@ -62,6 +62,48 @@ class UnitParserSyntheticTests(unittest.TestCase):
         self.assertEqual(f["source_severity"], "critical")
         self.assertEqual(f["line"], 18)
         self.assertIn("Expected: 2 but was: 3", f["text"])
+        self.assertEqual(d["summary"]["status"], "failed")
+        method = d["test_classes"][0]["methods"][1]
+        self.assertEqual(method["name"], "SHOULD_FAIL")
+        self.assertEqual(method["alerts"][0]["test_class"], "TESTS")
+        self.assertEqual(method["alerts"][0]["stack"][0]["line"], 18)
+        self.assertEqual(method["alerts"][0]["details"], ["Expected: 2 but was: 3"])
+
+    def test_warning_is_not_a_failed_method_and_class_setup_failure_is_not_a_pass(self):
+        payload = b"""<runResult><program><testClasses>
+        <testClass name="LTC_SETUP"><alerts><alert kind="exception" severity="critical">
+        <title>CLASS_SETUP failed</title></alert></alerts></testClass>
+        <testClass name="LTC_WARN"><testMethods>
+        <testMethod name="WARN" executionTime="1" unit="ms"><alerts>
+        <alert kind="warning" severity="tolerable"><title>Advisory</title></alert>
+        </alerts></testMethod></testMethods></testClass>
+        </testClasses></program></runResult>"""
+        d = findings.parse_unit(payload)
+        self.assertEqual(d["summary"]["class_failures"], 1)
+        self.assertEqual(d["summary"]["failed"], 0)
+        self.assertEqual(d["summary"]["passed"], 1)
+        self.assertEqual(d["summary"]["status"], "failed")
+        self.assertEqual(d["test_classes"][0]["status"], "failed")
+        self.assertEqual(d["test_classes"][1]["methods"][0]["status"], "passed")
+
+    def test_skipped_and_unknown_shapes_never_claim_a_pass(self):
+        for content, expected in [
+            ('<testMethod name="SKIP" unit="skipped"/>', "not_run"),
+            ('<testMethod name="OK"/><newResultShape/>', "incomplete"),
+            ('<testMethod name="UNKNOWN" status="aborted"/>', "incomplete"),
+            ('<testMethod name="UNKNOWN"><alerts><alert kind="futureResult"/></alerts></testMethod>',
+             "incomplete"),
+        ]:
+            with self.subTest(expected=expected):
+                xml = f"<runResult><testClass name='TEST'><testMethods>{content}</testMethods></testClass></runResult>"
+                d = findings.parse_unit(xml.encode())
+                self.assertEqual(d["summary"]["status"], expected)
+                self.assertEqual(d["_meta"]["no_tests_found"], "OK" not in content)
+
+    def test_method_failure_without_alert_still_fails_quality_gate(self):
+        d = findings.parse_unit(b"<runResult><testClass><testMethod name='FAIL' status='failed'/></testClass></runResult>")
+        self.assertEqual(d["summary"]["failed"], 1)
+        self.assertEqual(d["findings"][0]["severity"], "error")
 
 
 class UnitCommandTests(unittest.TestCase):
@@ -119,6 +161,23 @@ class UnitCommandTests(unittest.TestCase):
         self.assertTrue(d["meta"]["no_tests_found"])
         self.assertEqual(d["meta"]["risk_level"], "harmless")
         self.assertEqual(d["meta"]["config_version"], "v4")
+        self.assertEqual(d["data"]["summary"]["status"], "not_run")
+
+    def test_require_tests_exits_one_but_preserves_successful_operation_evidence(self):
+        r = self._invoke("ZCL_X", "--require-tests", "--fail-on", "never")
+        self.assertEqual(r.exit_code, 1, r.output)
+        d = json.loads(r.stdout)
+        self.assertTrue(d["ok"])
+        self.assertEqual(d["data"]["evidence_gaps"][0]["code"], "NO_TESTS_EXECUTED")
+
+    def test_incomplete_evidence_exits_one_even_with_fail_on_never(self):
+        class R:
+            content = b"<runResult><newResultShape/></runResult>"
+            text = content.decode()
+        with patch.object(self.handlers, "make_adt_request", return_value=R()):
+            r = self._invoke("ZCL_X", "--fail-on", "never")
+        self.assertEqual(r.exit_code, 1, r.output)
+        self.assertTrue(json.loads(r.stdout)["meta"]["partial"])
 
     def test_dangerous_without_allow_write_is_gate_3(self):
         # gate fires before any HTTP call: the mocked request must not run

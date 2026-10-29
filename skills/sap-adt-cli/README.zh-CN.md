@@ -15,6 +15,12 @@ CLI 1.6.0 新增了 **ADT 诊断 Feeds、对象分文件版本历史、版本差
 CLI 1.6.0 也新增了显式的 `sap-adt update` 升级命令；支持检查、逐次确认和
 安装渠道识别，不会擅自切换安装方式。详见[升级指引](references/updating.md)。
 
+CLI 1.6.1 新增 **Unit 失败证据、测试 Include 源码读取和 Dump 详情**，
+由 Skill 编排定位流程，不自动修改代码。详见
+[测试失败诊断](references/test-failure-diagnosis.md)。
+没有执行测试不等于通过；`--require-tests` 可让空执行结果返回退出码 1。
+Python 安装与 npm 原生运行时使用相同命令和输出契约。
+
 ---
 
 ## 环境要求

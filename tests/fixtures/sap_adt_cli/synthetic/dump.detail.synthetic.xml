@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SYNTHETIC values; XML/chapter structure checked on QAS, 2026-10-29.
+     No business source, identities, cookies or live dump contents retained. -->
+<dump xmlns="http://www.sap.com/adt/runtime/dump"
+  error="UNCAUGHT_EXCEPTION" exception="CX_DEMO" author="TESTUSER"
+  datetime="20261029120000" systemDate="20261029" systemTime="120000"
+  terminatedProgram="ZCL_DEMO" title="Synthetic exception">
+  <links>
+    <link relation="contents" contentType="text/plain"
+      uri="/sap/bc/adt/runtime/dump/DEMO/formatted"/>
+    <link relation="http://www.sap.com/adt/relations/runtime/dump/termination"
+      uri="adt://SYS/sap/bc/adt/oo/classes/zcl_demo/includes/testclasses#start=42"/>
+  </links>
+  <chapters>
+    <chapter name="kap0" title="Short Text" line="1"/>
+    <chapter name="kap3" title="Error analysis" line="4"/>
+    <chapter name="kap7" title="Information on where terminated" line="7"/>
+    <chapter name="kap8" title="Source Code Extract" line="10"/>
+    <chapter name="kap11" title="Active Calls/Events" line="14"/>
+    <chapter name="kap9" title="Contents of system fields" line="17"/>
+    <chapter name="kap10" title="Chosen Variables" line="20"/>
+  </chapters>
+</dump>

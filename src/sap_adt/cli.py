@@ -678,7 +678,9 @@ def credentials_doctor(coverage):
               help="Skip confirmation for dangerous/critical (trusted automation only)")
 @click.option("--fail-on", default="error",
               type=click.Choice(["error", "warning", "info", "never"]))
-def run_unit_test_cmd(object_name, object_type, group, risk_level, duration, yes, fail_on):
+@click.option("--require-tests", is_flag=True, default=False,
+              help="Exit 1 if no test method executed; an empty run is not a pass.")
+def run_unit_test_cmd(object_name, object_type, group, risk_level, duration, yes, fail_on, require_tests):
     """Run ABAP Unit tests for a class/program/include (read-only at harmless)."""
     config = _load_config()
     _require_config(config)
@@ -702,6 +704,8 @@ def run_unit_test_cmd(object_name, object_type, group, risk_level, duration, yes
         _abort_on_error(result)
     click.echo(output.render(result, output.get_format(),
                              command="run-unit-test", profile=_profile_name()))
+    if result.meta.get("partial") or (require_tests and result.meta.get("no_tests_found")):
+        sys.exit(1)
     _fail_on_findings(result, fail_on)
 
 
@@ -778,6 +782,35 @@ def get_program(program_name):
 def list_feeds_cmd():
     """List /sap/bc/adt/feeds with FQL attributes and query variants (JSON)."""
     _output(handlers.list_feeds())
+
+
+@cli.command("get-dump")
+@click.argument("identifier")
+@click.option("--max-chars", type=click.IntRange(1, 200000), default=20000,
+              show_default=True, help="Shared character budget for diagnostic chapter text.")
+def get_dump_cmd(identifier, max_chars):
+    """Read one runtime dump's metadata and formatted evidence (GET /runtime/dump).
+
+    JSON dumps envelope by default; partial/unavailable detail exits 1 with
+    evidence gaps and ST22 fallback. XML returns the metadata document.
+    """
+    result = handlers.get_dump(identifier, max_chars=max_chars)
+    _output(result)
+    if result.meta.get("partial"):
+        sys.exit(1)
+
+
+@cli.command("get-source")
+@click.argument("uri")
+@click.option("--start-line", type=click.IntRange(1), default=1, show_default=True)
+@click.option("--end-line", type=click.IntRange(1), default=None)
+def get_source_cmd(uri, start_line, end_line):
+    """Read a returned source URI, including test includes (plain ABAP default).
+
+    GET repository /source/main or /includes/{part}; --format json includes
+    one-based range metadata for the locally selected lines.
+    """
+    _output(handlers.get_source(uri, start_line=start_line, end_line=end_line))
 
 
 @cli.command("query-feed")
@@ -1327,6 +1360,10 @@ def main(prog_name: str = "sap-adt", args=None) -> None:
     ``args`` optionally overrides argv for embedding/tests; None means Click
     reads sys.argv as usual.
     """
+    # Frozen Windows Python can ignore PYTHONUTF8; pipes still need UTF-8.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure") and not stream.isatty():
+            stream.reconfigure(encoding="utf-8")
     cli(args=args, prog_name=prog_name)
 
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## CLI 1.6.1 / plugin/docs 1.3.1 — Unreleased
+
+Release hold: batch one (Unit evidence, Dump details and Skill diagnosis)
+is implemented. Wait for batch two (advanced debugging), then rebuild and
+verify the combined candidate. Tagging and publication still require
+explicit approval; completing either batch does not authorize release.
+
+- Enriched ABAP Unit evidence with test classes/methods, alert kinds,
+  details/stacks and explicit passed/failed/not-run/incomplete summaries.
+  Added opt-in `--require-tests`; existing empty-run exit behavior remains.
+- Added read-only `get-source` for returned repository/test include URIs
+  and line windows, and `get-dump` for metadata and bounded diagnostic
+  chapters. Unsupported detail, unknown layouts and truncation remain
+  explicit evidence gaps; permissions/network failures are not hidden.
+- Added evidence-based Unit/Dump Skill routing and a diagnosis report
+  schema. No automatic edits, risk escalation, debugging or workflow engine.
+- The same Python implementation is included in PyPI and all native npm
+  runtime targets; install smokes check the new commands offline.
+- Fixed redirected Windows CLI output to UTF-8 so non-English diagnostic
+  evidence remains parseable JSON under legacy system code pages.
+
 ## CLI 1.6.0 / plugin/docs 1.3.0 — 2026-10-29
 
 - Added read-only ADT Feeds, per-part object history, version source/diffs,

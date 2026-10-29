@@ -26,6 +26,12 @@ comparison baselines, evidence gaps and the real-system verification scope.
 CLI 1.6.0 also adds explicit CLI updates: see [updating](references/updating.md).
 The command never silently changes installation channels.
 
+CLI 1.6.1 adds **Unit failure evidence, test-include source reads and dump
+details**. The Skill connects these primitives into diagnosis, not automatic
+repair. See [test failure diagnosis](references/test-failure-diagnosis.md).
+An empty Unit result is not a pass; `--require-tests` makes it fail the gate.
+Use the same commands with Python or an npm-installed native runtime.
+
 ---
 
 ## Requirements

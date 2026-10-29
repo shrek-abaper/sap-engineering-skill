@@ -34,6 +34,7 @@
 | Assess a transport request before import | [`sap-transport-gate`](skills/sap-transport-gate/) | Not needed with a review package or source files; online collection uses the CLI |
 | Look up how to integrate SAP with Java, Python, .NET, Node.js or BTP | [`sap-integration-wiki`](skills/sap-integration-wiki/) | Not needed |
 | Read or write ABAP objects and transports on a live system | [`sap-adt-cli`](skills/sap-adt-cli/) | Required — installed CLI, connection profile, matching permissions |
+| Diagnose ABAP Unit failures and runtime dumps | [`sap-adt-cli`](skills/sap-adt-cli/) | Supplied evidence works offline; new evidence reads require CLI 1.6.1+ and SAP access |
 
 `abap-code-review` covers 9 review dimensions and `sap-transport-gate` covers 10. The per-dimension checks, supported object types and report contracts are documented in each skill's README and `references/` files; this page does not repeat them.
 
@@ -129,6 +130,22 @@ How do I create a purchase order in S/4HANA from Python?
 ```
 
 Expected output: the recommended technology for your SAP version and scenario, SAP-side prerequisites, implementation steps with working snippets, and 2–3 common pitfalls.
+
+**Diagnose a failed Unit run (CLI 1.6.1+):**
+
+```text
+Diagnose the supplied ZCL_EXAMPLE Unit failure on qas. Read the returned
+test include location; use dump details only when attributable to this run.
+Give me evidence, gaps and next actions, without changing code or rerunning
+with broader risk or duration.
+```
+
+The Skill composes `run-unit-test --require-tests`, `get-source` and
+`get-dump`; it does not introduce a workflow engine. Empty runs are not
+passes, and unsupported dump detail degrades explicitly to ST22. Python and
+native npm runtimes expose the same commands and JSON contract. See the
+[diagnosis reference](skills/sap-adt-cli/references/test-failure-diagnosis.md)
+and [release status](CHANGELOG.md) before upgrading.
 
 Review output is an input to your release process, not the approval itself. A developer, technical lead or release manager still has to sign off, test and import.
 

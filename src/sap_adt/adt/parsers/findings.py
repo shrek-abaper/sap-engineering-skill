@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 
-from .common import attr, localname, parse_xml
+from .common import ParseError, attr, localname, parse_xml
 
 _SEVERITY = {
     "E": "error",
@@ -63,11 +63,8 @@ def parse(payload: bytes) -> dict:
 # ---------------------------------------------------------------------------
 # ABAP Unit (aunit:runResult)
 #
-# NOTE: the alert/class-level mapping below is verified against real S/4
-# responses, but the testMethod path (pass/fail/skipped counts, failed
-# assertion text) is NOT: the capture DEV system exposes no healthy test
-# class, so that shape follows the abap-adt-api client. Unknown node shapes
-# are collected in meta.unparsed_nodes rather than dropped.
+# Executed-method fixtures are marked separately from live captures.
+# Unknown node shapes remain explicit evidence gaps rather than a clean run.
 # ---------------------------------------------------------------------------
 
 _AUNIT = "http://www.sap.com/adt/aunit"
@@ -83,7 +80,7 @@ _UNIT_KNOWN_TAGS = {
 }
 
 
-def _unit_alert(el, *, context_uri=None, source_severity=True) -> dict:
+def _unit_alert(el, *, context_uri=None, test_class=None, test_method=None) -> dict:
     kind = (attr(el, "kind") or "").strip()
     sev_attr = attr(el, "severity")
     title = None
@@ -98,15 +95,31 @@ def _unit_alert(el, *, context_uri=None, source_severity=True) -> dict:
         if value:
             details.append(value)
     text = " — ".join([t for t in ([title] + details) if t]) or None
-    uri = context_uri
+    stack = []
+    for entry in el.iter():
+        if localname(entry.tag) == "stackEntry":
+            uri = attr(entry, "uri")
+            stack.append({
+                "uri": uri, "line": _line_from_uri(uri),
+                "description": attr(entry, "description"),
+                "name": attr(entry, "name"), "type": attr(entry, "type"),
+            })
+    uri = next((s["uri"] for s in stack if s["uri"]), None) or context_uri
     line = _line_from_uri(uri)
     finding = {
-        "severity": _UNIT_ALERT_SEVERITY.get(kind, "info"),
+        "severity": _UNIT_ALERT_SEVERITY.get(
+            kind, "error" if (sev_attr or "").lower() in ("critical", "fatal") else "info"),
         "text": text,
         "line": line,
         "uri": uri,
+        "kind": kind or None,
+        "title": title,
+        "details": details,
+        "stack": stack,
+        "test_class": test_class,
+        "test_method": test_method,
     }
-    if source_severity and sev_attr:
+    if sev_attr:
         # kind is the result category; severity is the (possibly critical)
         # alert severity — keep it visible without conflating the two.
         finding["source_severity"] = sev_attr
@@ -115,82 +128,134 @@ def _unit_alert(el, *, context_uri=None, source_severity=True) -> dict:
 
 def parse_unit(payload: bytes) -> dict:
     root = parse_xml(payload)
+    if localname(root.tag) != "runResult":
+        raise ParseError("Expected an ABAP Unit runResult document")
     findings: list[dict] = []
-    total = failed = skipped = 0
+    total = failed = skipped = unknown = class_failures = not_run_classes = 0
     duration_ms: int | None = None
     duration_category = None
     unparsed: list[str] = []
-
-    programs = [el for el in root.iter() if localname(el.tag) == "program"]
-    classes = [el for el in root.iter() if localname(el.tag) == "testClass"]
-    methods = [el for el in root.iter() if localname(el.tag) == "testMethod"]
-
-    for c in classes:
-        if not duration_category:
-            duration_category = attr(c, "durationCategory")
-
-    # Class-level alerts are alerts NOT nested inside a testMethod (the real
-    # alert-only fixture shape: a defective test class emits one here).
-    method_alert_ids = set()
-    for m in methods:
-        for a in m.iter():
-            if localname(a.tag) == "alert":
-                method_alert_ids.add(id(a))
-    for a in root.iter():
-        if localname(a.tag) == "alert" and id(a) not in method_alert_ids:
-            stack_entry = next(
-                (s for s in a.iter() if localname(s.tag) == "stackEntry"), None
-            )
-            findings.append(_unit_alert(
-                a, context_uri=attr(stack_entry, "uri") if stack_entry is not None else None
-            ))
-
-    # method-level results (structure per abap-adt-api; unverified on DEV)
     have_method_time = False
-    for m in methods:
-        total += 1
-        unit_state = (attr(m, "unit") or "").lower()
-        if unit_state in ("skipped", "not_executed", "no_test"):
-            skipped += 1
-        method_alerts_list = [a for a in m.iter() if localname(a.tag) == "alert"]
-        is_failed = bool(method_alerts_list) or unit_state in (
-            "failed", "error", "fatal"
-        )
-        if is_failed:
-            failed += 1
-        for a in method_alerts_list:
-            stack_entry = next(
-                (s for s in a.iter() if localname(s.tag) == "stackEntry"), None
-            )
-            findings.append(_unit_alert(
-                a,
-                context_uri=(attr(stack_entry, "uri") if stack_entry is not None else None)
-                or attr(m, "navigationUri") or attr(m, "uri"),
-            ))
-        t = attr(m, "executionTime")
-        if t and t.replace(".", "", 1).isdigit():
-            have_method_time = True
-            duration_ms = (duration_ms or 0) + int(float(t))
+    test_classes = []
+    handled_alerts = set()
+    for c in (n for n in root.iter() if localname(n.tag) == "testClass"):
+        name = attr(c, "name")
+        uri = attr(c, "navigationUri") or attr(c, "uri")
+        duration_category = duration_category or attr(c, "durationCategory")
+        methods = []
+        method_alerts = set()
+        for m in (n for n in c.iter() if localname(n.tag) == "testMethod"):
+            total += 1
+            method_name = attr(m, "name")
+            method_uri = attr(m, "navigationUri") or attr(m, "uri")
+            alerts = []
+            for a in (n for n in m.iter() if localname(n.tag) == "alert"):
+                method_alerts.add(id(a))
+                handled_alerts.add(id(a))
+                alerts.append(_unit_alert(a, context_uri=method_uri,
+                                          test_class=name, test_method=method_name))
+            findings.extend(alerts)
+            state = (attr(m, "status") or attr(m, "unit") or "").lower()
+            if any(a["severity"] == "error" for a in alerts) or state in (
+                "failed", "error", "fatal",
+            ):
+                status = "failed"
+                failed += 1
+                if not any(a["severity"] == "error" for a in alerts):
+                    findings.append({
+                        "severity": "error", "text": "Test method reported failure without an alert",
+                        "line": _line_from_uri(method_uri), "uri": method_uri,
+                        "kind": "reportedFailure", "test_class": name,
+                        "test_method": method_name,
+                    })
+            elif state in ("skipped", "not_executed", "no_test", "notrun"):
+                status = "skipped"
+                skipped += 1
+            elif any(a["kind"] not in _UNIT_ALERT_SEVERITY for a in alerts):
+                status = "unknown"
+                unknown += 1
+            elif attr(m, "status") and state not in ("passed", "success", "successful", "ok"):
+                status = "unknown"
+                unknown += 1
+                unparsed.append("testMethod@status")
+            else:
+                status = "passed"
+            t = attr(m, "executionTime")
+            elapsed = None
+            if t and re.fullmatch(r"\d+(?:\.\d+)?", t):
+                elapsed = int(float(t))
+                have_method_time = True
+                duration_ms = (duration_ms or 0) + elapsed
+            methods.append({
+                "name": method_name, "uri": method_uri,
+                "line": _line_from_uri(method_uri), "status": status,
+                "duration_ms": elapsed, "alerts": alerts,
+            })
+        alerts = []
+        for a in (n for n in c.iter()
+                  if localname(n.tag) == "alert" and id(n) not in method_alerts):
+            handled_alerts.add(id(a))
+            alerts.append(_unit_alert(a, context_uri=uri, test_class=name))
+        findings.extend(alerts)
+        class_failed = any(a["severity"] == "error" for a in alerts)
+        class_failures += int(class_failed)
+        not_run = not methods and not class_failed
+        not_run_classes += int(not_run)
+        test_classes.append({
+            "name": name, "uri": uri, "risk_level": attr(c, "riskLevel"),
+            "duration_category": attr(c, "durationCategory"),
+            "status": ("failed" if class_failed or any(m["status"] == "failed" for m in methods)
+                       else "not_run" if not methods or all(m["status"] == "skipped" for m in methods)
+                       else "incomplete" if any(m["status"] in ("unknown", "skipped") for m in methods)
+                       or any(a["kind"] not in _UNIT_ALERT_SEVERITY for a in alerts)
+                       else "passed"),
+            "alerts": alerts, "methods": methods,
+        })
+    for a in (n for n in root.iter()
+              if localname(n.tag) == "alert" and id(n) not in handled_alerts):
+        findings.append(_unit_alert(a))
 
     # unknown shapes surface instead of being silently dropped
     known = _UNIT_KNOWN_TAGS
     for el in root.iter():
         if localname(el.tag) not in known and isinstance(el.tag, str):
             unparsed.append(el.tag.split("}")[-1])
+        elif localname(el.tag) == "alert" and attr(el, "kind") not in _UNIT_ALERT_SEVERITY:
+            unparsed.append("alert@kind")
 
-    # Empty shell or only non-executed classes: no test method ran.
-    no_tests = total == 0
+    executed = total - skipped - unknown
+    status = ("failed" if any(f["severity"] == "error" for f in findings)
+              else "incomplete" if unparsed
+              else "not_run" if executed == 0
+              else "incomplete" if skipped or not_run_classes else "passed")
+    gaps = []
+    if executed == 0:
+        gaps.append({"code": "NO_TESTS_EXECUTED", "message": "No test method executed; this is not a pass."})
+    elif skipped or not_run_classes:
+        gaps.append({"code": "TESTS_NOT_EXECUTED", "message": "Some tests were not executed."})
+    if unparsed:
+        gaps.append({"code": "UNPARSED_UNIT_NODES", "nodes": sorted(set(unparsed))})
     meta = {
         "total": total,
         "failed": failed,
         "skipped": skipped,
         "duration_ms": duration_ms if have_method_time else None,
         "duration_category": duration_category,
-        "no_tests_found": no_tests,
+        "no_tests_found": executed == 0,
+        "partial": bool(unparsed) or (executed > 0 and bool(skipped or not_run_classes)),
     }
     if unparsed:
         meta["unparsed_nodes"] = sorted(set(unparsed))
-    return {"findings": findings, "_meta": meta}
+    return {
+        "findings": findings, "test_classes": test_classes,
+        "summary": {
+            "status": status, "total": total, "executed": executed,
+            "passed": executed - failed, "failed": failed, "skipped": skipped,
+            "unknown": unknown,
+            "class_failures": class_failures, "not_run_classes": not_run_classes,
+        },
+        "evidence_gaps": gaps, "_meta": meta,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -273,4 +338,3 @@ def parse_atc(payload: bytes) -> dict:
     if unparsed:
         meta["unparsed_nodes"] = sorted(set(unparsed))
     return {"findings": findings_out, "_meta": meta}
-

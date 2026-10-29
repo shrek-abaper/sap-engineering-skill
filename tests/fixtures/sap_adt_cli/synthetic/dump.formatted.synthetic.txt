@@ -1,0 +1,21 @@
+|Short Text|
+|Synthetic exception for an offline test.|
+
+|Error analysis|
+|A synthetic exception was raised.|
+
+|Information on where terminated|
+|Test include, line 42|
+
+|Source Code Extract|
+|   41|  DATA value TYPE i.|
+|   42|  RAISE EXCEPTION TYPE cx_demo.|
+
+|Active Calls/Events|
+|  1 METHOD ZCL_DEMO TEST_METHOD 42|
+
+|Contents of system fields|
+|SY-SUBRC|0|
+
+|Chosen Variables|
+|VALUE|0|
