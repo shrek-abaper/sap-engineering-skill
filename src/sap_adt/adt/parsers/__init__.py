@@ -27,21 +27,25 @@ from __future__ import annotations
 from . import (
     capabilities,
     fields,
+    feeds,
     findings,
     objects,
     records,
     rows,
     scalar,
     source,
+    versions,
 )
 
 __all__ = [
     "capabilities",
     "fields",
+    "feeds",
     "findings",
     "objects",
     "records",
     "rows",
     "scalar",
     "source",
+    "versions",
 ]

@@ -1,9 +1,11 @@
 import json
+import difflib
+import posixpath
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import Optional
-from urllib.parse import quote
+from urllib.parse import parse_qsl, quote, unquote, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 
@@ -11,13 +13,15 @@ from . import coverage as coverage_lib
 from .client import AdtHttpError, config_override, make_adt_request
 from .parsers import capabilities as parse_capabilities
 from .parsers import fields as parse_fields
+from .parsers import feeds as parse_feeds
 from .parsers import findings as parse_findings
 from .parsers import objects as parse_objects
 from .parsers import records as parse_records
 from .parsers import rows as parse_rows
 from .parsers import scalar as parse_scalar
 from .parsers import source as parse_source
-from .parsers.common import ParseError
+from .parsers import versions as parse_versions
+from .parsers.common import ParseError, attr, localname, parse_xml
 from .. import errors
 from ..config import get_config
 
@@ -661,6 +665,376 @@ def list_transports(user: str = "", status: str = "D") -> AdtResult:
         if status:
             records = [t for t in records if (t.get("status") or "").upper() == status.upper()]
         return _structured("records", {"transports": records}, None, raw=resp.text)
+    except Exception as e:
+        return _err(e)
+
+
+def _adt_uri(href: str, resource: str = "/sap/bc/adt/") -> str:
+    """Resolve ADT links without allowing authenticated reads off-system."""
+    base = _base().rstrip("/")
+    origin = urlsplit(base)
+    target = urlsplit(urljoin(base + resource, href))
+    decoded = unquote(unquote(target.path))
+    if (
+        (target.scheme, target.netloc) != (origin.scheme, origin.netloc)
+        or target.fragment or target.username or target.password
+        or not decoded.startswith("/sap/bc/adt/")
+        or "\\" in decoded
+        or any(p in (".", "..") for p in decoded.split("/"))
+        or posixpath.normpath(decoded) != decoded.rstrip("/")
+    ):
+        raise ValueError("Expected a same-system ADT URI without traversal or fragment")
+    return urlunsplit(("", "", target.path, target.query, ""))
+
+
+def _read_adt(uri: str, **kwargs) -> requests.Response:
+    return make_adt_request(_base().rstrip("/") + _adt_uri(uri), **kwargs)
+
+
+def _limit(value: int, maximum: int = 500) -> None:
+    if not 1 <= value <= maximum:
+        raise ValueError(f"Limit must be between 1 and {maximum}")
+
+
+def list_feeds() -> AdtResult:
+    """GET /feeds: catalog with advertised FQL schemas and variants."""
+    try:
+        resp = _read_adt("/sap/bc/adt/feeds",
+                         extra_headers={"Accept": "application/atom+xml;type=feed"})
+        return _structured("feeds", parse_feeds.parse(resp.content), None, raw=resp.text)
+    except Exception as e:
+        return _err(e)
+
+
+def query_feed(uri: str, query: str = "", max_results: int = 20,
+               page_uri: Optional[str] = None) -> AdtResult:
+    """GET an advertised feed, one bounded page; never evaluate feed content."""
+    try:
+        _limit(max_results)
+        catalog = list_feeds()
+        if catalog.is_error:
+            return catalog
+        uri = _adt_uri(uri)
+        entry = next(
+            (e for e in catalog.data["entries"]
+             if _adt_uri(e["content_uri"] or e["id"]) == uri), None
+        )
+        if entry is None:
+            raise ValueError("Feed URI must be advertised by list-feeds")
+        if entry.get("schema", {}).get("query_required") and not (query or page_uri):
+            raise ValueError("This feed requires --query (see list-feeds schema)")
+        target = _adt_uri(page_uri) if page_uri else uri
+        if urlsplit(target).path != urlsplit(uri).path:
+            raise ValueError("Page URI must refer to the selected feed")
+        if page_uri and query:
+            raise ValueError("Use either --page-uri or --query, not both")
+        # A continuation already includes $top; replace it rather than sending
+        # duplicate parameters that different SAP releases interpret differently.
+        parsed_target = urlsplit(target)
+        target = urlunsplit(parsed_target._replace(query=urlencode([
+            (k, v) for k, v in parse_qsl(parsed_target.query, keep_blank_values=True)
+            if k not in ("$top", "sap-client")
+        ])))
+        # Basis 7.56 ignores size/maxNumber; FQL is $query, paging is $top.
+        params = {"$top": max_results}
+        if query:
+            params["$query"] = query
+        resp = _read_adt(target, params=params,
+                         extra_headers={"Accept": "application/atom+xml;type=feed"})
+        data = parse_feeds.parse(resp.content)
+        received = len(data["entries"])
+        data["entries"] = data["entries"][:max_results]
+        # Some feeds exceed $top when timestamps tie. Advancing their cursor
+        # after clipping could skip unseen entries, so require a larger retry.
+        if received > max_results:
+            data["next_uri"] = None
+        elif data["next_uri"]:
+            data["next_uri"] = _adt_uri(data["next_uri"], target)
+        return _structured("feeds", data, None, raw=resp.text, meta={
+            "limit": max_results, "received": received,
+            "truncated": received > max_results,
+            "has_more": bool(data["next_uri"]) or received > max_results,
+            "continuation_may_overlap": bool(page_uri),
+            **({"hint": "Server exceeded the limit; rerun this page with a larger --max-results before advancing"}
+               if received > max_results else {}),
+        })
+    except Exception as e:
+        return _err(e)
+
+
+def _history_object_uri(object_type: str, name: str, group: Optional[str]) -> str:
+    roots = {
+        "class": "oo/classes", "interface": "oo/interfaces",
+        "program": "programs/programs", "include": "programs/includes",
+        "function-group": "functions/groups", "table": "ddic/tables",
+        "structure": "ddic/structures", "cds-view": "ddic/ddl/sources",
+        "domain": "ddic/domains", "data-element": "ddic/dataelements",
+        "type-group": "ddic/typegroups",
+    }
+    if object_type == "function":
+        if not group:
+            raise ValueError("--group is required for a function")
+        return (f"/sap/bc/adt/functions/groups/{_enc(group.lower())}"
+                f"/fmodules/{_enc(name.lower())}")
+    if object_type not in roots:
+        raise ValueError(f"Unsupported history object type: {object_type}")
+    return f"/sap/bc/adt/{roots[object_type]}/{_enc(name.lower())}"
+
+
+def _version_streams(uri: str) -> list[dict]:
+    """Discover each include's versions and corresponding current source."""
+    root = parse_xml(_read_adt(uri).content)
+    streams = []
+    seen = set()
+    for container in root.iter():
+        children = list(container)
+        for link in children:
+            if (localname(link.tag) != "link"
+                    or attr(link, "rel") != "http://www.sap.com/adt/relations/versions"):
+                continue
+            history = _adt_uri(attr(link, "href") or "", uri.rstrip("/") + "/")
+            if history in seen:
+                continue
+            source = next(
+                (n for n in children if localname(n.tag) == "link"
+                 and attr(n, "rel") == "http://www.sap.com/adt/relations/source"
+                 and attr(n, "type") == "text/plain"), None
+            )
+            # DDIC objects expose versions on the metadata representation.
+            source_uri = (_adt_uri(attr(source, "href"), uri.rstrip("/") + "/")
+                          if source is not None else uri)
+            seen.add(history)
+            streams.append({
+                "history_uri": history, "source_uri": source_uri,
+                "part": attr(container, "name") or history.rsplit("/versions", 1)[0].rsplit("/", 1)[-1],
+            })
+    if not streams:
+        raise ParseError("Object metadata advertises no historical version links")
+    return streams
+
+
+def _history_for_uri(uri: str, max_results: int) -> dict:
+    versions, gaps = [], []
+    streams = _version_streams(uri)
+    for stream in streams:
+        try:
+            resp = _read_adt(stream["history_uri"],
+                             extra_headers={"Accept": "application/atom+xml;type=feed"})
+            data = parse_versions.parse(resp.content)
+            if data["next_uri"] or len(data["versions"]) > max_results:
+                gaps.append({**stream, "reason": "History is incomplete (pagination or limit)"})
+            for version in data["versions"][:max_results]:
+                if not version["content_uri"]:
+                    raise ParseError("Historical version has no content URI")
+                version["content_uri"] = _adt_uri(
+                    version["content_uri"], stream["history_uri"]
+                )
+                versions.append({**version, **stream})
+        except Exception as e:
+            result = _err(e)
+            gaps.append({**stream, "reason": result.text, "code": result.error_code})
+    return {"versions": versions, "streams": streams, "evidence_gaps": gaps}
+
+
+def get_versions(object_type: str, name: str, group: Optional[str] = None,
+                 max_results: int = 100) -> AdtResult:
+    """Read advertised per-part Atom version lists; never infer empty history."""
+    try:
+        _limit(max_results)
+        uri = _history_object_uri(object_type, name, group)
+        data = _history_for_uri(uri, max_results)
+        return _structured("versions", data, _obj(object_type, name),
+                           meta={"partial": bool(data["evidence_gaps"]),
+                                 "limit_per_part": max_results})
+    except Exception as e:
+        return _err(e)
+
+
+def _version_content_uri(uri: str) -> str:
+    uri = _adt_uri(uri)
+    parsed = urlsplit(uri)
+    if parsed.query or not re.fullmatch(
+        r"/sap/bc/adt/.+/versions/[^/]+/[^/]+/content", parsed.path
+    ):
+        raise ValueError("Use an opaque content_uri returned by get-versions")
+    return uri
+
+
+def get_version_source(uri: str) -> AdtResult:
+    """GET a historical content URI returned by get-versions."""
+    try:
+        uri = _version_content_uri(uri)
+        resp = _read_adt(uri)
+        return _source_result(resp, "version", uri)
+    except Exception as e:
+        return _err(e)
+
+
+def _source_diff(before: str, after: str, from_uri: str, to_uri: str,
+                 context: int) -> dict:
+    # Keep line endings, including missing EOF newlines, visible in the patch.
+    lines = difflib.unified_diff(
+        before.splitlines(keepends=True), after.splitlines(keepends=True),
+        fromfile=from_uri, tofile=to_uri, n=context,
+    )
+    chunks = []
+    for line in lines:
+        chunks.append(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n")
+    return {"from_uri": from_uri, "to_uri": to_uri,
+            "changed": before != after, "diff": "".join(chunks)}
+
+
+def diff_versions(from_uri: str, to_uri: str, context: int = 3) -> AdtResult:
+    """Compare two explicit version content URIs locally (GET only)."""
+    try:
+        if not 0 <= context <= 100:
+            raise ValueError("Context must be between 0 and 100")
+        from_uri, to_uri = _version_content_uri(from_uri), _version_content_uri(to_uri)
+        before = _read_adt(from_uri).text
+        after = _read_adt(to_uri).text
+        return _structured("diff", {
+            "diffs": [_source_diff(before, after, from_uri, to_uri, context)],
+            "evidence_gaps": [], "comparison": "explicit-version-content",
+        }, None)
+    except Exception as e:
+        return _err(e)
+
+
+def _transport_detail(trkorr: str) -> tuple[requests.Response, dict]:
+    if not _valid_trkorr(trkorr):
+        raise ValueError("Invalid transport number")
+    try:
+        resp = _read_adt(f"/sap/bc/adt/cts/transportrequests/{_enc(trkorr.upper())}",
+                         extra_headers={"Accept": "application/vnd.sap.adt.transportorganizer.v1+xml"})
+    except AdtHttpError as e:
+        if e.status == 400 and "does not exist in system" in str(e).lower():
+            raise AdtHttpError(str(e), status=404) from None
+        raise
+    data = parse_records.parse_single_request(resp.content)
+    root = parse_xml(resp.content)
+    if not any(localname(n.tag) in ("all_objects", "abap_object") for n in root.iter()):
+        raise ParseError("Transport response has no recognized object collection")
+    objects, seen = [], set()
+    for node in root.iter():
+        if localname(node.tag) != "abap_object" or attr(node, "pgmid") == "CORR":
+            continue
+        pgmid, typ, name = (attr(node, k) for k in ("pgmid", "type", "name"))
+        if not all((pgmid, typ, name)):
+            raise ParseError("Transport object lacks pgmid/type/name")
+        key = (pgmid, typ, name)
+        if key in seen:
+            continue
+        seen.add(key)
+        objects.append({"pgmid": pgmid, "type": typ, "name": name,
+                        "wbtype": attr(node, "wbtype")})
+    data["objects"] = objects
+    return resp, data
+
+
+def get_transport(trkorr: str) -> AdtResult:
+    """Read a request/task and its object entries from Transport Organizer."""
+    try:
+        resp, data = _transport_detail(trkorr)
+        return _structured("records", data, _obj("transport", trkorr), raw=resp.text)
+    except Exception as e:
+        return _err(e)
+
+
+def diff_transport(trkorr: str, max_objects: int = 50, context: int = 3) -> AdtResult:
+    """Diff request objects without substituting active code for released snapshots."""
+    try:
+        _limit(max_objects)
+        if not 0 <= context <= 100:
+            raise ValueError("Context must be between 0 and 100")
+        _, detail = _transport_detail(trkorr)
+        request = detail["transport"]
+        if request["status"] not in ("D", "R"):
+            raise ValueError("Only modifiable (D) or released (R) requests are supported")
+        related = {trkorr.upper()} | {t["trkorr"] for t in request["tasks"]}
+        diffs, gaps = [], []
+        objects = detail["objects"]
+        if len(objects) > max_objects:
+            gaps.append({"reason": "Object limit reached", "omitted": len(objects) - max_objects})
+        seen_uris = set()
+        for obj in objects[:max_objects]:
+            try:
+                ref = _read_adt("/sap/bc/adt/cts/transportrequests/reference", params={
+                    "tr_number": trkorr.upper(), "pgmid": obj["pgmid"],
+                    "obj_name": obj["name"], "obj_wbtype": obj["type"],
+                })
+                link = next(
+                    (n for n in parse_xml(ref.content).iter()
+                     if attr(n, "rel") == "http://www.sap.com/cts/relations/objecturi"), None
+                )
+                if link is None or not attr(link, "href"):
+                    raise ParseError("Transport object has no readable ADT object URI")
+                reference = urlsplit(attr(link, "href"))
+                # Method references carry source positions; class source views
+                # share the parent object's per-include history.
+                if re.fullmatch(r"/sap/bc/adt/oo/(classes|interfaces)/[^/]+/source/main",
+                                reference.path):
+                    uri = _adt_uri(reference.path.removesuffix("/source/main"))
+                else:
+                    uri = _adt_uri(attr(link, "href"))
+                if uri in seen_uris:
+                    continue
+                seen_uris.add(uri)
+                history = _history_for_uri(uri, 500)
+                for gap in history["evidence_gaps"]:
+                    gaps.append({"object": obj, **gap})
+                incomplete = {g["history_uri"] for g in history["evidence_gaps"]}
+                for stream in history["streams"]:
+                    if stream["history_uri"] in incomplete:
+                        continue
+                    versions = [v for v in history["versions"]
+                                if v["history_uri"] == stream["history_uri"]]
+                    stored = [v for v in versions if not v["is_active"]]
+                    target = None
+                    if request["status"] == "R":
+                        target = next(
+                            (v for v in stored if related.intersection(v["transports"])), None
+                        )
+                        if target is None:
+                            gaps.append({"object": obj, "part": stream["part"],
+                                         "reason": "No stored version attributable to this released request; active 00000 is not a snapshot"})
+                            continue
+                        stored = stored[stored.index(target) + 1:]
+                    baseline = next(
+                        (v for v in stored if not related.intersection(v["transports"])), None
+                    )
+                    if baseline is None:
+                        gaps.append({"object": obj, "part": stream["part"],
+                                     "reason": "No previous stored baseline; cannot infer a new object or unchanged source"})
+                        continue
+                    before_uri = _version_content_uri(baseline["content_uri"])
+                    active = next((v for v in versions if v["is_active"]), None)
+                    if target:
+                        after_uri = _version_content_uri(target["content_uri"])
+                    elif active:
+                        after_uri = _version_content_uri(active["content_uri"])
+                    else:
+                        after_uri = stream["source_uri"]
+                    diff = _source_diff(
+                        _read_adt(before_uri).text, _read_adt(after_uri).text,
+                        before_uri, after_uri, context,
+                    )
+                    diffs.append({**diff, "object": obj, "part": stream["part"],
+                                  "baseline_version": baseline["version"],
+                                  "target_version": target["version"] if target else "active"})
+            except Exception as e:
+                result = _err(e)
+                gaps.append({"object": obj, "reason": result.text, "code": result.error_code})
+        return _structured("diff", {
+            "transport": request,
+            "comparison": ("released-request-vs-previous-stored-version"
+                           if request["status"] == "R"
+                           else "current-active-vs-previous-stored-version (not an exact transport snapshot)"),
+            "objects": objects, "diffs": diffs, "evidence_gaps": gaps,
+        }, _obj("transport", trkorr), meta={
+            "partial": bool(gaps), "total_objects": len(objects),
+            "objects_attempted": min(len(objects), max_objects),
+            "changed_parts": sum(d["changed"] for d in diffs),
+        })
     except Exception as e:
         return _err(e)
 

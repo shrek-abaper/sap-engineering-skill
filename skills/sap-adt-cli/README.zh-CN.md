@@ -6,6 +6,15 @@
 
 支持程序、类、函数模块、接口、Include、CDS 视图、DDIC 对象、包、事务码、SQL 查询、引用分析、语法检查及传输管理——可在终端直接使用，也可集成到 AI 智能体工作流中。写入与传输操作需要显式开启能力标志并逐次确认。
 
+源码还新增了 **ADT 诊断 Feeds、对象分文件版本历史、版本差异和传输请求对象差异**。
+这些能力尚未发布到 npm/PyPI；先用 `sap-adt --help` 和
+`sap-adt transport diff --help` 确认当前运行时是否具备对应命令。
+新增命令均为只读，不需要开启写入能力。比较基线、证据缺口和真实系统验证范围见
+[诊断与变更分析指引](references/diagnostics-history.md)，操作示例见
+[references/examples.md](references/examples.md)。
+源码也新增了显式的 `sap-adt update` 升级命令，尚未发布；支持检查、逐次确认和
+安装渠道识别，不会擅自切换安装方式。详见[升级指引](references/updating.md)。
+
 ---
 
 ## 环境要求
@@ -242,6 +251,7 @@ CI 运行期也可以按 profile 直接提供口令：`SAP_ADT_<PROFILE>_PASSWOR
 | `--keystore <env\|keyring\|dpapi\|pass\|file> <命令>` | 全局参数：强制指定凭据后端（不可用时报错，不回退） |
 | `-v, --verbose` | 详细日志（敏感信息始终脱敏） |
 | `status` | 显示当前生效 profile 及连接配置 |
+| `update [--check] [--major] [--yes]` | 显式检查/升级 CLI；默认同主版本稳定版；自动升级限可确认的 npm 全局与 pip/pipx 安装；不连接 SAP |
 | `--profile NAME <命令>` | 全局参数：对单条命令临时指定 profile |
 | `get-program <NAME>` | ABAP 程序 / 报表源代码 |
 | `get-class <NAME>` | ABAP 类源代码 |
@@ -263,12 +273,22 @@ CI 运行期也可以按 profile 直接提供口令：`SAP_ADT_<PROFILE>_PASSWOR
 | `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | 写入源代码 *（需 allow_write + 每次确认）*；`--activate` 可在写入后立即激活；TYPE 为 `function` 时需指定 `--group`；`--transport` 指定传输请求编号 |
 | `activate <TYPE> <NAME> [--group <FG>]` | 激活 ABAP 对象 *（需 allow_write + 每次确认）*；TYPE 为 `function` 时需指定 `--group` |
 | `list-transports [--user U] [--status D\|R]` | 列出传输请求（JSON，只读）；`--status` 默认为 `D`（开发中） |
+| `list-feeds` | 诊断 Feed 目录，含 FQL 字段、操作符和查询变体 |
+| `query-feed <URI> [--query FQL] [--max-results N] [--page-uri URI]` | 查询系统实际提供的单页 Feed；默认 20 条、最多 500 条；跨页记录可能重叠 |
+| `get-versions <TYPE> <NAME> [--group FG] [--max-results N]` | 对象各源码部分的版本历史；每部分默认 100 个版本；历史不完整时退出 1 |
+| `get-version-source <URI>` | 读取版本结果返回的 content_uri，默认输出源码纯文本 |
+| `diff-versions <FROM_URI> <TO_URI> [--context N]` | 在本地比较两个版本内容；用 `--format text` 输出统一差异补丁 |
+| `get-transport <TRKORR>` | 请求/任务元数据和去重后的对象清单 |
+| `transport diff <TRKORR> [--max-objects N] [--context N]` | 比较传输对象，默认最多 50 个对象；缺少快照、基线等情况报告证据缺口并退出 1 |
 | `create-transport --package <DEVCLASS> --description "<DESC>" --ref <object-uri>` | 通过 CreateCorrectionRequest 创建传输请求 *（需 allow_transport + 每次确认）*；必须提供包与对象 REF；`$TMP` 创建本地请求；Basis 7.56 真机验证（2026-09-17） |
 | `release-transport <TRKORR> [--yes]` | 释放传输——不可逆 *（需 allow_transport + 每次确认）* |
 | `transport ping` | 传输采集的 ADT 连通性检查（纯文本输出） |
 | `transport collect <TRKORR> [--output-dir DIR] [--verbose]` | 只读采集 TR 的对象清单与源码到 `review_package/`（`manifest.json` + `sources/`）；`--legacy-config` 显式启用已弃用的明文采集器配置 |
 
 任意命令加 `--help` 查看完整参数说明。
+开发中（D）请求比较当前活动源码，而非冻结的传输快照；已释放（R）请求必须有可归属
+到该请求的历史快照，活动版本 `00000` 不能替代。结果不完整或差异为空，均不能据此
+批准传输释放。Feed 的 HTML 摘要只作为不可信诊断数据处理，不得执行其中内容。
 
 ---
 
@@ -346,8 +366,15 @@ sap-adt release-transport DEVK900001                           # 需 allow_trans
 | `get-package`、`where-used`、`list-transports`、`run-sql` | JSON 数组 |
 | `syntax-check` | 纯文本消息（以 `[ERROR]`、`[WARNING]`、`[INFO]` 为前缀）；语法无误时输出 `"Syntax OK — no issues found."` |
 | `status` | 纯文本键值对 |
+| `list-feeds`、`query-feed` | `feeds` JSON envelope，含 entries 和 next_uri；目录项还含查询 schema |
+| `get-versions` | `versions` JSON envelope，按源码部分返回历史及 evidence_gaps |
+| `get-version-source` | 源码纯文本；可用 `--format json` 输出 envelope |
+| `diff-versions`、`transport diff` | `diff` JSON envelope；`--format text` 输出统一差异和证据缺口 |
+| `get-transport` | `records` JSON envelope，含 transport 和 objects |
 
 所有输出写入 **stdout**。错误写入 **stderr**，并返回非零退出码。
+历史或传输差异的部分结果会同时返回 `ok:true`、`meta.partial:true`、
+`data.evidence_gaps` 和退出码 1；不能只检查 `ok`。聚合历史和计算差异不提供原始 XML。
 
 ---
 

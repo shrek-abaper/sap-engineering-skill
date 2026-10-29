@@ -17,6 +17,15 @@ packages, transactions, SQL queries, where-used analysis, syntax checks, and tra
 all from the terminal or from within an AI agent workflow. Write and transport operations require
 explicit capability flags and per-operation confirmation.
 
+The source also provides **ADT diagnostic feeds, per-part object history,
+version differences and transport object differences**. These additions are
+not yet published to npm/PyPI: confirm command availability with `sap-adt --help`
+and `sap-adt transport diff --help`. They are read-only and need no write flags.
+See [diagnostics and change analysis](references/diagnostics-history.md) for
+comparison baselines, evidence gaps and the real-system verification scope.
+Source also adds explicit CLI updates: see [updating](references/updating.md).
+The command is unpublished; it never silently changes installation channels.
+
 ---
 
 ## Requirements
@@ -278,6 +287,7 @@ At runtime, CI can instead provide the password per profile via
 | `credentials status` | Show configured/not-configured per profile (never prints passwords) |
 | `credentials doctor` | Diagnose backends, selected backend, files and entries |
 | `status` | Show active profile and current connection configuration |
+| `update [--check] [--major] [--yes]` | Explicit CLI check/update; same-major stable by default; recognized npm-global and pip/pipx only; no SAP connection |
 | `--profile NAME <command>` | Global option: one-off profile override for a single command |
 | `--keystore <env\|keyring\|dpapi\|pass\|file> <command>` | Global option: force the credential backend (fail-closed if unavailable) |
 | `-v, --verbose` | Verbose logging (secrets are always redacted) |
@@ -301,12 +311,24 @@ At runtime, CI can instead provide the password per profile via
 | `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | Write source code *(allow_write + confirm each time)*; `--activate` activates after writing; `--group` required when TYPE is `function`; `--transport` pins the transport request |
 | `activate <TYPE> <NAME> [--group <FG>]` | Activate ABAP object *(allow_write + confirm each time)*; `--group` required when TYPE is `function` |
 | `list-transports [--user U] [--status D\|R]` | List transport requests (JSON, read-only); default `--status D` (in development) |
+| `list-feeds` | Diagnostic feed catalog with FQL attributes and query variants |
+| `query-feed <URI> [--query FQL] [--max-results N] [--page-uri URI]` | One advertised feed page; default 20, maximum 500; continuation may overlap |
+| `get-versions <TYPE> <NAME> [--group FG] [--max-results N]` | Per-part object history; default 100 versions per part; partial history exits 1 |
+| `get-version-source <URI>` | Read an opaque historical content URI; plain source by default |
+| `diff-versions <FROM_URI> <TO_URI> [--context N]` | Compare two version contents locally; `--format text` for unified patches |
+| `get-transport <TRKORR>` | Request/task metadata and deduplicated objects |
+| `transport diff <TRKORR> [--max-objects N] [--context N]` | Object differences; default 50 objects; missing snapshots/baselines are evidence gaps, exit 1 |
 | `create-transport --package <DEVCLASS> --description "<DESC>" --ref <object-uri>` | Create transport via CreateCorrectionRequest *(allow_transport + confirm each time)*; package + object REF required; `$TMP` creates a local request; real-verified on Basis 7.56 (2026-09-17) |
 | `release-transport <TRKORR> [--yes]` | Release transport — irreversible *(allow_transport + confirm each time)* |
 | `transport ping` | ADT connectivity check for transport collection (plain text) |
 | `transport collect <TRKORR> [--output-dir DIR] [--verbose]` | Read-only collection of a TR's object list + sources into `review_package/` (`manifest.json` + `sources/`); `--legacy-config` explicitly opts into the deprecated plaintext collector config |
 
 Run any command with `--help` for full details.
+For the new read-only commands, see the workflows in
+[references/examples.md](references/examples.md). A modifiable request compares
+active source, not a frozen transport snapshot. A released request requires
+stored versions attributable to that request; active `00000` is not a snapshot.
+Do not treat partial output or empty diffs as release approval.
 
 ---
 
@@ -380,9 +402,13 @@ In transaction `SICF`, activate the following service paths:
 All read commands emit the JSON envelope documented in **SKILL.md**
 (`ok`/`format_version`/`command`/`object`/`kind`/`data`/`meta`); source
 commands default to plain ABAP text and every kind defaults to JSON. Kinds:
-`source`, `fields`, `objects`, `rows`, `records`, `findings`, `scalar`.
+`source`, `fields`, `objects`, `rows`, `records`, `findings`, `scalar`,
+`capabilities`, `feeds`, `versions`, `diff`.
 `-f/--format json|text|xml` (`SAP_ADT_FORMAT`) selects the format; `xml`
 returns the raw ADT payload. Empty results are `ok:true,row_count:0,exit 0`.
+Partial history/transport diffs instead return `meta.partial:true` and
+`data.evidence_gaps` with exit 1, even if `ok:true`. Aggregated history and
+computed diffs do not provide raw XML.
 
 Errors are JSON envelopes on **stderr** with exit tiers 1 (retryable),
 2 (config/credentials), 3 (safety-policy refusal — no retry), 4 (not found);

@@ -28,6 +28,12 @@ Expand-Archive .\sap-adt-<ver>-windows-x86_64.zip -DestinationPath .\sap-adt-por
 Portable extraction does not modify PATH. The separate
 [Windows desktop installer](windows.md) offers a PATH task.
 
+The new source-only `sap-adt update --check` can check the stable Python
+release version, but that does not prove a matching standalone build exists.
+Portable/desktop installations are not self-overwritten: `update` directs
+you to use the matching release archive/installer. It never tries to run pip
+inside a frozen runtime. Configuration and keystore entries stay separate.
+
 The archive is relocatable: it contains the interpreter, Python runtime,
 keyring/cryptography and CA bundle. External system components are still
 capability-probed, not bundled: Secret Service daemon, GPG/`pass`, Windows

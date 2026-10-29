@@ -39,8 +39,53 @@ A normal `sap-adt` invocation never downloads or upgrades anything. The
 runtime lives inside the npm package directory; upgrading the package
 requires re-running `install`.
 
-Behind a proxy, set `HTTPS_PROXY` (and `NO_PROXY` for internal hosts) before
-`install` — see
+## Explicit updates (source-only until the next publication)
+
+```bash
+sap-adt update --check     # query versions; do not change the installation
+sap-adt update             # preview and confirm a same-major stable update
+sap-adt update --yes       # explicit approval for automation
+```
+
+The global npm launcher stages the exact new package and its verified
+runtime before changing the live installation, then verifies the installed
+version. The frozen process exits before replacement, including on Windows.
+Staging failures leave the existing install untouched; the subsequent npm
+commit is not a full transaction, so later failures include repair guidance.
+Local/workspace/linked packages and npx caches are not self-modified: update
+through their owning project/lockfile or an explicit npx selector instead.
+SAP configuration and credentials are not read or changed.
+
+Older published versions have no `update` command. Bootstrap once with
+`npm install -g "sap-adt-cli@^1"` followed by `sap-adt install` after a
+release containing this command is published. `--major` explicitly allows
+crossing major versions and can exceed a skill's compatible range.
+
+The source installer (not yet published) discovers proxies in this order:
+environment variables, npm's persistent `https-proxy`/`proxy` configuration,
+then Windows current-user manual proxy settings. Windows bypass rules are
+honored unless explicit `NO_PROXY` overrides them. It reports the selected
+route, bounds connection setup to 30 seconds, and aborts a stalled transfer
+after 60 seconds of inactivity. PAC/WPAD, SOCKS and automatic integrated proxy
+authentication are not supported; explicit HTTP CONNECT proxy configuration
+is required for those environments. No system proxy setting is changed.
+
+The source `update` launcher also passes discovered Windows manual proxy
+settings to npm's registry checks and both package-install steps. This
+does not make the initial external `npm install -g` command import system
+proxies: configure npm or `HTTPS_PROXY` for that bootstrap step.
+
+Runtime replacement now keeps the old runtime until its self-test succeeds.
+Failed self-tests restore it; blocked restoration exits 3 with the retained
+backup location. Extraction and self-test have 120/60-second limits, tunable
+with `SAP_ADT_INSTALL_EXTRACT_TIMEOUT_MS` and
+`SAP_ADT_INSTALL_SELFTEST_TIMEOUT_MS`. Errors include proxy/TLS, disk,
+permissions, platform and startup recovery hints. Unsupported platforms
+receive Python virtual-environment commands instead of an install loop.
+See [failure recovery](runtime-setup.md#installationupdate-failure-recovery-source-only-improvements).
+
+For already-published installers, set `HTTPS_PROXY` (and `NO_PROXY` for
+internal hosts) before `install` — see
 [Proxied / restricted networks](runtime-setup.md#proxied--restricted-networks).
 
 ## Windows availability

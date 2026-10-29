@@ -73,8 +73,18 @@ atomic install → self-test), not an npm built-in.
 ## Proxied / restricted networks
 
 The npm/npx `install` wizard downloads the runtime itself, so it needs egress
-to the GitHub release CDN. It honors the standard proxy variables — set them
-before running `sap-adt install`:
+to the GitHub release CDN.
+
+**Source-only improvement (not yet published):** proxy selection is explicit
+environment variables → persistent npm proxy configuration → Windows current-user
+manual Internet Settings → direct connection. Thus enabling a Windows manual
+system proxy no longer also requires setting terminal environment variables.
+The installer prints the selected route without credentials and never changes
+the system's proxy settings. Windows per-protocol `https=host:port` and manual
+bypass rules are supported; explicit `NO_PROXY` takes precedence.
+
+Published versions still need the standard proxy variables set before
+running `sap-adt install`:
 
 | Variable | Example | Meaning |
 |---|---|---|
@@ -83,20 +93,56 @@ before running `sap-adt install`:
 
 - Only `http://` proxy URLs are supported; `https://` and `socks5://` are
   refused with an error rather than half-working.
+- Windows PAC/WPAD auto-configuration is not evaluated or downloaded; set
+  `HTTPS_PROXY` explicitly instead. WinHTTP machine settings and integrated
+  NTLM/Kerberos proxy authentication are not auto-imported.
 - Proxy credentials go in the URL: `http://user:password@proxy:8080`.
 - The artifact certificate is still verified against the real host name. If
   the proxy terminates TLS, point `NODE_EXTRA_CA_CERTS` at its CA bundle:
   `NODE_EXTRA_CA_CERTS=/path/to/corporate-ca.pem sap-adt install`.
-- The wizard reports size/progress and aborts after a bounded timeout instead
-  of hanging. A timeout message means the network needs a proxy, or the proxy
-  blocks `CONNECT` to `github.com:443`.
+- Source now bounds DNS/TCP/proxy/TLS connection setup to 30 seconds; receiving
+  data has a 60-second inactivity timeout, not a total download deadline.
+  Stalled or dripping CONNECT responses cannot extend setup indefinitely.
+  `SAP_ADT_INSTALL_CONNECT_TIMEOUT_MS` and `SAP_ADT_INSTALL_IDLE_TIMEOUT_MS`
+  can override these limits for diagnostics. A timeout can indicate an
+  unreachable proxy, a blocked `CONNECT`, TLS interception or a stalled CDN.
+- Source also bounds extraction to 120 seconds and the runtime self-test to
+  60 seconds (`SAP_ADT_INSTALL_EXTRACT_TIMEOUT_MS` /
+  `SAP_ADT_INSTALL_SELFTEST_TIMEOUT_MS`). These are per-stage limits, not a
+  single deadline for the whole installation.
+- The source npm `update` launcher passes discovered Windows manual proxy
+  settings to its registry checks and package downloads as child-process
+  environment variables. User npm/system settings are not changed. The
+  initial external `npm install` command still needs npm proxy configuration
+  or standard proxy environment variables.
 
 If the download still cannot work, install the runtime by hand: download
-`sap-adt-<ver>-linux-x86_64.tar.gz` from the release page, compare its
-sha256 with the one in the installed package's `runtime-manifest.json`,
-unpack it, and move the inner `sap-adt/` directory to
-`<npm prefix>/lib/node_modules/sap-adt-cli/runtime/<platform>/sap-adt/`
-(`npm prefix -g` prints the prefix on Linux/macOS).
+the matching Linux x86_64 `.tar.gz` or Windows x86_64 `.zip` from the release
+page and compare its SHA-256 with the installed package's
+`runtime-manifest.json`. For a **global** npm install, unpack the inner
+`sap-adt/` directory into
+`<npm root -g>/sap-adt-cli/runtime/<platform>/sap-adt/`; `npm root -g` prints
+the package root on both Linux and Windows. Close running CLI processes
+first. Do not copy global instructions into an npx cache or project-local
+installation. macOS has no published native runtime: use Python >=3.10 in
+a virtual environment instead.
+
+## Installation/update failure recovery (source-only improvements)
+
+The runtime installer retains the previous runtime until its replacement
+passes `--version`. Validation failure restores the old runtime; if restoration
+is blocked, exit 3 reports the retained backup path for manual recovery.
+Do not delete that backup or blindly retry. Initial installs with no previous
+runtime remove the failed candidate instead.
+
+Updates require explicit confirmation and a final version readback. npm
+package commits and pip/pipx upgrades are not full transactions: after a
+possibly modifying failure, inspect the installation first and follow the
+same-channel repair command printed by the updater. SAP configuration and
+credentials are not changed. Never bypass TLS, checksums or PEP668 to repair
+an installation. Initial `npm install` and `python -m pip install` are external
+tools; their own errors are supplemented by the diagnostics below, not
+intercepted by this CLI.
 
 ## Post-install self-test (from the install location)
 
@@ -149,6 +195,14 @@ per-operation confirmation; the env layer only supplies the connection.
 | Works at absolute path, not by name | PATH stale in the running agent/terminal | Restart the agent; do NOT reinstall |
 | Version below the compatible range | Runtime too old for the skill | Upgrade via the same channel; confirm with the user |
 | `install` cannot reach the release CDN | The network requires a proxy and none is configured (or the proxy blocks `CONNECT`) | Set `HTTPS_PROXY`/`NO_PROXY` — see *Proxied / restricted networks* |
+| Proxy HTTP 407 / `PROXY_AUTH` | The proxy requires authentication | Configure URL-encoded proxy credentials through `HTTPS_PROXY`, npm proxy or `PIP_PROXY`; never use SAP credentials |
+| Certificate verification / `TLS_CERTIFICATE` | A trusted corporate CA is missing or expired | npm: `NODE_EXTRA_CA_CERTS`; Python version checks: `REQUESTS_CA_BUNDLE`; pip: `PIP_CERT`. Do not disable verification |
+| `EACCES`, `EPERM`, `EBUSY` / `PERMISSION` | Unwritable installation or locked files | Close CLI processes, inspect folder permissions/quarantine; use a writable venv if needed, not automatic elevation |
+| `ENOSPC` / `DISK_FULL` | Temporary or installation drive is full | Free space on both drives, then inspect installation state before retrying |
+| Runtime self-test failure | Unsupported CPU/glibc, missing DLLs or blocked startup | Check the platform-specific hint; use Python in a venv if the native runtime is incompatible |
+| Unsupported native platform | No matching asset is published, including current macOS | Use the printed Python >=3.10 virtual-environment commands; repeating `install` will not create an asset |
+| Rollback incomplete / exit 3 | Installation state needs human inspection | Retain and restore the reported backup, or follow the scoped package-manager repair command; do not auto-retry |
+| pip externally managed / PEP668 | Python belongs to an OS package manager | Use pipx or a venv; do not use `sudo pip` or `--break-system-packages` |
 | `no usable keystore backend` | No OS keystore available | See `credentials doctor` output; the encrypted-file fallback needs `cryptography` (bundled in the frozen runtime) |
 | Sandbox/container without the user's desktop tools | The CLI may exist on the desktop but not in your sandbox | Ask the user; never assume the desktop install is reachable |
 | No shell / no install permission / no network | Agent cannot install or run | Give the user the manual steps; continue offline work if the task allows |

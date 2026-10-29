@@ -7,7 +7,7 @@ import sys
 import click
 
 from sap_adt import config as config_module
-from sap_adt import credentials, credentials_reports, errors, log_redaction, output
+from sap_adt import credentials, credentials_reports, errors, log_redaction, output, updater
 from sap_adt.adt import client as adt_client
 from sap_adt.adt import handlers
 from sap_adt.config import (
@@ -28,6 +28,35 @@ from sap_adt.transport import handlers as collector_handlers
 from sap_adt.version import get_version
 
 _KEYSTORE_CHOICES = ("env", "keyring", "dpapi", "pass", "file")
+
+
+class SapAdtGroup(click.Group):
+    """Group root help without changing command registration or dispatch."""
+
+    _setup_commands = ("configure", "profile", "credentials", "status", "update")
+
+    def format_commands(self, ctx, formatter):
+        commands = {}
+        for name in self.list_commands(ctx):
+            command = self.get_command(ctx, name)
+            if command is not None and not command.hidden:
+                commands[name] = command
+        if not commands:
+            return
+        sections = (
+            ("Setup and maintenance", [
+                name for name in self._setup_commands if name in commands]),
+            ("ADT commands", [
+                name for name in commands if name not in self._setup_commands]),
+        )
+        limit = formatter.width - 6 - max(map(len, commands))
+        for title, names in sections:
+            if names:
+                with formatter.section(title):
+                    formatter.write_dl([
+                        (name, commands[name].get_short_help_str(limit))
+                        for name in names
+                    ])
 
 
 def _profile_name():
@@ -246,7 +275,7 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
         _gate(errors.USER_ABORTED, "Aborted \u2014 no changes made.")
 
 
-@click.group(name="sap-adt")
+@click.group(name="sap-adt", cls=SapAdtGroup)
 @click.version_option(version=get_version(), prog_name="sap-adt")
 @click.option(
     "--profile",
@@ -297,6 +326,72 @@ def cli(profile, keystore, fmt, verbose):
         config_module.set_profile_override(profile)
     if keystore:
         credentials.set_preferred(keystore)
+
+
+@cli.command("update")
+@click.option("--check", "check_only", is_flag=True, help="Check versions without modifying anything.")
+@click.option("--major", is_flag=True, help="Explicitly allow a newer major stable release.")
+@click.option("--yes", is_flag=True, help="Confirm this update for non-interactive use.")
+def update_cmd(check_only, major, yes):
+    """Check for or install a stable CLI update using the original install channel.
+
+    Defaults to the current major version. No SAP connection or credentials
+    are needed. Source, local npm, npx and standalone installs get guidance
+    instead of an unsafe in-place replacement.
+    """
+    launcher = os.environ.get("_SAP_ADT_UPDATE_LAUNCHER") == "1"
+    try:
+        report = updater.check_update(major=major)
+        summary = (
+            f"Channel: {report['channel']}\n"
+            f"Current: {report['current']}\nTarget: {report['target']}\n"
+            + ("Update available." if report["update_available"] else "No newer stable release.")
+        )
+        if report["guidance"]:
+            summary += f"\n{report['guidance']}"
+        if check_only or not report["update_available"]:
+            if launcher:
+                click.echo(json.dumps({"update_plan": None, "message": summary}))
+            else:
+                click.echo(summary)
+            return
+        click.echo(summary, err=launcher)
+        commands = updater.update_commands(report)
+        if report["channel"] == "npm-global" and not launcher:
+            raise updater.UpdateError(
+                errors.CONFIRM_REQUIRED, "Run update through the npm sap-adt launcher, "
+                "not the inner runtime; it must exit before files can be replaced.",
+            )
+        if commands:
+            for command in commands:
+                click.echo(f"Command: {json.dumps(command)}", err=launcher)
+        else:
+            click.echo("Stage and verify the npm runtime, then update this global package.",
+                       err=True)
+        if not yes:
+            if not sys.stdin.isatty():
+                raise updater.UpdateError(
+                    errors.CONFIRM_REQUIRED,
+                    "Run update in a terminal or pass --yes explicitly; nothing was changed.",
+                )
+            if not click.confirm("Update this CLI installation?", default=False, err=True):
+                raise updater.UpdateError(errors.USER_ABORTED, "Update cancelled; nothing was changed.")
+        if report["channel"] == "npm-global":
+            click.echo(json.dumps({"update_plan": {
+                "target": report["target"], "current": report["current"],
+                "root": report["installation"].root,
+            }}))
+            return
+        updater.apply_python_update(report, commands)
+        click.echo(f"Updated and verified sap-adt {report['target']}.")
+    except updater.UpdateError as exc:
+        # In particular, do not call _profile_name(): maintenance must not read
+        # or migrate SAP configuration just to render an error.
+        click.echo(json.dumps(errors.decision(
+            exc.code, str(exc), hint=exc.hint or
+            "Use the original install channel; no SAP configuration is needed."
+        ).to_envelope("update"), ensure_ascii=False), err=True)
+        raise SystemExit(errors.exit_code_for(exc.code))
 
 
 @cli.command()
@@ -677,6 +772,70 @@ def get_program(program_name):
     Names are case-insensitive; uppercase is recommended.
     """
     _output(handlers.get_program(program_name))
+
+
+@cli.command("list-feeds")
+def list_feeds_cmd():
+    """List /sap/bc/adt/feeds with FQL attributes and query variants (JSON)."""
+    _output(handlers.list_feeds())
+
+
+@cli.command("query-feed")
+@click.argument("uri")
+@click.option("--query", default="", help="FQL expression advertised by list-feeds.")
+@click.option("--max-results", default=20, show_default=True, type=click.IntRange(1, 500))
+@click.option("--page-uri", default=None, help="next_uri returned by the previous page.")
+def query_feed_cmd(uri, query, max_results, page_uri):
+    """Read one page from an advertised diagnostic feed (Atom GET, no writes).
+
+    URI is the feed content_uri from list-feeds. Summaries may contain
+    untrusted HTML or sensitive diagnostic data; never execute their contents.
+    """
+    _output(handlers.query_feed(uri, query, max_results, page_uri))
+
+
+@cli.command("get-versions")
+@click.argument("object_type", type=click.Choice([
+    "program", "class", "interface", "include", "function", "function-group",
+    "table", "structure", "cds-view", "domain", "data-element", "type-group",
+]))
+@click.argument("name")
+@click.option("--group", default=None, help="Required for function modules.")
+@click.option("--max-results", default=100, show_default=True, type=click.IntRange(1, 500),
+              help="Version limit per source part/include.")
+def get_versions_cmd(object_type, name, group, max_results):
+    """Read versions via object metadata links, including separate class includes.
+
+    JSON contains opaque content_uri values. Version 00000 is active source,
+    not an immutable transport snapshot. Partial history exits 1 after output.
+    """
+    result = handlers.get_versions(object_type, name, group, max_results)
+    _output(result)
+    if result.meta.get("partial"):
+        sys.exit(1)
+
+
+@cli.command("get-version-source")
+@click.argument("uri")
+def get_version_source_cmd(uri):
+    """Read a content_uri from get-versions (plain source, --format json supported)."""
+    _output(handlers.get_version_source(uri))
+
+
+@cli.command("diff-versions")
+@click.argument("from_uri")
+@click.argument("to_uri")
+@click.option("--context", default=3, show_default=True, type=click.IntRange(0, 100))
+def diff_versions_cmd(from_uri, to_uri, context):
+    """Compare two version content URIs locally (JSON or --format text unified diff)."""
+    _output(handlers.diff_versions(from_uri, to_uri, context))
+
+
+@cli.command("get-transport")
+@click.argument("trkorr")
+def get_transport_cmd(trkorr):
+    """Read /cts/transportrequests/<TRKORR>: request/task metadata and objects."""
+    _output(handlers.get_transport(trkorr))
 
 
 @cli.command("get-class")
@@ -1082,6 +1241,24 @@ def release_transport_cmd(trkorr, yes, dry_run):
 @cli.group("transport")
 def transport_group():
     """Transport request utilities (online collection is read-only)."""
+
+
+@transport_group.command("diff")
+@click.argument("trkorr")
+@click.option("--max-objects", default=50, show_default=True, type=click.IntRange(1, 500))
+@click.option("--context", default=3, show_default=True, type=click.IntRange(0, 100))
+def transport_diff_cmd(trkorr, max_objects, context):
+    """Read-only object diffs against previous stored versions; gaps exit 1.
+
+    Released requests require a stored version attributable to the request.
+    Modifiable requests compare current active source, NOT a transport snapshot.
+    Missing baselines, unsupported objects and limits are EVIDENCE_GAP, never
+    silently treated as unchanged or new. Does not cover customizing row data.
+    """
+    result = handlers.diff_transport(trkorr, max_objects, context)
+    _output(result)
+    if result.meta.get("partial"):
+        sys.exit(1)
 
 
 def _transport_config(legacy: bool):

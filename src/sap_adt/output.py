@@ -31,6 +31,7 @@ RAW_KIND = "raw"
 STRUCTURED_KINDS = (
     "source", "fields", "objects", "rows", "records", "findings", "scalar",
     "capabilities",
+    "feeds", "versions", "diff",
 )
 
 # data key holding the list whose length is the row_count for that kind.
@@ -41,6 +42,9 @@ _LIST_KEY = {
     "records": "transports",
     "findings": "findings",
     "capabilities": "collections",
+    "feeds": "entries",
+    "versions": "versions",
+    "diff": "diffs",
 }
 
 _format: Optional[str] = None
@@ -164,6 +168,8 @@ def _text_rows(data: dict) -> str:
 
 
 def _text_records(data: dict) -> str:
+    if "transport" in data:
+        return json.dumps(data, indent=2, ensure_ascii=False)
     lines = []
     for t in data.get("transports", []):
         lines.append("\t".join([
@@ -201,6 +207,24 @@ def _text_capabilities(data: dict) -> str:
     )
 
 
+def _text_diagnostics(data: dict) -> str:
+    # Preserve nested schemas, per-include versions and evidence gaps in text.
+    return json.dumps(data, indent=2, ensure_ascii=False)
+
+
+def _text_diff(data: dict) -> str:
+    lines = []
+    for item in data.get("diffs", []):
+        lines.append(f"# {item.get('object') or ''} {item.get('part') or ''}".rstrip())
+        lines.append(f"# {item['from_uri']} -> {item['to_uri']}")
+        lines.append(item["diff"] or "# No source differences")
+    for gap in data.get("evidence_gaps", []):
+        lines.append(f"# EVIDENCE_GAP: {json.dumps(gap, ensure_ascii=False)}")
+    if data.get("comparison"):
+        lines.insert(0, f"# Comparison: {data['comparison']}")
+    return "\n".join(lines)
+
+
 _TEXT_RENDERERS = {
     "source": _text_source,
     "fields": _text_fields,
@@ -210,6 +234,9 @@ _TEXT_RENDERERS = {
     "findings": _text_findings,
     "scalar": _text_scalar,
     "capabilities": _text_capabilities,
+    "feeds": _text_diagnostics,
+    "versions": _text_diagnostics,
+    "diff": _text_diff,
 }
 
 

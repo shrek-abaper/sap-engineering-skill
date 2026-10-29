@@ -3,6 +3,26 @@
 SAP ABAP Development Tools (ADT) exposes a REST API under `/sap/bc/adt/`.
 Authentication is HTTP Basic Auth with the `X-SAP-Client` header for client selection.
 
+## Diagnostic feeds and historical comparisons (read-only)
+
+These source additions are not yet published in npm/PyPI runtimes. See
+**diagnostics-history.md** for the complete workflow, comparison semantics
+and 2026-10-29 QAS verification scope.
+
+| Purpose | Protocol |
+|---|---|
+| Catalog and FQL schema | GET `/sap/bc/adt/feeds`, Accept `application/atom+xml;type=feed` |
+| Diagnostic page | GET an advertised feed URI with `$query` (FQL) and `$top` (page limit); use returned `next` links, with inclusive-boundary deduplication |
+| Object version streams | GET object metadata, then follow `http://www.sap.com/adt/relations/versions` for each source part |
+| Version contents | GET the Atom entry's opaque `content@src`; `00000` denotes active source, not a frozen snapshot |
+| Transport objects | GET `/sap/bc/adt/cts/transportrequests/<TRKORR>`, Accept `application/vnd.sap.adt.transportorganizer.v1+xml` |
+| Resolve a transport entry | GET `/sap/bc/adt/cts/transportrequests/reference` with `tr_number`, `pgmid`, `obj_name`, `obj_wbtype`; follow `http://www.sap.com/cts/relations/objecturi` |
+| Unified differences | Read the selected sources and compare locally; no write, activation or release endpoint is used |
+
+Do not generalize a class root's `/versions` path: main, definitions,
+implementations and macros can advertise different history resources.
+Missing historical evidence is an explicit gap, not an empty/new object.
+
 ## Write-side rule: 2xx means "accepted", never "completed"
 
 > ADT write-side endpoints generally confirm only that the **request was

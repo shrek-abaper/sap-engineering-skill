@@ -1,0 +1,56 @@
+name: Build macOS runtime
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            target: darwin-x86_64
+          - runner: macos-15
+            target: darwin-aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "15.0"
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22"
+      - name: Install build dependencies
+        run: python -m pip install ".[keystore,file]" pyinstaller
+      - name: Verify native target
+        run: test "$(python -c 'from tools.build_runtime import target_id; print(target_id())')" = "${{ matrix.target }}"
+      - name: Run offline tests
+        run: |
+          python -m unittest discover -s tests -q
+          python tests/check_contract.py
+          node --test packaging/npm/test/*.test.js
+      - name: Build native runtime and npm staging
+        run: |
+          python tools/build_runtime.py
+          python tools/build_npm.py
+      - name: Verify isolated npm installation
+        run: python tools/smoke_npm.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: macos-runtime-${{ matrix.target }}
+          path: |
+            dist/runtime/sap-adt-*-${{ matrix.target }}.tar.gz
+            dist/runtime/${{ matrix.target }}/build-info.json
+          if-no-files-found: error
+          retention-days: 7

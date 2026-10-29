@@ -3,7 +3,8 @@
  *
  * Dispatches to the installed self-contained runtime. The runtime must have
  * been fetched once by `<bin> install` — a normal invocation NEVER downloads
- * or upgrades anything. Node.js is required only for this launcher path;
+ * or upgrades anything (except the explicitly requested update command).
+ * Node.js is required only for this launcher path;
  * the runtime itself is a native, Python-free executable.
  *
  * `sap-adt install` is our custom install wizard, not an npx/npm feature.
@@ -13,6 +14,7 @@
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const { pythonFallback, safeMessage, installationHint } = require("./npm.js");
 
 const PKG_DIR = path.resolve(__dirname, "..");
 
@@ -45,6 +47,13 @@ function main(argv) {
 
   const bin = runtimeBin();
   if (!fs.existsSync(bin)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(path.join(PKG_DIR, "runtime-manifest.json"), "utf8"));
+      if (manifest.artifacts && !manifest.artifacts[platformKey()]) {
+        fail(`No native runtime is published for ${platformKey()} in this package.\n` +
+          pythonFallback(), 2);
+      }
+    } catch { /* The install wizard diagnoses a missing or invalid manifest. */ }
     fail(
       `sap-adt runtime is not installed for ${platformKey()}.\n` +
       `Run the install wizard once:  npx sap-adt-cli install\n` +
@@ -53,10 +62,26 @@ function main(argv) {
     );
   }
 
+  const { isUpdate, runUpdate } = require("./update.js");
+  if (isUpdate(argv)) {
+    try {
+      process.exit(runUpdate(PKG_DIR, bin, argv));
+    } catch (error) {
+      process.stderr.write(JSON.stringify({
+        ok: false, format_version: 1, command: "update",
+        error: { code: error.needsInspection ? "CONFIRM_REQUIRED" : "SERVER_ERROR",
+          message: safeMessage(error), http_status: null,
+          hint: installationHint(error) },
+      }) + "\n");
+      process.exit(error.needsInspection ? 3 : 1);
+    }
+  }
+
   // Argument array, no shell: exit code and both streams pass through.
   const result = spawnSync(bin, argv, { stdio: "inherit" });
   if (result.error) {
-    fail(`Failed to launch runtime at ${bin}: ${result.error.message}`, 2);
+    fail(`Failed to launch runtime at ${bin}: ${safeMessage(result.error)}\n` +
+      installationHint({ code: result.error.code, message: "runtime self-test startup" }), 2);
   }
   process.exit(result.status === null ? 1 : result.status);
 }

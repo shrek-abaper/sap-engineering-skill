@@ -46,7 +46,11 @@ def archive_dir(tree: Path, out_dir: Path, name: str) -> Path:
                 zf.write(path, path.relative_to(tree.parent))
     else:
         target = out_dir / f"{name}.tar.gz"
-        with tarfile.open(target, "w:gz") as tf:
+        for path in tree.rglob("*"):
+            if path.is_symlink() and not path.resolve().is_relative_to(tree.resolve()):
+                raise ValueError(f"Runtime symlink escapes the runtime tree: {path}")
+        # macOS framework layouts use symlinks; the npm extractor rejects them.
+        with tarfile.open(target, "w:gz", dereference=True) as tf:
             tf.add(tree, arcname=tree.name)
     return target
 

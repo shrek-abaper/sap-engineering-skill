@@ -19,6 +19,8 @@ import re
 import sys
 from pathlib import Path
 
+import click
+
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "sap-adt-cli" / "SKILL.md"
 SRC = ROOT / "src"
@@ -26,6 +28,7 @@ SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
 
 from sap_adt import errors  # noqa: E402
+from sap_adt import output  # noqa: E402
 from sap_adt.adt.parsers import __all__ as parser_modules  # noqa: E402
 
 failures: list[str] = []
@@ -64,7 +67,7 @@ spec.loader.exec_module(cli_mod)
 
 registered: set[str] = set()
 for name, cmd in cli_mod.cli.commands.items():
-    if isinstance(cmd, type(cli_mod.cli)):  # click Group
+    if isinstance(cmd, click.Group):
         for sub in cmd.commands:
             registered.add(f"{name} {sub}")
     else:
@@ -116,10 +119,12 @@ check("commands", index_commands, registered)
 
 kind_section = section(skill, "## Output contract")
 skill_kinds = set(re.findall(
-    r"`(source|fields|objects|rows|records|findings|scalar|capabilities)`",
-    kind_section))
-implemented = set(parser_modules)
+    r"^\| `([a-z]+)` \|",
+    kind_section, re.MULTILINE))
+implemented = set(output.STRUCTURED_KINDS)
 check("kinds", skill_kinds, implemented)
+if not set(parser_modules).issubset(implemented):
+    failures.append("[kinds] parser has no registered output kind")
 
 # ------------------ 4. command -> handler kind consistency ------------------
 
@@ -160,7 +165,8 @@ for node in ast.walk(cli_tree):
                 if isinstance(target.value, ast.Name) and target.value.id == "cli":
                     command_name = dec.args[0].value
                 else:
-                    grp = target.value.attr if isinstance(target.value, ast.Attribute) else None
+                    grp = (target.value.id.removesuffix("_group")
+                           if isinstance(target.value, ast.Name) else None)
                     command_name = f"{grp} {dec.args[0].value}" if grp else dec.args[0].value
     if not command_name:
         continue
@@ -339,6 +345,8 @@ for label, text in (("handoff", handoff_text), ("summary", summary_text)):
 n_commands = len(registered)
 n_codes = len(errors.ALL_CODES)
 n_kinds = len(parser_modules)
+n_output_kinds = len(implemented)
+n_declarations = len(declared)
 
 if f"All {n_codes} codes" not in skill_text:
     failures.append(f"[cross-docs] SKILL.md missing canonical 'All {n_codes} codes'")
@@ -350,10 +358,12 @@ if not m or tuple(map(int, m.groups())) != (n_commands, n_kinds, n_codes):
                     f"{n_codes} error codes'")
 m = re.search(r"(\d+) codes / (\d+) commands / (\d+) kinds /\s*"
               r"(\d+) command", summary_text)
-if not m or tuple(map(int, m.groups())) != (n_codes, n_commands, n_kinds, 21):
+if not m or tuple(map(int, m.groups())) != (
+    n_codes, n_commands, n_output_kinds, n_declarations
+):
     failures.append("[cross-docs] summary CI line must read "
-                    f"'{n_codes} codes / {n_commands} commands / {n_kinds} "
-                    "kinds / 21 command→kind declarations'")
+                    f"'{n_codes} codes / {n_commands} commands / {n_output_kinds} "
+                    f"kinds / {n_declarations} command→kind declarations'")
 
 # Exit-tier table in SKILL.md: every code appears exactly once and the
 # tier-1 row lists precisely the codes EXIT_CODE_MAP maps to 1.

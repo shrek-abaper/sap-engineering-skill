@@ -1,7 +1,10 @@
 # Building
 
-All builds are local. There is no cloud CI (hosted runners cannot reach real
-SAP systems); see [releasing.md](releasing.md).
+Linux/Windows builds and live SAP verification run locally. The manually
+dispatched `build-macos-runtime.yml` workflow builds on native Intel and
+Apple Silicon macOS runners, runs offline tests and verifies an isolated
+npm installation. It never connects to SAP or publishes packages.
+See [releasing.md](releasing.md).
 
 ## One-time environment
 
@@ -88,6 +91,25 @@ in the Linux suite.
 Build and local verification do not publish anything. A new npm version
 and its Windows release ZIP must be published together before registry
 users can install it.
+
+## macOS runtime on hosted runners
+
+After pushing a reviewed source commit, explicitly dispatch:
+
+```bash
+gh workflow run build-macos-runtime.yml --ref main
+```
+
+The workflow uses macOS 15 Intel and Apple Silicon runners with Python
+3.12 and Node.js 22. Each job checks its native target, runs offline tests,
+builds the runtime and tests `npm pack` through runtime installation in a
+temporary global prefix/cache. Only successful jobs upload versioned
+archives and build metadata; download them before assembling the release.
+No SAP credentials, signing certificates or publishing tokens are used.
+
+This does not verify a personal Mac, older macOS, Keychain interaction,
+Gatekeeper/quarantine behavior, signing/notarization or live SAP access.
+Do not mark a target verified until its native job actually succeeds.
 
 ### Desktop installer verification
 

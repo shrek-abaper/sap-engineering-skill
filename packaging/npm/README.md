@@ -40,9 +40,27 @@ artifact over HTTPS, verifies its SHA-256 (from the manifest bundled with
 the package — never from the download endpoint), extracts safely and swaps
 it in atomically, then self-tests with the absolute install path.
 
-On a proxied network, set `HTTPS_PROXY` (and `NO_PROXY` for hosts that go
-direct) before running `install`; the wizard tunnels through an `http://`
-proxy, reports download progress, and aborts on a timeout instead of hanging.
+The source installer (not yet published) selects an explicit proxy environment
+variable first, then npm's persistent proxy settings, then Windows current-user
+manual proxy settings. It respects `NO_PROXY` and Windows manual bypass rules.
+It prints the selected route without credentials, bounds connection setup
+to 30 seconds, and aborts stalled downloads after 60 seconds of inactivity.
+System settings are never modified. PAC/WPAD scripts, SOCKS and integrated
+NTLM/Kerberos proxy authentication are not evaluated or enabled automatically.
+
+For published versions, set `HTTPS_PROXY` (and `NO_PROXY` for hosts that go
+direct) before `install`. An `http://` CONNECT proxy is required; interception
+proxies need their CA configured with `NODE_EXTRA_CA_CERTS`, not disabled TLS.
+
+The source installer retains the previous runtime until the new self-test
+succeeds, restores it on failure and reports a retained backup if recovery
+is blocked. Extraction/self-test are limited to 120/60 seconds, configurable
+through `SAP_ADT_INSTALL_EXTRACT_TIMEOUT_MS` /
+`SAP_ADT_INSTALL_SELFTEST_TIMEOUT_MS`. Failures include actionable network,
+CA, permission, disk and OS-runtime hints; unsupported platforms get Python
+venv instructions. The source update launcher passes discovered Windows
+manual proxies to npm's registry/package steps too, without changing user
+configuration. Bootstrap `npm install` remains npm's own operation.
 
 ## Use
 
@@ -57,7 +75,25 @@ With npx, prefix each command: `npx "sap-adt-cli@^1.5.0" <command>`.
 
 Configuration and credentials live in `~/.sap-adt-cli/` and the OS keystore —
 never inside this package. Upgrading the npm package requires re-running
-`install` (the runtime slot lives next to the launcher).
+`install` (the runtime slot lives next to the launcher). Once published,
+`sap-adt update` handles both steps for a confirmed global npm installation.
+
+## Explicit updates (not yet published)
+
+```bash
+sap-adt update --check
+sap-adt update             # preview + confirmation, current major only
+sap-adt update --yes       # explicit approval for automation
+```
+
+The launcher first stages and verifies the new runtime, then updates this
+global package and verifies the final version. It replaces files only after
+the frozen runtime has exited. Staging failures keep the existing install;
+the npm commit itself is not a full transaction, and later errors provide
+repair instructions. Local/workspace installs and npx get guidance instead
+of being silently rewritten. No SAP config or credentials are needed.
+`--major` explicitly allows a new major, outside the default skill range.
+Older versions need one manual package upgrade to obtain this command.
 
 ## Security model notes
 
@@ -66,7 +102,8 @@ never inside this package. Upgrading the npm package requires re-running
   for a fresh `[y/N]` confirmation per operation.
 - The installer refuses digest mismatches, unsupported platforms, non-HTTPS
   or unlisted redirect hosts, and archives with path traversal or symlinks.
-- A normal `sap-adt` invocation never downloads or upgrades anything.
+- Normal SAP commands never download or upgrade anything; only explicit
+  `install` and confirmed `update` requests do.
 
 Package versions track the CLI version exactly; installing version X always
 installs runtime X (no `latest` surprises).
