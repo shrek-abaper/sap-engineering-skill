@@ -182,6 +182,9 @@ class DpapiRealRunnerTests(unittest.TestCase):
         self._td = tempfile.TemporaryDirectory()
         self.tmp = Path(self._td.name)
         self.store = dpapi_store.DpapiStore(secrets_file=self.tmp / "secrets.json")
+        shell = patch.object(self.store, "_find_powershell", return_value="/mock/powershell.exe")
+        shell.start()
+        self.addCleanup(shell.stop)
 
     def tearDown(self):
         self._td.cleanup()

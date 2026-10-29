@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install build dependencies
-        run: python -m pip install ".[keystore,file]" pyinstaller
+        run: python -m pip install -e ".[keystore,file]" pyinstaller
       - name: Verify native target
         run: test "$(python -c 'from tools.build_runtime import target_id; print(target_id())')" = "${{ matrix.target }}"
       - name: Run offline tests

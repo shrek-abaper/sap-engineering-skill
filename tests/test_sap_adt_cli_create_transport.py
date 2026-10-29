@@ -22,6 +22,9 @@ class FakeResponse:
 class CreateTransportProtocolTests(unittest.TestCase):
     def setUp(self):
         self.calls = []
+        base = patch.object(handlers, "_base", return_value="https://sap.example.invalid")
+        base.start()
+        self.addCleanup(base.stop)
 
         def fake(url, method="GET", **kw):
             self.calls.append({"url": url, "method": method, **kw})

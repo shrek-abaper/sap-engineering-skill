@@ -109,6 +109,7 @@ class CommandGateMatrixTests(unittest.TestCase):
         if args[0] == "write-source":
             args = args + ["--file", str(self.src)]
         with patch.object(self.cli, "load_config", return_value=cfg), \
+                patch.object(self.handlers, "_base", return_value="https://sap.example.invalid"), \
                 patch.object(self.handlers, "make_adt_request") as no_http:
             r = CliRunner().invoke(self.cli.cli, args + ["--yes"])
         return r, no_http
@@ -151,6 +152,7 @@ class CommandGateMatrixTests(unittest.TestCase):
 
         def run(cmd, cfg):
             with patch.object(self.cli, "load_config", return_value=cfg), \
+                    patch.object(self.handlers, "_base", return_value="https://sap.example.invalid"), \
                     patch.object(self.handlers, "make_adt_request", return_value=R()):
                 return CliRunner().invoke(
                     self.cli.cli,
