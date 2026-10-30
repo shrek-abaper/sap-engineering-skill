@@ -1,6 +1,6 @@
 # Changelog
 
-## CLI 1.6.1 / plugin/docs 1.3.1 — Unreleased
+## CLI 1.6.1 / plugin/docs 1.3.1 — 2026-10-30
 
 Combines Unit/Dump evidence diagnosis with opt-in experimental debugging.
 Live debugger attachment remains unverified; offline verification does not

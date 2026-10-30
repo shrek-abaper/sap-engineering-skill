@@ -77,8 +77,6 @@ Keep the Linux archive of the same version alongside it, then stage both:
 .venv/bin/python tools/build_npm.py
 powershell.exe -NoProfile -NonInteractive -Command \
   '& "C:\Path\To\venv\Scripts\python.exe" tools/smoke_npm.py; exit $LASTEXITCODE'
-powershell.exe -NoProfile -NonInteractive -Command \
-  'node --test packaging/npm/test/install.test.js; exit $LASTEXITCODE'
 ```
 
 The smoke tool uses a temporary Windows-local npm prefix/cache, so npm does
@@ -87,6 +85,17 @@ the npm `.cmd` shim without changing the user's global installation or
 contacting SAP. It also checks local artifact SHA-256 before testing.
 The GNU-tar-specific traversal fixture is skipped on Windows; it still runs
 in the Linux suite.
+
+For Windows npm regressions, copy `packaging/npm` to a Windows-local temporary
+directory, change to that copy, then run:
+
+```powershell
+node --test test/install.test.js test/update.test.js
+```
+
+Do not run these Node tests from a WSL UNC checkout: Node 24 can fail while
+probing ancestor `package.json` files on the UNC share. The installed-runtime
+smoke already avoids this by using a Windows-local working directory.
 
 Build and local verification do not publish anything. A new npm version
 and its Windows release ZIP must be published together before registry
@@ -170,6 +179,16 @@ native macOS workflow targets. Each installed runtime must pass the diagnostic
 and cross-process debugger smokes. These use synthetic offline responses,
 not live debugger attachment; previous-version builds do not validate a new
 candidate. Tagging/publication require separate approval.
+
+Verified on 2026-10-30: Linux and both native macOS targets passed the
+441-test Python suite (platform-specific skips apply); Linux passed all 47
+npm regressions. Windows-local npm regressions passed 42 tests with 5
+platform-specific skips. Linux/Windows installed npm runtimes and a clean
+Python wheel passed the diagnostic/debugger smokes; the Windows 1.6.1
+desktop installer passed silent install, same-version upgrade and uninstall.
+Both macOS builds and installed-runtime smokes passed
+[Actions run 40994475197](https://github.com/shrek-abaper/sap-engineering-skill/actions/runs/40994475197)
+at source `26bf0580df4613803225f997abadda249601936e`.
 
 Live QAS checked dump metadata/formatted
 details and test-include reads. That system returned empty Unit runs for

@@ -7,25 +7,25 @@
       "status": "verified-local",
       "python_floor": "3.10",
       "installer": "packaging/windows/setup.iss (Inno Setup 6, per-user default)",
-      "notes": "Windows x64 runtime built with Windows Python 3.12 via WSL interop; ZIP and real npm global-prefix install smoke verified locally on 2026-10-29. Inno Setup 6.7.4 desktop installer: silent per-user install, same-version upgrade, launch and uninstall verified in a Unicode/space path with the PATH task disabled; PATH cleanup helper tested separately. Interactive wizard, actual PATH mutation and elevated install are unverified. No Windows assets published by these checks."
+      "notes": "CLI 1.6.1 Windows x64 runtime built with Windows Python 3.12 via WSL interop on 2026-10-30; ZIP and isolated npm install passed diagnostic/debugger cross-process smokes. Inno Setup 6.7.4 desktop installer: silent per-user install, same-version upgrade, launch and uninstall verified in a Unicode/space path with the PATH task disabled; PATH cleanup helper tested separately. Windows-local npm regressions: 42 passed, 5 platform-specific skips. Interactive wizard, actual PATH mutation, elevated installation and live debugger attachment are unverified."
     },
     "linux-x86_64": {
       "status": "verified-local",
       "python_floor": "3.10",
       "installer": "portable tar.gz (dist/runtime/sap-adt-<ver>-linux-x86_64.tar.gz)",
-      "notes": "Verified on Ubuntu 24.04 glibc 2.39 (WSL2). glibc floor applies to other distros; do not generalize to musl/older glibc without a real build there."
+      "notes": "CLI 1.6.1 verified on Ubuntu 24.04 glibc 2.39 (WSL2), 2026-10-30: Python/npm regressions, clean wheel install and native npm diagnostic/debugger cross-process smokes. glibc floor applies to other distros; do not generalize to musl/older glibc without a real build there. Live debugger attachment is unverified."
     },
     "darwin-aarch64": {
       "status": "verified-ci",
       "python_floor": "3.10",
       "installer": "portable tar.gz",
-      "notes": "Experimental macOS 15+ Apple Silicon runtime. Native macos-15 CI with Python 3.14 passed the full offline Python/npm suites, runtime build and isolated npm runtime installation: Actions run 40881012113, source e1e0bb056fc0c2b3e25989e8e02996d292f8605d. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
+      "notes": "Experimental CLI 1.6.1 macOS 15+ Apple Silicon runtime, verified 2026-10-30. Native macos-15 CI with Python 3.14 passed the offline Python/npm suites, runtime build and isolated npm diagnostic/debugger cross-process smokes: Actions run 40994475197, source 26bf0580df4613803225f997abadda249601936e. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
     },
     "darwin-x86_64": {
       "status": "verified-ci",
       "python_floor": "3.10",
       "installer": "portable tar.gz",
-      "notes": "Experimental macOS 15+ Intel runtime. Native macos-15-intel CI with Python 3.14 passed the full offline Python/npm suites, runtime build and isolated npm runtime installation: Actions run 40881012113, source e1e0bb056fc0c2b3e25989e8e02996d292f8605d. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
+      "notes": "Experimental CLI 1.6.1 macOS 15+ Intel runtime, verified 2026-10-30. Native macos-15-intel CI with Python 3.14 passed the offline Python/npm suites, runtime build and isolated npm diagnostic/debugger cross-process smokes: Actions run 40994475197, source 26bf0580df4613803225f997abadda249601936e. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
     }
   }
 }
