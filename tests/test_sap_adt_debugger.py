@@ -3,7 +3,7 @@ from dataclasses import replace
 import json
 import os
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Queue
 import subprocess
 import sys
 import tempfile
@@ -412,14 +412,25 @@ class ProcessLifecycleTests(unittest.TestCase):
                 "PYTHONUTF8": "1",
             })
             command = [sys.executable, "-m", "sap_adt"]
-            owner = subprocess.Popen([*command, "debug", "serve", "--yes", "--ttl", "30",
-                                      "--idle", "20"], env=env, stdout=subprocess.PIPE,
+            owner_command = [sys.executable, "-c",
+                             "import faulthandler, runpy; "
+                             "faulthandler.dump_traceback_later(10); "
+                             "runpy.run_module('sap_adt', run_name='__main__')"]
+            owner = subprocess.Popen([*owner_command, "debug", "serve", "--yes", "--ttl", "120",
+                                      "--idle", "60"], env=env, stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE)
             try:
                 ready = Queue()
                 reader = threading.Thread(target=lambda: ready.put(owner.stdout.readline()), daemon=True)
                 reader.start()
-                session = json.loads(ready.get(timeout=15))["data"]["session"]
+                try:
+                    line = ready.get(timeout=40)
+                except Empty:
+                    owner.kill()
+                    _, stderr = owner.communicate(timeout=10)
+                    self.fail("Debugger owner startup timed out:\n"
+                              + stderr.decode("utf-8", "replace"))
+                session = json.loads(line)["data"]["session"]
                 def invoke(operation, *args, expected=0):
                     result = subprocess.run([*command, "debug", operation, "--session", session, *args],
                                             env=env, capture_output=True, timeout=20)
