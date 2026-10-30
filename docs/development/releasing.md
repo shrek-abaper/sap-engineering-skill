@@ -3,10 +3,12 @@
 **Nothing in this document is executed by an agent without explicit
 authorization.** Remote publishing is a separate, human-approved step.
 
-The planned CLI **1.6.1** / plugin/docs **1.3.1** release is on hold until
-batch two (advanced debugging) is complete. Batch-one implementation and
-local verification do not authorize tagging or publication. Rebuild and
-verify the combined candidate, then obtain explicit release approval.
+The planned CLI **1.6.1** / plugin/docs **1.3.1** release remains on hold.
+Both batches are implemented; the combined Linux/Windows wheel/native npm
+candidate has offline verification. Live debugger attachment, current-source
+macOS builds and the new desktop installer lifecycle remain unverified.
+Implementation/local verification do not authorize tagging or publication:
+complete the intended release gates and obtain explicit release approval.
 
 ## Preconditions
 

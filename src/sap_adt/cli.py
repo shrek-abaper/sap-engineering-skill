@@ -813,6 +813,165 @@ def get_source_cmd(uri, start_line, end_line):
     _output(handlers.get_source(uri, start_line=start_line, end_line=end_line))
 
 
+def _debug_config(action=None, yes=False):
+    config = _load_config()
+    _require_config(config)
+    if output.get_format() == "xml":
+        _gate(errors.BAD_REQUEST, "Debugger commands support JSON or text, not XML")
+    if action:
+        _require_write(config)
+        _confirm_change([
+            f"Action   : Debugger {action}",
+            f"Profile  : {config.profile_name or '(environment variables)'}",
+            "WARNING  : Debugging can pause execution; stepping/resuming may MODIFY BUSINESS DATA.",
+            "Scope    : Current SAP user only; no system debugging or variable modification.",
+        ], yes=yes)
+    return config
+
+
+def _debug_output(result):
+    _output(result)
+    if result.meta.get("partial"):
+        sys.exit(1)
+
+
+@cli.group("debug")
+def debug_group():
+    """Experimental stateful debugger; start a bounded owner with 'serve'."""
+
+
+@debug_group.command("serve")
+@click.option("--ttl", type=click.IntRange(10, 1800), default=900, show_default=True)
+@click.option("--idle", type=click.IntRange(5, 1800), default=120, show_default=True)
+@click.option("--yes", is_flag=True)
+def debug_serve(ttl, idle, yes):
+    """Own a debugger in this foreground process; prints a session handle.
+
+    Start in another terminal. Ctrl-C/expiry attempts non-terminating cleanup.
+    No SAP credentials or cookies are written into the local descriptor.
+    """
+    config = _debug_config("serve", yes)
+    from sap_adt.debugger.owner import Owner
+    owner = None
+    try:
+        owner = Owner(config, ttl=ttl, idle=idle)
+        click.echo(output.render(handlers.debug_result(owner.open()), output.get_format(),
+                                 command="debug serve", profile=_profile_name(), compact=True))
+        sys.stdout.flush()
+        result = owner.run()
+        owner = None
+        click.echo(output.render(handlers.debug_result(result), output.get_format(),
+                                 command="debug serve", profile=_profile_name(), compact=True))
+        if result.get("evidence_gaps"):
+            sys.exit(1)
+    except Exception as exc:
+        if owner is not None:
+            owner.finish()
+        _abort_on_error(handlers._err(exc))
+
+
+@debug_group.command("status")
+@click.option("--session", required=True)
+def debug_status(session):
+    """Read owner state over private IPC; no SAP request."""
+    config = _debug_config()
+    _debug_output(handlers.debug_operation(config, session, "status", {}))
+
+
+@debug_group.command("breakpoint")
+@click.option("--session", required=True)
+@click.option("--uri", required=True)
+@click.option("--line", required=True, type=click.IntRange(1, 10000000))
+@click.option("--yes", is_flag=True)
+def debug_breakpoint(session, uri, line, yes):
+    """Set one owned source-line breakpoint before listening (POST /breakpoints)."""
+    config = _debug_config("breakpoint", yes)
+    _debug_output(handlers.debug_operation(config, session, "breakpoint", {"uri": uri, "line": line}))
+
+
+@debug_group.command("listen")
+@click.option("--session", required=True)
+@click.option("--timeout", type=click.IntRange(1, 30), default=15, show_default=True)
+@click.option("--yes", is_flag=True)
+def debug_listen(session, timeout, yes):
+    """Wait for the current user's debuggee (POST /debugger/listeners)."""
+    config = _debug_config("listen", yes)
+    _debug_output(handlers.debug_operation(config, session, "listen", {"timeout": timeout}))
+
+
+@debug_group.command("attach")
+@click.option("--session", required=True)
+@click.option("--debuggee", required=True)
+@click.option("--yes", is_flag=True)
+def debug_attach(session, debuggee, yes):
+    """Attach this owner's returned debuggee (POST /debugger?method=attach)."""
+    config = _debug_config("attach", yes)
+    _debug_output(handlers.debug_operation(config, session, "attach", {"debuggee": debuggee}))
+
+
+@debug_group.command("stack")
+@click.option("--session", required=True)
+def debug_stack(session):
+    """Read the attached stack (GET /debugger/stack?method=getStack)."""
+    config = _debug_config()
+    _debug_output(handlers.debug_operation(config, session, "stack", {}))
+
+
+@debug_group.command("vars")
+@click.option("--session", required=True)
+@click.option("--id", "ids", multiple=True)
+@click.option("--parent", default=None, help="Expand exactly one parent, e.g. @LOCALS.")
+@click.option("--limit", type=click.IntRange(1, 100), default=20, show_default=True)
+@click.option("--max-chars", type=click.IntRange(1, 4000), default=500, show_default=True)
+def debug_vars(session, ids, parent, limit, max_chars):
+    """Read explicit variables/one parent (POST getVariables/getChildVariables)."""
+    config = _debug_config()
+    _debug_output(handlers.debug_operation(config, session, "vars", {
+        "ids": list(ids), "parent": parent, "limit": limit, "max_chars": max_chars,
+    }))
+
+
+@debug_group.command("step")
+@click.option("--session", required=True)
+@click.option("--action", type=click.Choice(["into", "over", "return"]), default="over")
+@click.option("--yes", is_flag=True)
+def debug_step(session, action, yes):
+    """Execute one approved step (POST /debugger?method=stepInto/Over/Return)."""
+    config = _debug_config("step " + action, yes)
+    _debug_output(handlers.debug_operation(config, session, "step", {
+        "action": {"into": "stepInto", "over": "stepOver", "return": "stepReturn"}[action],
+    }))
+
+
+@debug_group.command("continue")
+@click.option("--session", required=True)
+@click.option("--yes", is_flag=True)
+def debug_continue(session, yes):
+    """Resume execution (POST /debugger?method=stepContinue); may write data."""
+    config = _debug_config("continue", yes)
+    _debug_output(handlers.debug_operation(config, session, "continue", {}))
+
+
+@debug_group.command("detach")
+@click.option("--session", required=True)
+def debug_detach(session):
+    """Detach without terminating; remove owned listener/breakpoints and end owner."""
+    config = _debug_config()
+    _debug_output(handlers.debug_operation(config, session, "detach", {}))
+
+
+@debug_group.command("cleanup")
+@click.option("--session", required=True)
+@click.option("--discard-local", is_flag=True, help="If owner unreachable, forget local state ONLY.")
+@click.option("--yes", is_flag=True)
+def debug_cleanup(session, discard_local, yes):
+    """Clean owned resources; stale owners cannot prove remote release."""
+    config = _debug_config()
+    if discard_local:
+        _confirm_change(["Discard local debugger state only; remote state remains unknown."], yes=yes)
+    _debug_output(handlers.debug_operation(config, session, "cleanup", {}, discard=discard_local))
+
+
 @cli.command("query-feed")
 @click.argument("uri")
 @click.option("--query", default="", help="FQL expression advertised by list-feeds.")

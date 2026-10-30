@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Debugger primitive data (format-version 1 envelope)",
+  "type": "object",
+  "required": ["session", "state", "operation", "evidence_gaps"],
+  "properties": {
+    "session": {"type": "string", "pattern": "^[a-f0-9]{32}$"},
+    "state": {"enum": ["ready", "candidate", "attached", "uncertain", "closed", "cleanup_incomplete", "discarded_local"]},
+    "operation": {"enum": ["serve", "status", "breakpoint", "listen", "attach", "stack", "vars", "step", "continue", "detach", "cleanup"]},
+    "evidence_gaps": {"type": "array", "items": {"type": "string"}},
+    "timed_out": {"type": "boolean"},
+    "debuggee": {"type": ["object", "null"]},
+    "attached": {"type": "boolean"},
+    "stack": {"type": "array", "items": {"type": "object"}},
+    "variables": {"type": "array", "items": {"type": "object"}},
+    "hierarchies": {"type": "array", "items": {"type": "object"}},
+    "breakpoints": {"type": "array", "items": {"type": "object"}},
+    "truncated": {"type": "boolean"},
+    "remote_cleanup_verified": {"const": false},
+    "cleanup_requests_accepted": {"type": "boolean"},
+    "outcome": {"const": "response_received"},
+    "stepping_possible": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {"if": {"properties": {"operation": {"const": "listen"}}},
+     "then": {"required": ["timed_out", "debuggee"]}},
+    {"if": {"properties": {"operation": {"const": "stack"}}},
+     "then": {"required": ["stack", "truncated"]}},
+    {"if": {"properties": {"operation": {"const": "vars"}}},
+     "then": {"required": ["variables", "hierarchies", "truncated"]}}
+  ]
+}

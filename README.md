@@ -35,6 +35,7 @@
 | Look up how to integrate SAP with Java, Python, .NET, Node.js or BTP | [`sap-integration-wiki`](skills/sap-integration-wiki/) | Not needed |
 | Read or write ABAP objects and transports on a live system | [`sap-adt-cli`](skills/sap-adt-cli/) | Required — installed CLI, connection profile, matching permissions |
 | Diagnose ABAP Unit failures and runtime dumps | [`sap-adt-cli`](skills/sap-adt-cli/) | Supplied evidence works offline; new evidence reads require CLI 1.6.1+ and SAP access |
+| Explicitly debug an approved non-production target | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | Experimental CLI 1.6.1+; bounded foreground owner, write capability and fresh control approval; no automatic escalation from diagnosis |
 
 `abap-code-review` covers 9 review dimensions and `sap-transport-gate` covers 10. The per-dimension checks, supported object types and report contracts are documented in each skill's README and `references/` files; this page does not repeat them.
 

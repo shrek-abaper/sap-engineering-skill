@@ -35,6 +35,7 @@
 | 查询 SAP 与 Java、Python、.NET、Node.js、BTP 的集成方式 | [`sap-integration-wiki`](skills/sap-integration-wiki/) | 不需要 |
 | 在真实系统上读写 ABAP 对象与传输请求 | [`sap-adt-cli`](skills/sap-adt-cli/) | 需要：已安装的 CLI、连接 Profile 与相应权限 |
 | 诊断 ABAP Unit 失败与运行时 Dump | [`sap-adt-cli`](skills/sap-adt-cli/) | 已有证据可离线分析；采集新证据需要 CLI 1.6.1+ 与 SAP 连接 |
+| 显式调试已批准的非生产目标 | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | CLI 1.6.1+ 实验性能力；有时限的前台会话进程、写权限与逐次控制确认；诊断不会自动升级为调试 |
 
 `abap-code-review` 覆盖 9 个审查维度，`sap-transport-gate` 覆盖 10 个。各维度的检查项、支持的对象类型和报告契约写在对应 Skill 的 README 与 `references/` 中，本页不重复。
 

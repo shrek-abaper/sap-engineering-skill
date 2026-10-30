@@ -3,8 +3,8 @@
 ## CLI 1.6.1 / plugin/docs 1.3.1 — Unreleased
 
 Release hold: batch one (Unit evidence, Dump details and Skill diagnosis)
-is implemented. Wait for batch two (advanced debugging), then rebuild and
-verify the combined candidate. Tagging and publication still require
+is implemented. Batch two adds experimental advanced debugging; rebuild and
+verify the combined candidate before release. Tagging and publication still require
 explicit approval; completing either batch does not authorize release.
 
 - Enriched ABAP Unit evidence with test classes/methods, alert kinds,
@@ -20,6 +20,15 @@ explicit approval; completing either batch does not authorize release.
   runtime targets; install smokes check the new commands offline.
 - Fixed redirected Windows CLI output to UTF-8 so non-English diagnostic
   evidence remains parseable JSON under legacy system code pages.
+- Added opt-in `debug` primitives: bounded foreground HTTP session owner,
+  private authenticated IPC, owned breakpoint, listen/attach, stack/variables,
+  step/continue and non-terminating detach/cleanup. No persisted SAP cookies,
+  native RFC dependency, automatic execution or ambiguous-control replay.
+  Write/PRD/confirmation gates apply to debugger control actions. Owner death
+  is an explicit remote-state gap, not recoverable by a saved PID/cookie.
+- Added an explicitly authorized Skill debugging route, separate from default
+  Unit/Dump diagnosis. Live attachment remains unverified; offline synthetic
+  regression does not certify SAP debugger permission or transport affinity.
 
 ## CLI 1.6.0 / plugin/docs 1.3.0 — 2026-10-29
 

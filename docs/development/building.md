@@ -139,6 +139,7 @@ Publishing and signing remain separate authorized steps.
 .venv/bin/python -m unittest discover -s tests -v   # unit/contract/distribution
 .venv/bin/python tests/check_contract.py            # SKILL.md vs code
 .venv/bin/python tools/smoke_diagnostics.py "$PWD/.venv/bin/python" -m sap_adt
+.venv/bin/python tools/smoke_debugger.py "$PWD/.venv/bin/python" -m sap_adt
 node --test packaging/npm/test/*.test.js             # installer/update error paths
 gitleaks protect --staged --config .gitleaks.toml    # pre-commit secret scan
 ```
@@ -148,21 +149,35 @@ Unit failure evidence, the empty-run gate, a source line window, dump details
 and partial-evidence exits through the actual CLI process. It removes SAP
 connection variables and uses a temporary home. Pass an absolute installed
 CLI path to check a wheel or native runtime instead of the source checkout.
-`smoke_npm.py` runs the same checks after packing and isolated installation;
+`smoke_debugger.py` proves one foreground owner can service distinct CLI
+processes with the same synthetic SAP context: breakpoint/listen/attach,
+stack/UTF-8 variables, gated controls and scoped non-terminating cleanup.
+It checks that descriptors never contain SAP session material or variables.
+The debugger unit suite additionally covers unknown control outcomes,
+unconfirmed cleanup, private IPC, expiry, process death and POSIX SIGTERM.
+Native Windows runs verify the actual protected DACL, not `chmod` emulation;
+Windows TerminateProcess is abrupt death, not a catchable POSIX SIGTERM.
+Interactive Windows console Ctrl-C remains outside automated verification.
+
+`smoke_npm.py` runs both smokes after packing and isolated installation;
 the existing native macOS workflow therefore checks these primitives too.
 Redirected stdout/stderr must remain UTF-8 even when Windows Python starts
 with a legacy code page.
 
-Batch-one code was checked locally using Linux and Windows npm runtimes
-and clean Python wheel installations. Release packaging for the planned
-1.6.1 candidate is deferred until batch two is complete; rebuild and repeat
-the installation checks for the combined candidate before publishing.
+The combined 1.6.1 candidate was rebuilt and checked locally using Linux and
+Windows native npm runtimes and clean Python wheel installations, including
+the debugger cross-process smoke. This is offline synthetic verification,
+not live debugger attachment. Desktop-installer lifecycle was not repeated
+for this candidate. Tagging/publication still require separate approval.
 Current-source macOS native builds
 still require the authorized hosted workflow; previous macOS verification
 does not validate a new candidate. Live QAS checked dump metadata/formatted
 details and test-include reads. That system returned empty Unit runs for
 the inspected standard classes, so executed-method pass/failure parsing is
 covered by synthetic fixtures, not claimed as live-verified.
+There is no approved non-business live debug target in this verification
+scope; the CLI does not enable writes, install fixtures or interrupt
+business sessions to obtain one.
 
 Before publishing an upgrade, `--skip-marketplace` leaves the previous
 published plugin archive live. After publication and the marketplace

@@ -670,9 +670,9 @@ def list_transports(user: str = "", status: str = "D") -> AdtResult:
         return _err(e)
 
 
-def _adt_uri(href: str, resource: str = "/sap/bc/adt/") -> str:
+def _adt_uri(href: str, resource: str = "/sap/bc/adt/", base: Optional[str] = None) -> str:
     """Resolve ADT links without allowing authenticated reads off-system."""
-    base = _base().rstrip("/")
+    base = (base or _base()).rstrip("/")
     origin = urlsplit(base)
     target = urlsplit(urljoin(base + resource, href))
     decoded = unquote(unquote(target.path))
@@ -704,25 +704,54 @@ def _navigation_target(uri: str) -> str:
     return urlunsplit(parsed)
 
 
+def source_uri(uri: str, base: Optional[str] = None) -> str:
+    """Validate a source target without reading it (also used for breakpoints)."""
+    parsed = urlsplit(_navigation_target(uri))
+    target = _adt_uri(urlunsplit(parsed._replace(fragment="")), base=base)
+    if urlsplit(target).query:
+        raise ValueError("Source URI must not contain query parameters")
+    roots = (
+        r"oo/(?:classes|interfaces)/[^/]+/(?:source/main|includes/(?:testclasses|definitions|implementations|macros))",
+        r"programs/(?:programs|includes)/[^/]+/source/main",
+        r"functions/groups/[^/]+/(?:source/main|fmodules/[^/]+/source/main)",
+        r"ddic/(?:ddl/sources|typegroups)/[^/]+/source/main",
+    )
+    if not re.fullmatch(r"/sap/bc/adt/(?:" + "|".join(roots) + ")", urlsplit(target).path):
+        raise ValueError("Expected a repository source URI returned by SAP")
+    return target
+
+
+def debug_result(data: dict) -> AdtResult:
+    return _structured("debug", data, None, meta={
+        "partial": bool(data.get("evidence_gaps")) or bool(data.get("truncated")),
+    })
+
+
+def debug_operation(config, session: str, operation: str, arguments: dict,
+                    discard: bool = False) -> AdtResult:
+    try:
+        from ..debugger.owner import rpc
+        data = rpc(config, session, operation, arguments, discard=discard)
+        if isinstance(data, errors.ErrorDecision):
+            return AdtResult(is_error=True, error_code=data.code, text=data.message,
+                             hint=data.hint, http_status=data.http_status)
+        return debug_result(data)
+    except Exception as exc:
+        result = _err(exc)
+        result.hint = (
+            "Do not replay debugger control actions. Inspect the owner and selected profile; "
+            "use ADT/Basis if remote state is unknown. Local discard is not remote cleanup."
+        )
+        return result
+
+
 def get_source(uri: str, start_line: int = 1,
                end_line: Optional[int] = None) -> AdtResult:
     """GET a repository source link, including test includes; slice locally."""
     try:
         if start_line < 1 or (end_line is not None and end_line < start_line):
             raise ValueError("Expected 1 <= start-line <= end-line")
-        parsed = urlsplit(_navigation_target(uri))
-        target = _adt_uri(urlunsplit(parsed._replace(fragment="")))
-        if urlsplit(target).query:
-            raise ValueError("Source URI must not contain query parameters")
-        path = urlsplit(target).path
-        roots = (
-            r"oo/(?:classes|interfaces)/[^/]+/(?:source/main|includes/(?:testclasses|definitions|implementations|macros))",
-            r"programs/(?:programs|includes)/[^/]+/source/main",
-            r"functions/groups/[^/]+/(?:source/main|fmodules/[^/]+/source/main)",
-            r"ddic/(?:ddl/sources|typegroups)/[^/]+/source/main",
-        )
-        if not re.fullmatch(r"/sap/bc/adt/(?:" + "|".join(roots) + ")", path):
-            raise ValueError("Expected a repository source URI returned by SAP")
+        target = source_uri(uri)
         resp = _read_adt(target, extra_headers={"Accept": "text/plain"})
         data = parse_source.parse(resp.content)
         lines = data["source"].splitlines(keepends=True)

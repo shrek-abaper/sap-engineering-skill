@@ -18,6 +18,7 @@ from pathlib import Path
 
 from build_runtime import target_id
 from smoke_diagnostics import check_cli
+from smoke_debugger import check_cli as check_debugger
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -85,6 +86,7 @@ def main() -> int:
             capture_output=True, text=True, check=True,
         )
         check_cli([str(bin_path)])
+        check_debugger([str(bin_path)])
         print(f"[smoke_npm] OK: {target}: npm pack -> global install -> runtime install -> {actual}")
     return 0
 

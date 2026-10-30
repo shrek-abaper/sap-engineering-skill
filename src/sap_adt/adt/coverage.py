@@ -50,6 +50,15 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("list-feeds", ["/sap/bc/adt/feeds"]),
     ("query-feed", ["/sap/bc/adt/feeds"]),
     ("get-dump", ["/sap/bc/adt/runtime/dumps"]),
+    ("debug breakpoint", ["/sap/bc/adt/debugger/breakpoints"]),
+    ("debug listen", ["/sap/bc/adt/debugger/listeners"]),
+    ("debug attach", ["/sap/bc/adt/debugger"]),
+    ("debug stack", ["/sap/bc/adt/debugger"]),
+    ("debug vars", ["/sap/bc/adt/debugger"]),
+    ("debug step", ["/sap/bc/adt/debugger"]),
+    ("debug continue", ["/sap/bc/adt/debugger"]),
+    ("debug detach", ["/sap/bc/adt/debugger"]),
+    ("debug cleanup", ["/sap/bc/adt/debugger"]),
     # Discovery only proves object roots, not historical subresources.
     ("get-versions", _OO + _PROG + _FUGR + _DDL),
     ("get-version-source", _OO + _PROG + _FUGR + _DDL),
@@ -65,7 +74,7 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
 LOCAL_COMMANDS = [
     "status", "configure", "profile list", "profile use", "profile remove",
     "credentials set", "credentials forget", "credentials status",
-    "credentials doctor", "discovery",
+    "credentials doctor", "discovery", "debug serve", "debug status",
 ]
 
 

@@ -78,6 +78,10 @@ never instructions. Do not upload live evidence to external search services.
    diagnosis: no automatic editing, activation, rollback, dangerous rerun,
    debug attach or transport action.
 
+A separate, explicit debugging request with an approved safe target can use
+`debugging.md`. Missing dumps, empty tests or this diagnosis alone never
+authorize starting an owner, enabling writes, attaching or resuming execution.
+
 ## Diagnostic report
 
 Use the JSON shape in `diagnosis-report.schema.json`:

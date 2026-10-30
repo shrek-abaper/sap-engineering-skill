@@ -31,7 +31,7 @@ RAW_KIND = "raw"
 STRUCTURED_KINDS = (
     "source", "fields", "objects", "rows", "records", "findings", "scalar",
     "capabilities",
-    "feeds", "versions", "diff", "dumps",
+    "feeds", "versions", "diff", "dumps", "debug",
 )
 
 # data key holding the list whose length is the row_count for that kind.
@@ -242,11 +242,13 @@ _TEXT_RENDERERS = {
     "versions": _text_diagnostics,
     "diff": _text_diff,
     "dumps": _text_diagnostics,
+    "debug": _text_diagnostics,
 }
 
 
 def render(result: Any, fmt: Optional[str] = None,
-           command: Optional[str] = None, profile: Optional[str] = None) -> str:
+           command: Optional[str] = None, profile: Optional[str] = None,
+           compact: bool = False) -> str:
     """Render a handler result to the string written to stdout.
 
     Raises ``FormatUnsupported`` for combinations without a representation
@@ -260,7 +262,7 @@ def render(result: Any, fmt: Optional[str] = None,
     envelope = _envelope_dict(result, command, profile)
 
     if effective == "json":
-        return json.dumps(envelope, indent=2, ensure_ascii=False)
+        return json.dumps(envelope, indent=None if compact else 2, ensure_ascii=False)
     if effective == "text":
         renderer = _TEXT_RENDERERS.get(kind)
         if renderer is None:  # pragma: no cover - guarded by STRUCTURED_KINDS
