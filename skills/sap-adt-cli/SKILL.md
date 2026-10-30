@@ -195,10 +195,10 @@ Full examples: **references/examples.md**.
 | 0 | success, including empty results | — |
 | 1 | operational (9 codes; incl. two release results) | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED`, `RELEASE_UNVERIFIED`, `RELEASE_REJECTED` |
 | 2 | configuration / credentials | `CONFIG_MISSING`, `PROFILE_NOT_FOUND`, `AUTH_FAILED` |
-| 3 | policy refusal / operation did not happen — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED` |
+| 3 | policy refusal / operation did not happen — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `DEBUG_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED` |
 | 4 | requested object does not exist | `OBJECT_NOT_FOUND` |
 
-All 18 codes. **`RELEASE_UNVERIFIED` = release sent, final status unknown
+All 19 codes. **`RELEASE_UNVERIFIED` = release sent, final status unknown
 (readback timeout) — never re-release, verify in SE09/SE10; `RELEASE_REJECTED`
 = still status D / check failed.** Our errors are **JSON envelopes** on stderr;
 Click usage errors are **plain text** (also exit 2 — distinguish by content).
@@ -269,10 +269,16 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
   write the profile section). The top-level `--global-allow-*` switches are a
   legacy fallback used only when the profile declares neither. Agents should
   always use the profile scope.
+- Debugger setup/controls require separate profile-only `allow_debug`
+  (`configure --allow-debug`), default false. No write/transport/global
+  inheritance; `allow_write=false` can remain in place. `DEBUG_DISABLED`
+  means local debug-policy refusal, not advice to enable source writes.
+  Never change flags without explicit approval. Authorized session reads
+  and cleanup do not require re-enabling debug permission.
 - Each profile has `environment: dev|qas|prd` (`--environment`; default inferred
   loosely from the name: contains `prd`/`prod`→prd, `qas`/`qa`→qas, else dev;
   `reproduce` matches `prod` by design — a false prd only blocks, use `--environment dev`).
-- **environment=prd hard-refuses ALL writes** (write/activate/create/release,
+- **environment=prd hard-refuses writes and debugger controls** (write/activate/create/release,
   dangerous/critical Unit, debugger controls): no prompt, no flag override → exit 3; inferred-prd
   hints explain how to override via `--environment dev`.
 - Off flags → exit 3 before any HTTP call. Every write/create/release then
@@ -286,6 +292,9 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
   not an automatic switch to another installer.
 - **Env/.env writes**: `SAP_ALLOW_WRITE/TRANSPORT=true` requires `SAP_ENVIRONMENT`
   explicitly (nothing to infer from), else `CONFIG_MISSING` exit 3; `…=prd` refuses.
+  Env/dotenv debugging separately requires `SAP_ALLOW_DEBUG=true` and explicit
+  `SAP_ENVIRONMENT=dev|qas`; no capability falls back to profile flags on a
+  complete environment connection.
 - `run-sql` blocks non-SELECT DML before sending (`DML_REJECTED`, exit 3).
 - write-source always unlocks (`_action=UNLOCK`, handle via query) in `finally`; release-transport cannot be undone. **Write-side 2xx = "accepted" only** — release/activate/unlock need independent readback (**references/adt_api.md** top rule); foreign-context unlock is a silent 200 no-op.
 - Debugger cleanup uses detachDebugger, not termination; existing execution

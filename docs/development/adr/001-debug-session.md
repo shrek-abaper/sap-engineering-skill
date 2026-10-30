@@ -1,6 +1,6 @@
 # ADR 001: bounded HTTP debugger owner
 
-Status: accepted for the unreleased CLI 1.6.1 candidate, 2026-10-30.
+Status: accepted for CLI 1.6.1, 2026-10-30.
 
 ## Context and decision
 
@@ -23,7 +23,9 @@ All `debug` commands emit format-version 1 `kind=debug` envelopes, with
 and `data.evidence_gaps`; `meta.partial` is true on incomplete cleanup.
 Cleanup explicitly distinguishes accepted requests/local owner closure from
 independently verified remote release (`remote_cleanup_verified=false`).
-The existing 18 error codes and exit tiers apply. Timeout is a bounded
+The closed error registry and existing exit tiers apply; `DEBUG_DISABLED`
+is a distinct tier-3 policy refusal, never advice to enable source writes.
+Timeout is a bounded
 `timed_out` result, not a hit or successful attachment. Unknown responses
 are errors, not empty evidence. XML passthrough is not supported.
 
@@ -35,10 +37,17 @@ foreign-user debugging or bulk deletion of another tool's breakpoints.
 budgets; it does not recursively dump memory.
 
 `serve`, `breakpoint`, `listen`, `attach`, `step` and `continue` require
-`allow_write`, non-production environment and fresh confirmation. Attaching
+`allow_debug`, non-production environment and fresh confirmation. This
+profile-only capability defaults to false and never inherits source-write,
+transport-write or legacy global switches. Complete env/dotenv connections
+use `SAP_ALLOW_DEBUG` and an explicit `SAP_ENVIRONMENT` instead. Attaching
 pauses a work process; stepping/continuing can execute application writes.
 Stack/variable reads require a previously attached context. Cleanup remains
-available when the current profile's write flag is disabled. Normal detach,
+available when the current profile's debug or write flag is disabled.
+Stack/variable reads use an already authorized attached session, not source
+write permission. Debug permission is not a read-only execution sandbox:
+the target's own code can change business data even with `allow_write=false`.
+Normal detach,
 expiry and Ctrl-C use **detachDebugger**, never **terminateDebuggee**.
 Detaching can allow the application's existing execution to proceed.
 

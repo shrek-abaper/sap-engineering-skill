@@ -44,12 +44,12 @@ ALL_CODES = (
     CONFIG_MISSING, PROFILE_NOT_FOUND, AUTH_FAILED,
     CSRF_EXPIRED, OBJECT_NOT_FOUND, SERVICE_NOT_ACTIVE,
     BAD_REQUEST, SERVER_ERROR, LOCKED_BY_OTHER, NETWORK_ERROR, PARSE_FAILED,
-    WRITE_DISABLED, TRANSPORT_DISABLED, CONFIRM_REQUIRED,
+    WRITE_DISABLED, TRANSPORT_DISABLED, DEBUG_DISABLED, CONFIRM_REQUIRED,
     USER_ABORTED, DML_REJECTED,
     RELEASE_UNVERIFIED, RELEASE_REJECTED,
 )
 # EXIT_CODE_MAP: 2=CONFIG_MISSING,PROFILE_NOT_FOUND,AUTH_FAILED;
-#  3=WRITE_DISABLED,TRANSPORT_DISABLED,CONFIRM_REQUIRED,USER_ABORTED,DML_REJECTED;
+#  3=WRITE_DISABLED,TRANSPORT_DISABLED,DEBUG_DISABLED,CONFIRM_REQUIRED,USER_ABORTED,DML_REJECTED;
 #  4=OBJECT_NOT_FOUND; everything else (incl. CSRF_EXPIRED, BAD_REQUEST,
 #  SERVER_ERROR, RELEASE_UNVERIFIED, RELEASE_REJECTED) = 1
 ```
@@ -75,7 +75,7 @@ _LIST_KEY = {"fields":"fields","objects":"objects","rows":"rows",
 # environment inference (loose substring): prd/prod->prd, qas/qa->qas, else dev
 ```
 
-57 Click commands, 11 parser modules, 18 error codes. `check_contract.py`
+57 Click commands, 11 parser modules, 19 error codes. `check_contract.py`
 asserts all four tables stay aligned with SKILL.md and fails CI on drift.
 
 ## 3. Fourteen verified protocol facts (S/4HANA 2021 / Basis 7.56)

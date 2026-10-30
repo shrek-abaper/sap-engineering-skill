@@ -7,7 +7,7 @@ workflow only for an explicit debugging request against a known, approved,
 non-business target on a non-production profile. Establish the exact source
 URI/line, triggering action and safe execution boundary first. Missing these
 means stop and request scope, not invent a target, run a business transaction,
-enable `allow_write`, install a fixture, or broaden Unit risk/duration.
+enable capability flags, install a fixture, or broaden Unit risk/duration.
 
 Check `sap-adt debug --help` and `debug serve --help`; older runtimes need
 an approved upgrade. Debug authorization is system-dependent: discovery only
@@ -16,12 +16,23 @@ This implementation has synthetic offline coverage; it is not a claim of
 live-SAP debugging certification. No new native RFC runtime is required.
 
 `serve`, `breakpoint`, `listen`, `attach`, `step`, `continue` require
-`allow_write`, non-PRD and a fresh confirmation for each action. Never
+`allow_debug`, non-PRD and a fresh confirmation for each action. This
+permission defaults to false and never inherits `allow_write`,
+`allow_transport` or legacy global switches. Source writes can remain
+disabled. After explicit configuration approval, use
+`sap-adt configure --profile qas --allow-debug` for an existing profile;
+`--no-allow-debug` disables new controls. Complete env/dotenv connections
+instead require `SAP_ALLOW_DEBUG=true` and explicit `SAP_ENVIRONMENT=dev|qas`.
+`status` reports debug permission/source; the flag does not grant SAP-side
+debug authorization. Never
 silently add `--yes`; approval to start an owner is not approval to execute
 application steps. Stepping/continuing **can write business data**.
 Detach/expiry/Ctrl-C may allow existing execution to proceed; they do not
 abort or roll back application work. There is no terminate/evaluate/set-variable
 command. Reads never imply permission to resume.
+Already authorized session reads, status, detach and cleanup remain available
+when debug permission is disabled. Disabling it does not automatically close
+an existing owner; clean up explicitly. No source-write permission is needed.
 
 ## Primitive sequence
 
@@ -73,7 +84,9 @@ All commands emit `kind=debug` format-version 1 envelopes; data follows
 `debug-session.schema.json`. JSON is default; text is available, raw XML
 is not. `meta.partial=true` and exit 1 flag truncation/unconfirmed cleanup.
 Timeout is `ok:true`, `timed_out:true`, exit 0, not attachment success.
-Other errors use the existing 18-code registry, with JSON on stderr.
+Other errors use the closed 19-code registry, with JSON on stderr.
+`DEBUG_DISABLED` is a local debug-policy refusal (exit 3), not a reason to
+enable source writes. SAP authorization failures remain `AUTH_FAILED`.
 
 Owner has a hard lifetime of 10..1800 seconds, idle lifetime 5..TTL seconds,
 one serialized active command and bounded network/IPC calls. Lifetimes are

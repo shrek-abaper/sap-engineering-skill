@@ -35,7 +35,7 @@
 | Look up how to integrate SAP with Java, Python, .NET, Node.js or BTP | [`sap-integration-wiki`](skills/sap-integration-wiki/) | Not needed |
 | Read or write ABAP objects and transports on a live system | [`sap-adt-cli`](skills/sap-adt-cli/) | Required — installed CLI, connection profile, matching permissions |
 | Diagnose ABAP Unit failures and runtime dumps | [`sap-adt-cli`](skills/sap-adt-cli/) | Supplied evidence works offline; new evidence reads require CLI 1.6.1+ and SAP access |
-| Explicitly debug an approved non-production target | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | Experimental CLI 1.6.1+; bounded foreground owner, write capability and fresh control approval; no automatic escalation from diagnosis |
+| Explicitly debug an approved non-production target | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | Experimental CLI 1.6.1+; bounded foreground owner, independent `allow_debug` and fresh control approval; no automatic escalation from diagnosis |
 
 `abap-code-review` covers 9 review dimensions and `sap-transport-gate` covers 10. The per-dimension checks, supported object types and report contracts are documented in each skill's README and `references/` files; this page does not repeat them.
 
@@ -183,6 +183,7 @@ ECC 6.0 and S/4HANA are the target systems. Online use requires the ADT services
 ### Safety defaults
 
 - **Read-only by default.** Writes, activation and transport release require the capability to be enabled in the profile and a fresh `[y/N]` preview for each operation. `--yes` exists for trusted automation; it is not a blanket approval. A profile marked `environment=prd` refuses all write-class operations regardless of flags.
+- **Debug permission is independent.** `allow_debug` defaults to false; source writes can stay disabled. Non-production and per-action confirmation still apply. Debug execution can let the target write business data; this is not a read-only sandbox.
 - **SQL preview is SELECT-only.** Non-SELECT DML is rejected before any request is sent.
 - **Secrets stay out of the config file.** Passwords go through the OS keystore or an explicit environment/dotenv layer, depending on what is available on the machine; `sap-adt credentials doctor` shows the active backend.
 - **Transport gate never executes transports** and never asks for SAP credentials. Online collection is read-only and performed by the CLI.

@@ -15,7 +15,7 @@ The CLI resolves the connection in this order (highest first):
 
 1. **Process environment variables** — `SAP_URL`, `SAP_USERNAME`,
    `SAP_PASSWORD`, `SAP_CLIENT` (optionally `SAP_LANGUAGE`,
-   `SAP_VERIFY_SSL`, `SAP_ALLOW_WRITE`, `SAP_ALLOW_TRANSPORT`,
+   `SAP_VERIFY_SSL`, `SAP_ALLOW_WRITE`, `SAP_ALLOW_TRANSPORT`, `SAP_ALLOW_DEBUG`,
    `SAP_ENVIRONMENT`).
 2. **Dotenv file declared by `SAP_ADT_DOTENV`** — merged per key with the
    process environment (the shell value wins); this layer only applies when
@@ -26,6 +26,52 @@ A complete env/dotenv set overrides profiles entirely, and `--profile` is then
 ignored for connection data. The CLI never scans the current directory, a
 skill folder or a guessed install path for `.env` files. `sap-adt status`
 prints which source is active.
+
+## Capability configuration
+
+Source writes, transport writes and debugging are separate capabilities.
+Prefer profile-scoped `--allow-write`, `--allow-transport` and, in
+**CLI 1.6.1+**, `--allow-debug`. Debugging defaults to disabled;
+neither write capability grants it. Legacy global fallbacks apply only to
+write/transport, never debugging. Existing profiles without `allow_debug`
+remain debug-disabled; no migration silently grants it.
+
+For an **existing**, explicitly approved non-production profile:
+
+```bash
+sap-adt configure --profile qas --allow-debug
+sap-adt status
+```
+
+This keeps unspecified write and TLS settings. Use `--no-allow-debug` to
+disable new debugger controls. The relevant fields belong inside that
+profile's existing section, alongside its connection settings:
+
+```json
+{
+  "environment": "qas",
+  "allow_write": false,
+  "allow_transport": false,
+  "allow_debug": true
+}
+```
+
+Use JSON booleans, not strings. `status` reports the effective debug
+permission and its source. `environment=prd` hard-refuses debugger setup
+and controls regardless of the stored flag.
+
+Complete env/dotenv connections use `SAP_ALLOW_DEBUG=true` with an explicit
+`SAP_ENVIRONMENT=dev|qas`; these values do not fall back to profile flags.
+This is a local consent gate, not SAP authorization: SAP must separately
+permit debugging. `DEBUG_DISABLED` is a local policy refusal (exit 3).
+
+Debugger setup/control actions retain per-action confirmation. Stack and
+variable reads require an already authorized attached session; status,
+reads, detach and cleanup do not require enabling source writes or
+re-enabling debug permission. Disabling a flag does not close an existing
+owner: clean it up explicitly. Debugging is **not a read-only sandbox**:
+step/continue execute application code that may write business data;
+detach/expiry may also let existing execution proceed, not roll it back.
 
 ## Channels
 
@@ -183,8 +229,9 @@ chmod 600 ~/.config/sap-adt.env
 export SAP_ADT_DOTENV="$HOME/.config/sap-adt.env"
 ```
 
-Write/activate/transport operations still require the capability flags and
-per-operation confirmation; the env layer only supplies the connection.
+Write/activate/transport operations and debugger setup/controls still require
+their respective capability flags and per-operation confirmation. Debugging
+on the complete env/dotenv path additionally requires explicit SAP_ENVIRONMENT.
 
 ## Diagnostics matrix
 

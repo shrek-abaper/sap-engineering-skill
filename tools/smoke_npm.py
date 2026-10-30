@@ -78,7 +78,8 @@ def main() -> int:
         for command in ("configure", "update", "list-feeds", "query-feed",
                         "get-versions", "get-version-source", "diff-versions",
                         "get-transport", "get-dump", "get-source",
-                        "Setup and maintenance", "ADT commands"):
+                        "Setup and maintenance", "Test and diagnose",
+                        "Read and change source", "Transport requests"):
             if command not in help_text:
                 raise SystemExit(f"Runtime --help does not list {command}.")
         subprocess.run(

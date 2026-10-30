@@ -74,12 +74,20 @@ profile name, exit 1).
   When all four `SAP_*` are present they override profiles entirely;
   `SAP_PROFILE` only selects among profiles otherwise.
 - Optional: `SAP_LANGUAGE`, `SAP_VERIFY_SSL=0`, `SAP_ALLOW_WRITE=1`,
-  `SAP_ALLOW_TRANSPORT=1`. Keep both allow flags `0` unless the user
-  explicitly authorizes write/transport.
+  `SAP_ALLOW_TRANSPORT=1`, `SAP_ALLOW_DEBUG=1` (CLI 1.6.1+). Keep capability
+  flags `0` unless the user explicitly authorizes that capability. Debug
+  controls also require explicit `SAP_ENVIRONMENT=dev|qas`.
 
 ## Capability flags
 
 `--allow-write` controls `write-source`/`activate`; `--allow-transport`
-controls `create-transport`/`release-transport`. Both default to disabled and
-are **global** (apply to every profile — verify the active profile before any
-write). Enabling a flag never bypasses the per-operation `[y/N]` confirmation.
+controls `create-transport`/`release-transport`. Both default to disabled;
+prefer profile scope, with legacy global fallbacks only when the corresponding
+profile flag is absent. `--allow-debug` independently enables debugger
+setup/controls on one non-production profile and defaults to disabled.
+It never inherits source/transport permissions or a global flag; those
+permissions can remain false. Verify the active profile with `status`.
+Enabling a flag never bypasses per-operation `[y/N]` confirmation.
+Debug execution may change business data even though the CLI does not edit
+source or variables. Existing session reads and cleanup do not need source
+write permission or re-enabling debug permission.

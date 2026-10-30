@@ -122,7 +122,9 @@ class Adapter:
             for cookie in self.pinned:
                 self.http.cookies.set_cookie(copy.copy(cookie))
         headers = {
-            "X-sap-adt-sessiontype": "stateful", "Accept": content_type,
+            "X-sap-adt-sessiontype": "stateful",
+            "Accept": "application/atomsvc+xml, application/*"
+                      if path == "/sap/bc/adt/discovery" else content_type,
             "Content-Type": content_type, "X-SAP-Client": self.config.client,
         }
         if self.context:

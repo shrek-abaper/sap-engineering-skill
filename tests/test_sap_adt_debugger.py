@@ -16,7 +16,7 @@ import requests
 
 from sap_adt import cli, errors
 from sap_adt.adt import handlers
-from sap_adt.config import SapConfig
+from sap_adt.config import ConfigError, SapConfig
 from sap_adt.debugger.adapter import Adapter
 from sap_adt.debugger.owner import Owner, descriptor, rpc
 from debugger_fixture import debugger_fixture
@@ -35,7 +35,7 @@ def tearDownModule():
 
 def config(url):
     return SapConfig(url, "OFFLINE", "offline-fixture", "000",
-                     allow_write=True, environment="qas", profile_name="qas")
+                     allow_debug=True, environment="qas", profile_name="qas")
 
 
 class AdapterTests(unittest.TestCase):
@@ -188,6 +188,17 @@ class OwnerTests(unittest.TestCase):
         self.addCleanup(finish)
         return owner
 
+    def test_owner_requires_debug_not_write_and_an_explicit_env_context(self):
+        for cfg in (
+            replace(config("http://offline"), allow_debug=False, allow_write=True),
+            replace(config("http://offline"), environment="prd"),
+            replace(config("http://offline"), from_environment=True),
+        ):
+            with self.subTest(cfg=cfg), patch("sap_adt.debugger.owner.Adapter") as adapter:
+                with self.assertRaises(ConfigError):
+                    Owner(cfg)
+                adapter.assert_not_called()
+
     def test_private_ipc_profile_affinity_unknown_commands_and_cleanup(self):
         with debugger_fixture() as (url, _):
             cfg = config(url)
@@ -333,19 +344,24 @@ class DebugCliTests(unittest.TestCase):
         ]
         for args in arguments:
             for cfg, code in (
-                (replace(config("http://offline"), allow_write=False), "WRITE_DISABLED"),
-                (replace(config("http://offline"), environment="prd"), "WRITE_DISABLED"),
+                (replace(config("http://offline"), allow_debug=False,
+                         allow_write=True, allow_transport=True), "DEBUG_DISABLED"),
+                (replace(config("http://offline"), environment="prd"), "DEBUG_DISABLED"),
+                (replace(config("http://offline"), from_environment=True), "CONFIG_MISSING"),
+                (replace(config("http://offline"), from_environment=True,
+                         environment_source="inferred"), "CONFIG_MISSING"),
                 (config("http://offline"), "CONFIRM_REQUIRED"),
             ):
                 with self.subTest(args=args, code=code), patch.object(cli, "load_config", return_value=cfg), \
                         patch.object(handlers, "debug_operation") as request:
-                    result = CliRunner().invoke(cli.cli, ["debug", *args])
+                    result = CliRunner().invoke(
+                        cli.cli, ["debug", *args] + ([] if code == "CONFIRM_REQUIRED" else ["--yes"]))
                     self.assertEqual(result.exit_code, 3, result.output)
                     self.assertEqual(json.loads(result.stderr)["error"]["code"], code)
                     request.assert_not_called()
 
-    def test_cleanup_allowed_when_writes_disabled_and_partial_exit_one(self):
-        cfg = replace(config("http://offline"), allow_write=False)
+    def test_cleanup_allowed_when_debug_disabled_and_partial_exit_one(self):
+        cfg = replace(config("http://offline"), allow_debug=False)
         data = {"session": "a" * 32, "operation": "cleanup", "state": "discarded_local",
                 "evidence_gaps": ["REMOTE_STATE_UNKNOWN"]}
         with patch.object(cli, "load_config", return_value=cfg), patch.object(
@@ -355,6 +371,35 @@ class DebugCliTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 1, result.output)
         self.assertTrue(json.loads(result.stdout)["meta"]["partial"])
 
+    def test_authorized_session_reads_and_exit_do_not_need_debug_or_write_flags(self):
+        cfg = replace(config("http://offline"), allow_debug=False)
+        for operation, extra in (("status", []), ("stack", []),
+                                 ("vars", ["--id", "opaque"]), ("detach", [])):
+            data = {"session": "a" * 32, "operation": operation, "state": "attached",
+                    "evidence_gaps": []}
+            with self.subTest(operation=operation), \
+                    patch.object(cli, "load_config", return_value=cfg), \
+                    patch.object(handlers, "debug_operation",
+                                 return_value=handlers.debug_result(data)) as request:
+                result = CliRunner().invoke(
+                    cli.cli, ["debug", operation, "--session", "a" * 32, *extra])
+                self.assertEqual(result.exit_code, 0, result.output)
+                request.assert_called_once()
+
+    def test_debug_permission_does_not_grant_source_or_transport_writes(self):
+        for args, code in (
+            (["activate", "class", "ZCL_DEMO", "--yes"], "WRITE_DISABLED"),
+            (["create-transport", "--package", "$TMP", "--description", "offline",
+              "--ref", SOURCE, "--yes"], "TRANSPORT_DISABLED"),
+        ):
+            with self.subTest(args=args), patch.object(
+                cli, "load_config", return_value=config("http://offline"),
+            ), patch.object(handlers, "make_adt_request") as request:
+                result = CliRunner().invoke(cli.cli, args)
+                self.assertEqual(result.exit_code, 3, result.output)
+                self.assertEqual(json.loads(result.stderr)["error"]["code"], code)
+                request.assert_not_called()
+
 
 class ProcessLifecycleTests(unittest.TestCase):
     def exercise(self, abrupt):
@@ -363,7 +408,7 @@ class ProcessLifecycleTests(unittest.TestCase):
             env.update({
                 "HOME": home, "USERPROFILE": home, "SAP_URL": url, "SAP_USERNAME": "OFFLINE",
                 "SAP_PASSWORD": "offline-fixture", "SAP_CLIENT": "000",
-                "SAP_ENVIRONMENT": "qas", "SAP_ALLOW_WRITE": "true", "SAP_ADT_FORMAT": "json",
+                "SAP_ENVIRONMENT": "qas", "SAP_ALLOW_DEBUG": "true", "SAP_ADT_FORMAT": "json",
                 "PYTHONUTF8": "1",
             })
             command = [sys.executable, "-m", "sap_adt"]

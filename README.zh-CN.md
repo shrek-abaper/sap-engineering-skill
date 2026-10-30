@@ -35,7 +35,7 @@
 | 查询 SAP 与 Java、Python、.NET、Node.js、BTP 的集成方式 | [`sap-integration-wiki`](skills/sap-integration-wiki/) | 不需要 |
 | 在真实系统上读写 ABAP 对象与传输请求 | [`sap-adt-cli`](skills/sap-adt-cli/) | 需要：已安装的 CLI、连接 Profile 与相应权限 |
 | 诊断 ABAP Unit 失败与运行时 Dump | [`sap-adt-cli`](skills/sap-adt-cli/) | 已有证据可离线分析；采集新证据需要 CLI 1.6.1+ 与 SAP 连接 |
-| 显式调试已批准的非生产目标 | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | CLI 1.6.1+ 实验性能力；有时限的前台会话进程、写权限与逐次控制确认；诊断不会自动升级为调试 |
+| 显式调试已批准的非生产目标 | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | CLI 1.6.1+ 实验性能力；有时限的前台会话进程、独立 `allow_debug` 与逐次控制确认；诊断不会自动升级为调试 |
 
 `abap-code-review` 覆盖 9 个审查维度，`sap-transport-gate` 覆盖 10 个。各维度的检查项、支持的对象类型和报告契约写在对应 Skill 的 README 与 `references/` 中，本页不重复。
 
@@ -180,6 +180,7 @@ ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升�
 ### 安全默认值
 
 - **默认只读。** 写入、激活与传输请求发布需要在 Profile 中开启能力，并且每次操作都重新确认 `[y/N]`。`--yes` 面向可信自动化，不是一次性总授权。标记为 `environment=prd` 的 Profile 会拒绝所有写类操作，与开关无关。
+- **调试独立授权。** `allow_debug` 默认关闭，源码写权限可保持关闭；仍限制非生产环境并逐次确认。调试会推进目标程序，可能产生业务写入，并不是只读沙箱。
 - **SQL 预览只允许 SELECT。** 非 SELECT 的 DML 在发出请求前即被拒绝。
 - **密码不写入配置文件。** 密码通过操作系统密钥库，或显式声明的环境变量/dotenv 层提供，取决于机器上可用的后端；`sap-adt credentials doctor` 可查看当前生效的后端。
 - **传输门控不执行传输**，也不索取 SAP 凭据。在线采集是只读操作，由 CLI 完成。

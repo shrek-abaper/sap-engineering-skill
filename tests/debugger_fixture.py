@@ -45,6 +45,9 @@ def debugger_fixture(scenario="normal"):
                 "params": query, "body": body, "headers": dict(self.headers),
             })
             if parsed.path == "/sap/bc/adt/discovery":
+                if "application/atomsvc+xml" not in self.headers.get("Accept", ""):
+                    self.answer(status=406)
+                    return
                 self.answer(b"<service/>", cookie=True)
                 return
             if (self.headers.get("X-sap-adt-sessiontype") != "stateful"

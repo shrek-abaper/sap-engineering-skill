@@ -119,6 +119,11 @@ class SapAdtCliConfigTests(unittest.TestCase):
                 "SAP_CLIENT": "",
                 "SAP_LANGUAGE": "",
                 "SAP_VERIFY_SSL": "",
+                "SAP_ALLOW_WRITE": "",
+                "SAP_ALLOW_TRANSPORT": "",
+                "SAP_ALLOW_DEBUG": "",
+                "SAP_ENVIRONMENT": "",
+                "SAP_PROFILE": "",
             },
             clear=False,
         )
@@ -282,6 +287,131 @@ class SapAdtCliConfigTests(unittest.TestCase):
         self.assertIn("URL:             https://status-dotenv.example.com:8000", result.output)
         self.assertIn(f"Config source:   {env_path} (overrides config profiles)", result.output)
         self.assertNotIn(f"Config:          {config_file}", result.output)
+
+    def test_debug_is_never_inherited_from_global_or_write_capabilities(self):
+        self.module.save_profile(
+            name="qas", url="https://qas.example.invalid", username="OFFLINE",
+            password="offline", client="000", allow_write=True, allow_transport=True,
+        )
+        raw = json.loads(self.config_file.read_text())
+        raw.update(allow_write=True, allow_transport=True, allow_debug=True)
+        self.config_file.write_text(json.dumps(raw))
+        with self.clear_sap_env():
+            config = self.module.load_config()
+        self.assertTrue(config.allow_write)
+        self.assertTrue(config.allow_transport)
+        self.assertFalse(config.allow_debug)
+        self.assertEqual(config.debug_source, "default")
+        for value in (False, "true", "false", 1, None):
+            with self.subTest(value=value), self.clear_sap_env():
+                raw["profiles"]["qas"]["allow_debug"] = value
+                self.config_file.write_text(json.dumps(raw))
+                self.assertFalse(self.module.load_config().allow_debug)
+
+    def test_profile_debug_is_preserved_isolated_and_refused_in_production(self):
+        connection = dict(url="https://qas.example.invalid", username="OFFLINE",
+                          password="offline", client="000")
+        self.module.save_profile(name="qas", allow_debug=True, **connection)
+        self.module.save_profile(name="qas", **connection)
+        self.module.save_profile(name="dev", allow_write=True, **connection)
+        self.module.save_profile(name="prd", allow_debug=True, **connection)
+        with self.clear_sap_env():
+            qas = self.module.load_config(profile="qas")
+            self.assertTrue(qas.allow_debug)
+            self.assertEqual(qas.debug_source, "profile")
+            self.assertFalse(qas.allow_write)
+            self.assertFalse(qas.allow_transport)
+            self.assertFalse(self.module.load_config(profile="dev").allow_debug)
+            prd = self.module.load_config(profile="prd")
+        self.assertFalse(prd.allow_debug)
+        self.assertEqual(prd.debug_source, "hard-refused")
+        raw = json.loads(self.config_file.read_text())
+        self.assertNotIn("allow_debug", raw)
+        self.assertTrue(raw["profiles"]["prd"]["allow_debug"])
+
+    def test_env_debug_has_its_own_flag_and_process_overrides_dotenv(self):
+        self.write_dotenv("\n".join([
+            "SAP_URL=https://dotenv.example.invalid", "SAP_USERNAME=OFFLINE",
+            "SAP_PASSWORD=offline", "SAP_CLIENT=000", "SAP_ENVIRONMENT=qas",
+            "SAP_ALLOW_WRITE=true", "SAP_ALLOW_TRANSPORT=true",
+        ]))
+        with self.clear_sap_env():
+            self.assertFalse(self.module.load_config().allow_debug)
+        with self.env_path.open("a") as stream:
+            stream.write("\nSAP_ALLOW_DEBUG=true\n")
+        for override, environment, expected in (("", "qas", True),
+                                                 ("false", "qas", False),
+                                                 ("true", "prd", False)):
+            with self.subTest(override=override, environment=environment), self.clear_sap_env(), \
+                    patch.dict(os.environ, {"SAP_ALLOW_DEBUG": override,
+                                            "SAP_ENVIRONMENT": environment}):
+                config = self.module.load_config()
+                self.assertEqual(config.allow_debug, expected)
+                self.assertEqual(config.debug_source,
+                                 "hard-refused" if environment == "prd" else "env")
+
+    def test_configure_debug_only_preserves_other_capabilities_and_tls(self):
+        cli_module, module = load_cli_module()
+        module.CONFIG_DIR = self.config_file.parent
+        module.CONFIG_FILE = self.config_file
+        module._OLD_CONFIG_FILE = self.old_config_file
+        module._DOTENV_OVERRIDE = self.env_path
+        module.credentials.set_registry_override([self.keystore])
+        for writes in (False, True):
+            with self.subTest(writes=writes), self.clear_sap_env():
+                module.save_profile(
+                    name="qas", url="https://qas.example.invalid", username="OFFLINE",
+                    password="offline", client="000", allow_write=writes,
+                    allow_transport=writes, verify_ssl=False,
+                )
+                for flag, enabled in (("--allow-debug", True), ("--no-allow-debug", False)):
+                    result = CliRunner().invoke(
+                        cli_module.cli, ["configure", "--profile", "qas", flag])
+                    self.assertEqual(result.exit_code, 0, result.output)
+                    config = module.load_config()
+                    self.assertEqual(config.allow_debug, enabled)
+                    self.assertEqual(config.allow_write, writes)
+                    self.assertEqual(config.allow_transport, writes)
+                    self.assertFalse(config.verify_ssl)
+                    status = CliRunner().invoke(cli_module.cli, ["status"])
+                    self.assertEqual(status.exit_code, 0, status.output)
+                    self.assertIn("Debug mode:      " + ("ENABLED" if enabled else "DISABLED"),
+                                  status.output)
+        with self.clear_sap_env():
+            module.save_profile(
+                name="dev", url="https://dev.example.invalid", username="OFFLINE",
+                password="offline", client="000", allow_debug=False,
+            )
+            result = CliRunner().invoke(
+                cli_module.cli, ["--profile", "qas", "configure", "--allow-debug"])
+            self.assertEqual(result.exit_code, 0, result.output)
+            self.assertTrue(module.load_config(profile="qas").allow_debug)
+            self.assertFalse(module.load_config(profile="dev").allow_debug)
+
+    def test_wizard_debug_defaults_off_and_opt_in_does_not_enable_writes(self):
+        for answer, expected in (("", False), ("y", True)):
+            with self.subTest(answer=answer), self.clear_sap_env(), \
+                    patch("builtins.input", side_effect=[
+                        "qas", "https://qas.example.invalid", "OFFLINE", "000",
+                        "EN", "y", "N", "N", answer,
+                    ]), patch("getpass.getpass", return_value="offline"), patch("builtins.print"):
+                config = self.module.run_configure_wizard()
+                self.assertEqual(config.allow_debug, expected)
+                self.assertFalse(config.allow_write)
+                self.assertFalse(config.allow_transport)
+        for writes in (False, True):
+            self.module.save_profile(
+                name="qas", url="https://qas.example.invalid", username="OFFLINE",
+                password="offline", client="000", allow_write=writes, allow_transport=writes,
+            )
+            self.module.set_global_capabilities(not writes, not writes)
+            with self.subTest(writes=writes), self.clear_sap_env(), \
+                    patch("builtins.input", side_effect=[""] * 8 + ["y"]), \
+                    patch("getpass.getpass", return_value=""), patch("builtins.print"):
+                config = self.module.run_configure_wizard()
+            self.assertEqual(config.allow_write, writes)
+            self.assertEqual(config.allow_transport, writes)
+            self.assertTrue(config.allow_debug)
 
 
 if __name__ == "__main__":

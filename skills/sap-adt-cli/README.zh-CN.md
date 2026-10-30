@@ -199,6 +199,8 @@ export SAP_LANGUAGE=EN              # 可选，默认：EN
 export SAP_VERIFY_SSL=0             # 可选：设为 0 以跳过自签名证书验证
 export SAP_ALLOW_WRITE=0            # 可选：设为 1 以开启 write-source/activate
 export SAP_ALLOW_TRANSPORT=0        # 可选：设为 1 以开启 create/release transport
+export SAP_ALLOW_DEBUG=0            # 可选：独立调试能力（CLI 1.6.1+）
+export SAP_ENVIRONMENT=dev          # 环境变量连接启用调试时必须显式声明
 
 # env 密钥库的按 profile 口令（profile dev 对应变量 SAP_ADT_DEV_PASSWORD）
 export SAP_ADT_DEV_PASSWORD=secret
@@ -208,7 +210,9 @@ export SAP_ADT_MASTER_PASSPHRASE=...
 
 ### 能力标志（默认：关闭）
 
-两个可选标志用于解锁写入和传输能力。**仅在确有需要时开启——它们是全局开关，对所有 profile（含生产环境）都生效。** 执行写操作前建议先运行 `status` 确认当前 profile 和开关状态。
+源码写入、传输写入、调试控制分别授权。**只在目标 profile 上开启所需能力。**
+写入/传输保留旧版全局回退，调试没有全局回退；`environment=prd` 会硬拒绝三类操作。
+先运行 `status` 确认当前 profile、各能力的有效值及来源。
 
 ```bash
 # 交互式开启（在写入/传输提示处输入 'y'）
@@ -223,12 +227,23 @@ SAP_PASSWORD="secret" sap-adt configure --profile dev \
   --no-allow-transport
 ```
 
-| 标志 | 配置字段（全局，对所有 profile 生效） | 默认值 | 解锁的命令 |
+| 标志 | 配置字段（优先使用 profile 范围） | 默认值 | 解锁的命令 |
 |------|---------|--------|----------|
 | `--allow-write` | `allow_write` | false | `write-source`、`activate` |
 | `--allow-transport` | `allow_transport` | false | `create-transport`、`release-transport` |
+| `--allow-debug`（1.6.1+） | `allow_debug`（仅 profile） | false | `debug serve/breakpoint/listen/attach/step/continue` |
 
-**确认策略**：即使标志已开启，每次写入/创建/释放操作仍会展示变更预览并要求显式输入 `[y/N]` 确认。确认仅对当次操作有效，完成后立即失效，下次操作需重新确认。
+对已有且明确获准的非生产 profile，运行
+`sap-adt configure --profile qas --allow-debug`，未指定的写权限和 TLS 设置保持不变；
+`--no-allow-debug` 关闭后续调试控制。`allow_write=true` 或旧版全局开关都不会授予调试能力。
+完整环境变量/dotenv 连接则使用 `SAP_ALLOW_DEBUG=true`，并显式设置 `SAP_ENVIRONMENT=dev|qas`。
+这只是本地同意门禁，不能代替 SAP 端调试授权。
+
+**确认策略**：即使标志已开启，每次写入/创建/释放或调试控制仍要求显式 `[y/N]` 确认。
+确认仅对当次操作有效，完成后立即失效，下次操作需重新确认。
+调试不是只读沙箱：单步/继续可让应用自身写入业务数据，即使源码写权限仍关闭。
+已授权会话的栈/变量读取及状态、分离、清理无需重新开启调试权限。
+关闭开关不会自动结束已有会话进程，仍需显式清理。
 
 ### 非交互式参数（智能体 / 自动化工作流）
 

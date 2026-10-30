@@ -35,6 +35,7 @@ NETWORK_ERROR = "NETWORK_ERROR"
 PARSE_FAILED = "PARSE_FAILED"
 WRITE_DISABLED = "WRITE_DISABLED"
 TRANSPORT_DISABLED = "TRANSPORT_DISABLED"
+DEBUG_DISABLED = "DEBUG_DISABLED"
 CONFIRM_REQUIRED = "CONFIRM_REQUIRED"
 USER_ABORTED = "USER_ABORTED"
 DML_REJECTED = "DML_REJECTED"
@@ -56,6 +57,7 @@ ALL_CODES = (
     PARSE_FAILED,
     WRITE_DISABLED,
     TRANSPORT_DISABLED,
+    DEBUG_DISABLED,
     CONFIRM_REQUIRED,
     USER_ABORTED,
     DML_REJECTED,
@@ -71,6 +73,7 @@ EXIT_CODE_MAP = {
     # 3 - policy refusal / operation did not happen, do not retry
     WRITE_DISABLED: 3,
     TRANSPORT_DISABLED: 3,
+    DEBUG_DISABLED: 3,
     CONFIRM_REQUIRED: 3,
     USER_ABORTED: 3,
     DML_REJECTED: 3,
@@ -92,6 +95,7 @@ EXIT_CODE_MAP = {
 GATE_CODES = frozenset({
     WRITE_DISABLED,
     TRANSPORT_DISABLED,
+    DEBUG_DISABLED,
     CONFIRM_REQUIRED,
     USER_ABORTED,
     DML_REJECTED,
@@ -115,6 +119,11 @@ DEFAULT_HINTS = {
     PARSE_FAILED: "The response could not be parsed; use --format xml for the raw payload.",
     WRITE_DISABLED: "Re-run 'configure' and enable write mode; the operation was not performed.",
     TRANSPORT_DISABLED: "Re-run 'configure' and enable transport write; the operation was not performed.",
+    DEBUG_DISABLED: (
+        "Use a non-production profile with allow_debug enabled "
+        "('configure --allow-debug'), or SAP_ALLOW_DEBUG=true with "
+        "SAP_ENVIRONMENT. Source write permission is not required."
+    ),
     CONFIRM_REQUIRED: "Run in a terminal or pass --yes explicitly; the operation was not performed.",
     USER_ABORTED: "The confirmation prompt was declined; no changes were made.",
     DML_REJECTED: "Direct DML via run-sql is permanently disabled in this version.",

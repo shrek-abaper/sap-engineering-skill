@@ -3,12 +3,12 @@
 **Nothing in this document is executed by an agent without explicit
 authorization.** Remote publishing is a separate, human-approved step.
 
-The planned CLI **1.6.1** / plugin/docs **1.3.1** release remains on hold.
-Both batches are implemented; the combined Linux/Windows wheel/native npm
-candidate has offline verification. Live debugger attachment, current-source
-macOS builds and the new desktop installer lifecycle remain unverified.
-Implementation/local verification do not authorize tagging or publication:
-complete the intended release gates and obtain explicit release approval.
+CLI **1.6.1** / plugin/docs **1.3.1** combines Unit/Dump evidence diagnosis
+with opt-in experimental debugging. Live debugger attachment and persistent
+SAP affinity remain unverified and must not be described as certified.
+Rebuild and verify every advertised native target from the release source;
+previous-version builds do not validate a new candidate. Implementation and
+local verification alone do not authorize tagging or publication.
 
 ## Preconditions
 
@@ -92,9 +92,9 @@ Guidance:
 
 ## Versioning
 
-- Planned CLI: `1.6.1`, unreleased (single source: `pyproject.toml`; runtime/npm/installers
+- CLI: `1.6.1` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Planned plugin/docs: `1.3.1`, unreleased (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.3.1` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

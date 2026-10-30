@@ -32,7 +32,7 @@ src/sap_adt/
 ├── cli.py            Click group `sap-adt` (commands, gates, confirmations)
 ├── config.py         profiles/env/dotenv resolution, ~/.sap-adt-cli
 ├── credentials.py    keystore orchestration (+ *_reports.py for doctor output)
-├── errors.py         closed 18-code set + exit tiers
+├── errors.py         closed 19-code set + exit tiers
 ├── output.py         envelope rendering (format_version = 1)
 ├── adt/              ADT client, handlers, parsers, coverage
 ├── keystore/         env / keyring / dpapi / pass / file backends

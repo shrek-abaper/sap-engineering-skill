@@ -230,6 +230,8 @@ export SAP_LANGUAGE=EN              # optional, default: EN
 export SAP_VERIFY_SSL=0             # optional: set 0 for self-signed certificates
 export SAP_ALLOW_WRITE=0            # optional: set 1 to enable write-source/activate
 export SAP_ALLOW_TRANSPORT=0        # optional: set 1 to enable create/release transport
+export SAP_ALLOW_DEBUG=0            # optional: separate debugger capability (CLI 1.6.1+)
+export SAP_ENVIRONMENT=dev          # required explicitly for env-based debugging
 
 # Per-profile password for the 'env' keystore (profile 'dev' -> variable SAP_ADT_DEV_PASSWORD)
 export SAP_ADT_DEV_PASSWORD=secret
@@ -239,10 +241,10 @@ export SAP_ADT_MASTER_PASSPHRASE=...
 
 ### Capability flags (default: disabled)
 
-Two optional flags unlock write and transport capabilities.
-**Enable only when needed — they are GLOBAL and apply to every profile, including
-production.** Check `status` (which shows the active profile and both switches)
-before write operations.
+Separate flags unlock source writes, transport writes and debugger controls.
+**Enable only the capability needed, on the intended profile.** Write/transport
+have legacy global fallbacks; debug permission never does. `environment=prd`
+hard-refuses all three. Check `status` for each effective flag and its source.
 
 ```bash
 # Enable interactively (answer 'y' to the write/transport prompts)
@@ -257,15 +259,27 @@ SAP_PASSWORD="secret" sap-adt configure --profile dev \
   --no-allow-transport
 ```
 
-| Flag | Config field (global, all profiles) | Default | Commands unlocked |
+| Flag | Config field (profile scope preferred) | Default | Commands unlocked |
 |------|-------------|---------|-------------------|
 | `--allow-write` | `allow_write` | false | `write-source`, `activate` |
 | `--allow-transport` | `allow_transport` | false | `create-transport`, `release-transport` |
+| `--allow-debug` (1.6.1+) | `allow_debug` (profile-only) | false | `debug serve/breakpoint/listen/attach/step/continue` |
 
-**Confirmation policy**: even when flags are enabled, every write/create/release
+For an existing, approved non-production profile:
+`sap-adt configure --profile qas --allow-debug` preserves unspecified write/TLS
+settings. `--no-allow-debug` disables new controls. Neither `allow_write=true`
+nor a legacy global switch grants debugging. Complete env/dotenv connections
+use `SAP_ALLOW_DEBUG=true` with explicit `SAP_ENVIRONMENT=dev|qas`.
+This local flag does not replace SAP-side debug authorization.
+
+**Confirmation policy**: even when flags are enabled, every write/create/release or debug control
 operation shows a change preview and requires explicit `[y/N]` confirmation.
 The confirmation applies to the current operation only — it is discarded immediately
 after use and must be repeated for each subsequent operation.
+Debugging is not a read-only sandbox: step/continue can let application code
+write business data even with source writes disabled. Authorized stack/variable
+reads and status/detach/cleanup do not need re-enabling debug permission.
+Disabling a flag does not close an existing owner; clean it up explicitly.
 
 ### Non-interactive flags (agent / automation workflows)
 

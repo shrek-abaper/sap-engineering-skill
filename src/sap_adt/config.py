@@ -35,8 +35,8 @@ PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 _OLD_CONFIG_DIR = Path.home() / ".sap-abap-cli"
 _OLD_CONFIG_FILE = _OLD_CONFIG_DIR / "config.json"
 
-# Per-profile connection fields. Global capability flags (allow_write,
-# allow_transport) live OUTSIDE profiles and apply to every environment.
+# Connection fields only. Write/transport flags have legacy global fallbacks;
+# debugger permission is profile-only and never inherits those fallbacks.
 _CONNECTION_FIELDS = ("url", "username", "password", "client", "language", "verify_ssl")
 
 
@@ -68,6 +68,8 @@ class SapConfig:
     # Effective capability provenance for status reporting.
     write_source: str = "global"        # profile | global | env | hard-refused
     transport_source: str = "global"
+    allow_debug: bool = False
+    debug_source: str = "default"       # profile | default | env | hard-refused
 
     def base_url(self) -> str:
         from urllib.parse import urlparse
@@ -148,6 +150,13 @@ def effective_capabilities(section: dict, raw_global: dict, environment: str
     w, ws = one("allow_write")
     t, ts = one("allow_transport")
     return w, t, ws, ts
+
+
+def effective_debug_capability(section: dict, environment: str) -> Tuple[bool, str]:
+    if environment == "prd":
+        return False, "hard-refused"
+    return section.get("allow_debug") is True, (
+        "profile" if "allow_debug" in section else "default")
 
 
 def validate_profile_name(name: str) -> str:
@@ -393,6 +402,7 @@ def _config_from_section(
         allow_write, allow_transport, wsrc, tsrc = effective_capabilities(
             section, raw, environment
         )
+        allow_debug, dsrc = effective_debug_capability(section, environment)
         return SapConfig(
             url=section["url"],
             username=section["username"],
@@ -407,6 +417,8 @@ def _config_from_section(
             environment_source=env_source,
             write_source=wsrc,
             transport_source=tsrc,
+            allow_debug=allow_debug,
+            debug_source=dsrc,
         )
     except KeyError as e:
         _fail(f"Profile '{name}' in {CONFIG_FILE} is missing required field {e}. Re-run `configure --profile {name}`.")
@@ -436,6 +448,7 @@ def load_env_connection(profile: Optional[str] = None) -> Tuple[Optional[SapConf
             "SAP_VERIFY_SSL",
             "SAP_ALLOW_WRITE",
             "SAP_ALLOW_TRANSPORT",
+            "SAP_ALLOW_DEBUG",
             "SAP_ENVIRONMENT",
         ]
         selected = profile or _profile_override or os.getenv("SAP_PROFILE")
@@ -447,11 +460,15 @@ def load_env_connection(profile: Optional[str] = None) -> Tuple[Optional[SapConf
         raw_write = _env_bool("SAP_ALLOW_WRITE", dotenv)
         raw_transport = _env_bool("SAP_ALLOW_TRANSPORT", dotenv)
         allow_write, allow_transport = raw_write, raw_transport
+        allow_debug = _env_bool("SAP_ALLOW_DEBUG", dotenv)
         wsrc = tsrc = "env"
+        dsrc = "env"
         if environment == "prd":
             # Same hard refusal as a prd profile; env cannot override it.
             allow_write = allow_transport = False
+            allow_debug = False
             wsrc = tsrc = "hard-refused"
+            dsrc = "hard-refused"
         return SapConfig(
             url=url,
             username=username,
@@ -469,6 +486,8 @@ def load_env_connection(profile: Optional[str] = None) -> Tuple[Optional[SapConf
             env_transport_requested=raw_transport,
             write_source=wsrc,
             transport_source=tsrc,
+            allow_debug=allow_debug,
+            debug_source=dsrc,
         ), _env_source(source_keys, dotenv)
     return None, None
 
@@ -547,6 +566,7 @@ def save_profile(
     verify_ssl: bool = True,
     allow_write: Optional[bool] = None,
     allow_transport: Optional[bool] = None,
+    allow_debug: Optional[bool] = None,
     environment: Optional[str] = None,
 ) -> SapConfig:
     """Create/update one profile and make it the active profile.
@@ -572,7 +592,8 @@ def save_profile(
     }
     # Carry over unspecified profile-level flags rather than resetting them.
     for key, val in (("allow_write", allow_write),
-                     ("allow_transport", allow_transport)):
+                     ("allow_transport", allow_transport),
+                     ("allow_debug", allow_debug)):
         if val is None:
             if key in existing:
                 section[key] = existing[key]
@@ -591,6 +612,7 @@ def save_profile(
     _write_raw(raw)
 
     w, t, wsrc, tsrc = effective_capabilities(section, raw, env)
+    d, dsrc = effective_debug_capability(section, env)
     return SapConfig(
         url=section["url"],
         username=username,
@@ -604,6 +626,8 @@ def save_profile(
         environment=env,
         write_source=wsrc,
         transport_source=tsrc,
+        allow_debug=d,
+        debug_source=dsrc,
     )
 
 
@@ -650,14 +674,15 @@ def save_config_from_flags(
     password: Optional[str],
     client: Optional[str],
     language: Optional[str] = None,
-    verify_ssl: bool = True,
-    allow_write: bool = False,
-    allow_transport: bool = False,
+    verify_ssl: Optional[bool] = True,
+    allow_write: Optional[bool] = False,
+    allow_transport: Optional[bool] = False,
     profile: Optional[str] = None,
     environment: Optional[str] = None,
     profile_scope: bool = False,
     global_write: Optional[bool] = None,
     global_transport: Optional[bool] = None,
+    allow_debug: Optional[bool] = None,
 ) -> SapConfig:
     raw = _read_raw() or {}
     name = profile or os.getenv("SAP_PROFILE") or raw.get("active_profile") or DEFAULT_PROFILE_NAME
@@ -676,6 +701,8 @@ def save_config_from_flags(
     )
     resolved_client = client or existing.get("client")
     resolved_language = language or existing.get("language") or "EN"
+    if verify_ssl is None:
+        verify_ssl = existing.get("verify_ssl", True)
 
     missing = [label for label, val in [
         ("--url", resolved_url),
@@ -690,12 +717,8 @@ def save_config_from_flags(
         )
 
     if profile_scope:
-        # Capability flags are written to the profile section (default).
-        # --allow-write=False is meaningful (explicit disable), but the
-        # Click default False on an unused flag must not wipe an existing
-        # value: callers wanting "leave as-is" pass None. save_config_from_flags
-        # is only called with connection flags present, so explicit False is
-        # treated as a declared disable here.
+        # Debug-only updates pass None for unspecified write flags;
+        # explicit False still disables a profile capability.
         w, t = allow_write, allow_transport
     else:
         # Legacy: top-level fallback switches; profile section inherits.
@@ -711,6 +734,7 @@ def save_config_from_flags(
         verify_ssl=verify_ssl,
         allow_write=w,
         allow_transport=t,
+        allow_debug=allow_debug,
         environment=environment,
     )
     if not profile_scope:
@@ -769,10 +793,10 @@ def run_configure_wizard(profile: Optional[str] = None) -> SapConfig:
     )
     verify_ssl = verify_ssl_raw.lower() not in ("n", "no", "0", "false")
 
-    # Global capability flags — apply to ALL profiles.
-    current_allow_write = bool(raw.get("allow_write", False))
-    current_allow_transport = bool(raw.get("allow_transport", False))
-    print("\nThe following switches are GLOBAL and apply to every profile.")
+    environment, _ = infer_environment(name, existing.get("environment"))
+    current_allow_write, current_allow_transport, _, _ = effective_capabilities(
+        existing, raw, environment)
+    print("\nThe following switches apply to this profile.")
     allow_write_raw = _prompt(
         "Enable source code write (write-source, activate)? [y/N]",
         "y" if current_allow_write else "N",
@@ -784,6 +808,13 @@ def run_configure_wizard(profile: Optional[str] = None) -> SapConfig:
         "y" if current_allow_transport else "N",
     )
     allow_transport = allow_transport_raw.lower() in ("y", "yes")
+
+    print("\nDebugger permission applies only to this profile, independently of writes.")
+    allow_debug_raw = _prompt(
+        "Enable debugger (can pause/run application code)? [y/N]",
+        "y" if existing.get("allow_debug") is True else "N",
+    )
+    allow_debug = allow_debug_raw.lower() in ("y", "yes")
 
     if not url or not username or not (password or has_stored) or not client:
         print("Error: URL, username, password and client are all required.", file=sys.stderr)
@@ -799,6 +830,7 @@ def run_configure_wizard(profile: Optional[str] = None) -> SapConfig:
         verify_ssl=verify_ssl,
         allow_write=allow_write,
         allow_transport=allow_transport,
+        allow_debug=allow_debug,
     )
     print(f"\nProfile '{name}' saved to {CONFIG_FILE} (active profile: {name})")
     return config

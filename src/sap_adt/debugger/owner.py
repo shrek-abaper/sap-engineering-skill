@@ -138,8 +138,10 @@ class Owner:
     def __init__(self, config, ttl=900, idle=120, adapter=None):
         bounded_int(ttl, 10, 1800)
         bounded_int(idle, 5, ttl)
-        if config.is_production or not config.allow_write:
-            raise ConfigError("Debugger owner requires a non-production write-enabled profile")
+        if config.is_production or not config.allow_debug:
+            raise ConfigError("Debugger owner requires non-production and allow_debug=true")
+        if config.from_environment and config.environment_source != "explicit":
+            raise ConfigError("SAP_ENVIRONMENT must be explicit for an environment-based debugger")
         self.config = config
         self.session = secrets.token_hex(16)
         self.token = secrets.token_hex(32)

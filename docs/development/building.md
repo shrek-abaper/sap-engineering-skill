@@ -164,20 +164,30 @@ the existing native macOS workflow therefore checks these primitives too.
 Redirected stdout/stderr must remain UTF-8 even when Windows Python starts
 with a legacy code page.
 
-The combined 1.6.1 candidate was rebuilt and checked locally using Linux and
-Windows native npm runtimes and clean Python wheel installations, including
-the debugger cross-process smoke. This is offline synthetic verification,
-not live debugger attachment. Desktop-installer lifecycle was not repeated
-for this candidate. Tagging/publication still require separate approval.
-Current-source macOS native builds
-still require the authorized hosted workflow; previous macOS verification
-does not validate a new candidate. Live QAS checked dump metadata/formatted
+The 1.6.1 release gate includes Linux/Windows native npm runtimes, clean Python
+wheel installations, the Windows silent desktop-installer lifecycle and both
+native macOS workflow targets. Each installed runtime must pass the diagnostic
+and cross-process debugger smokes. These use synthetic offline responses,
+not live debugger attachment; previous-version builds do not validate a new
+candidate. Tagging/publication require separate approval.
+
+Live QAS checked dump metadata/formatted
 details and test-include reads. That system returned empty Unit runs for
 the inspected standard classes, so executed-method pass/failure parsing is
 covered by synthetic fixtures, not claimed as live-verified.
 There is no approved non-business live debug target in this verification
 scope; the CLI does not enable writes, install fixtures or interrupt
 business sessions to obtain one.
+Subsequent read-only live checks verified debugger-resource discovery and
+the adapter's CSRF preflight. Generic XML discovery was rejected with HTTP
+406; requesting the Atom service media type fixed it and is enforced by
+the synthetic fixture. The selected non-production profile now has explicitly approved independent
+debug permission, with source/transport writes still disabled. Current-source
+local owner startup, separate-process status and cleanup passed; the owner
+exited and its descriptor was removed. No live breakpoint/listener/attachment
+was created because no approved non-business target and trigger were supplied.
+Discovery, CSRF and local owner lifecycle do not prove SAP debug authorization
+or persistent affinity.
 
 Before publishing an upgrade, `--skip-marketplace` leaves the previous
 published plugin archive live. After publication and the marketplace

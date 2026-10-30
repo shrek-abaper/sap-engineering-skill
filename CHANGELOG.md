@@ -2,10 +2,9 @@
 
 ## CLI 1.6.1 / plugin/docs 1.3.1 — Unreleased
 
-Release hold: batch one (Unit evidence, Dump details and Skill diagnosis)
-is implemented. Batch two adds experimental advanced debugging; rebuild and
-verify the combined candidate before release. Tagging and publication still require
-explicit approval; completing either batch does not authorize release.
+Combines Unit/Dump evidence diagnosis with opt-in experimental debugging.
+Live debugger attachment remains unverified; offline verification does not
+certify SAP debugger authorization or session affinity.
 
 - Enriched ABAP Unit evidence with test classes/methods, alert kinds,
   details/stacks and explicit passed/failed/not-run/incomplete summaries.
@@ -24,8 +23,21 @@ explicit approval; completing either batch does not authorize release.
   private authenticated IPC, owned breakpoint, listen/attach, stack/variables,
   step/continue and non-terminating detach/cleanup. No persisted SAP cookies,
   native RFC dependency, automatic execution or ambiguous-control replay.
-  Write/PRD/confirmation gates apply to debugger control actions. Owner death
+  Independent debug/PRD/confirmation gates apply to debugger control actions. Owner death
   is an explicit remote-state gap, not recoverable by a saved PID/cookie.
+- Separated debugger consent into profile-only `allow_debug` (default false),
+  `configure --allow-debug/--no-allow-debug` and `SAP_ALLOW_DEBUG` for complete
+  env/dotenv connections with explicit `SAP_ENVIRONMENT`. No source/transport
+  or global inheritance; existing write/TLS settings survive a debug-only
+  configuration update. `status` reports the independent effective flag.
+  Local refusal is `DEBUG_DISABLED` (exit 3), now in the closed 19-code
+  registry; authorized reads and cleanup do not require re-enabling flags.
+- Corrected debugger CSRF discovery content negotiation after a read-only
+  live probe returned HTTP 406 for generic XML. The Atom service media type
+  now obtains a real CSRF token; this does not verify debugger attachment.
+- Organized root help into seven task-oriented groups, with registration-owned
+  metadata, risk-first short descriptions and narrow/no-color rendering.
+  Existing command paths, output formats and exit behavior are unchanged.
 - Added an explicitly authorized Skill debugging route, separate from default
   Unit/Dump diagnosis. Live attachment remains unverified; offline synthetic
   regression does not certify SAP debugger permission or transport affinity.

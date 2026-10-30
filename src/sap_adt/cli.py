@@ -29,34 +29,57 @@ from sap_adt.version import get_version
 
 _KEYSTORE_CHOICES = ("env", "keyring", "dpapi", "pass", "file")
 
+_SETUP_HELP = (0, "Setup and maintenance")
+_FIND_HELP = (1, "Find objects")
+_SOURCE_HELP = (2, "Read and change source")
+_DATA_HELP = (3, "Inspect data and types")
+_DIAGNOSIS_HELP = (4, "Test and diagnose")
+_HISTORY_HELP = (5, "Compare source versions")
+_TRANSPORT_HELP = (6, "Transport requests")
+
+
+class _HelpCommand(click.Command):
+    def __init__(self, *args, help_group, help_order=0, **kwargs):
+        self.help_group = help_group
+        self.help_order = help_order
+        super().__init__(*args, **kwargs)
+
+
+class _HelpGroup(click.Group):
+    def __init__(self, *args, help_group, help_order=0, **kwargs):
+        self.help_group = help_group
+        self.help_order = help_order
+        super().__init__(*args, **kwargs)
+
 
 class SapAdtGroup(click.Group):
-    """Group root help without changing command registration or dispatch."""
+    """Render task sections from metadata on registered commands."""
 
-    _setup_commands = ("configure", "profile", "credentials", "status", "update")
+    command_class = _HelpCommand
+    group_class = _HelpGroup
+
+    def format_options(self, ctx, formatter):
+        rows = [record for param in self.get_params(ctx)
+                if (record := param.get_help_record(ctx)) is not None]
+        if rows:
+            with formatter.section("Options"):
+                formatter.write_dl(
+                    rows, col_max=min(30, max(10, formatter.width - 24)))
+        self.format_commands(ctx, formatter)
 
     def format_commands(self, ctx, formatter):
-        commands = {}
+        sections = {}
         for name in self.list_commands(ctx):
             command = self.get_command(ctx, name)
             if command is not None and not command.hidden:
-                commands[name] = command
-        if not commands:
-            return
-        sections = (
-            ("Setup and maintenance", [
-                name for name in self._setup_commands if name in commands]),
-            ("ADT commands", [
-                name for name in commands if name not in self._setup_commands]),
-        )
-        limit = formatter.width - 6 - max(map(len, commands))
-        for title, names in sections:
-            if names:
-                with formatter.section(title):
-                    formatter.write_dl([
-                        (name, commands[name].get_short_help_str(limit))
-                        for name in names
-                    ])
+                sections.setdefault(command.help_group, []).append(
+                    (command.help_order, name, command))
+        for (_, title), commands in sorted(sections.items()):
+            with formatter.section(title):
+                formatter.write_dl([
+                    (name, command.get_short_help_str())
+                    for _, name, command in sorted(commands)
+                ])
 
 
 def _profile_name():
@@ -199,6 +222,29 @@ def _require_transport_write(config: SapConfig) -> None:
         )
 
 
+def _require_debug(config: SapConfig) -> None:
+    if config.is_production:
+        _gate(
+            errors.DEBUG_DISABLED,
+            "Debugging is hard-refused in environment=prd. "
+            f"{_production_refusal_hint(config)}",
+        )
+    if config.allow_debug and config.from_environment and config.environment_source != "explicit":
+        _gate(
+            errors.CONFIG_MISSING,
+            "SAP_ENVIRONMENT must be set explicitly when enabling debugging "
+            "via SAP_ALLOW_DEBUG.",
+            exit_code=3,
+        )
+    if not config.allow_debug:
+        who = config.profile_name or "(environment variables)"
+        _gate(
+            errors.DEBUG_DISABLED,
+            f"Debugging is disabled for '{who}' (source: {config.debug_source}). "
+            "Enable allow_debug explicitly; allow_write does not grant debug access.",
+        )
+
+
 def _require_env_write_context(config, kind: str = "write") -> None:
     """Env-var/.env connections need SAP_ENVIRONMENT before any write.
 
@@ -302,23 +348,17 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
 @click.option("-v", "--verbose", is_flag=True, default=False,
               help="Verbose logging (secrets stay redacted)")
 def cli(profile, keystore, fmt, verbose):
-    """Read and write ABAP source code and metadata from SAP systems via the ADT REST API.
+    """Read, check and change ABAP objects in SAP.
 
-    Multiple SAP environments are stored as profiles in
-    ~/.sap-adt-cli/config.json. Switch persistently with 'profile use NAME'
-    or per command with '--profile NAME' (SAP_PROFILE env var also supported).
+    SAP source and transport writes require capabilities and confirmation.
+    Debugger controls require separate allow_debug permission. Unit tests
+    and debugger controls can execute application code.
 
-    Credential resolution (highest priority first):
-      1. Process environment variables (SAP_URL, SAP_USERNAME,
-         SAP_PASSWORD, SAP_CLIENT)
-      2. Dotenv file declared by SAP_ADT_DOTENV (explicit path)
-      3. Profile in ~/.sap-adt-cli/config.json + OS keystore
+    Start with 'configure', then 'status'. Use '--profile NAME' for one
+    command or 'profile use NAME' to switch persistently.
 
-    A complete env/dotenv set overrides profiles entirely (all four required
-    keys or none). The CLI never scans the current directory or a skill
-    folder for .env files.
-
-    Run 'configure' on first use to save your connection settings.
+    Run 'COMMAND --help' for parameters, output formats and safety details.
+    See 'configure --help' for connection and credential resolution.
     """
     log_redaction.configure_logging(verbose)
     output.set_format(fmt)
@@ -328,7 +368,8 @@ def cli(profile, keystore, fmt, verbose):
         credentials.set_preferred(keystore)
 
 
-@cli.command("update")
+@cli.command("update", help_group=_SETUP_HELP, help_order=60,
+             short_help="[LOCAL UPDATE] Check or upgrade this CLI.")
 @click.option("--check", "check_only", is_flag=True, help="Check versions without modifying anything.")
 @click.option("--major", is_flag=True, help="Explicitly allow a newer major stable release.")
 @click.option("--yes", is_flag=True, help="Confirm this update for non-interactive use.")
@@ -394,7 +435,8 @@ def update_cmd(check_only, major, yes):
         raise SystemExit(errors.exit_code_for(exc.code))
 
 
-@cli.command()
+@cli.command(help_group=_SETUP_HELP, help_order=10,
+             short_help="Configure a connection profile.")
 @click.option("--url",                    default=None, help="SAP system URL (e.g. https://my-sap.example.com:8000)")
 @click.option("--username",               default=None, help="SAP username")
 @click.option("--password",               default=None, help="SAP password (see security warning below)")
@@ -403,21 +445,37 @@ def update_cmd(check_only, major, yes):
 @click.option("--no-verify-ssl",          is_flag=True, default=False, help="Disable SSL certificate verification")
 @click.option("--allow-write/--no-allow-write",         default=False, help="Enable source code write for THIS profile (preferred)")
 @click.option("--allow-transport/--no-allow-transport", default=False, help="Enable transport writes for THIS profile (preferred)")
+@click.option("--allow-debug/--no-allow-debug", default=None,
+              help="Enable debugger for THIS profile only (default: disabled; "
+                   "independent of writes). Can pause/run ABAP; PRD is refused.")
 @click.option("--global-allow-write/--no-global-allow-write", default=None,
               help="Write the LEGACY global fallback switch (applies only when the profile declares neither)")
 @click.option("--global-allow-transport/--no-global-allow-transport", default=None,
               help="Write the LEGACY global transport fallback switch")
 @click.option("--environment", default=None,
               type=click.Choice(["dev", "qas", "prd"]),
-              help="Logical environment (default: inferred from profile name; prd hard-refuses writes)")
+              help="Logical environment (default: inferred from profile name; prd hard-refuses writes and debugging)")
 @click.option("--profile", default=None, help="Profile name to create or update (default: active profile, or 'default' on first run)")
 def configure(url, username, password, client, language, no_verify_ssl,
               allow_write, allow_transport, global_allow_write,
-              global_allow_transport, environment, profile):
+              global_allow_transport, environment, profile, allow_debug):
     """Save SAP connection credentials for one environment profile.
 
     The saved profile becomes the active profile. Add more environments
     with `configure --profile NAME` and switch with `profile use NAME`.
+
+    Profiles are stored in ~/.sap-adt-cli/config.json; passwords are stored
+    in the OS keystore. SAP_PROFILE also selects a profile per command.
+
+    Credential resolution (highest priority first):
+      1. Process environment variables (SAP_URL, SAP_USERNAME,
+         SAP_PASSWORD, SAP_CLIENT)
+      2. Dotenv file declared by SAP_ADT_DOTENV (explicit path)
+      3. Profile in ~/.sap-adt-cli/config.json + OS keystore
+
+    A complete env/dotenv set overrides profiles entirely (all four required
+    keys or none). The CLI never scans the current directory or a skill
+    folder for .env files.
 
     When called with flags the credentials are saved non-interactively —
     useful for agent workflows. When called with no flags an interactive
@@ -427,8 +485,16 @@ def configure(url, username, password, client, language, no_verify_ssl,
     Security note: passing --password on the command line may expose it in
     shell history and process listings. Prefer the interactive wizard or
     the SAP_PASSWORD environment variable.
+
+    Debugging defaults to disabled and does not inherit allow_write,
+    allow_transport or legacy global switches. For an existing profile,
+    'configure --profile NAME --allow-debug' changes only that capability;
+    '--no-allow-debug' disables it. Unspecified write/TLS settings are kept.
+    Complete env/dotenv connections use SAP_ALLOW_DEBUG and an explicit
+    SAP_ENVIRONMENT instead. Debugging may pause execution or let application
+    code write business data even when source writes remain disabled.
     """
-    if any([url, username, password, client]):
+    if any([url, username, password, client]) or allow_debug is not None:
         if password:
             click.echo(
                 "Warning: passing --password on the command line may expose it in shell history "
@@ -438,8 +504,18 @@ def configure(url, username, password, client, language, no_verify_ssl,
             )
         # Non-interactive path: callers are agents, so failures are JSON
         # envelopes with tiered exits (never plain text). Discrimination is
-        # by "any connection flag present", not TTY state.
+        # by explicit connection/debug flags, not TTY state.
         try:
+            verify_ssl = not no_verify_ssl
+            if allow_debug is not None:
+                context = click.get_current_context()
+                profile = profile or context.find_root().params.get("profile")
+                if context.get_parameter_source("allow_write") == click.core.ParameterSource.DEFAULT:
+                    allow_write = None
+                if context.get_parameter_source("allow_transport") == click.core.ParameterSource.DEFAULT:
+                    allow_transport = None
+                if context.get_parameter_source("no_verify_ssl") == click.core.ParameterSource.DEFAULT:
+                    verify_ssl = None
             # Profile-scoped is the default; --allow-write/--allow-transport
             # write the profile section, the --global-* legacy flags the
             # top-level fallback. Setting neither leaves existing values.
@@ -449,7 +525,7 @@ def configure(url, username, password, client, language, no_verify_ssl,
                 password=password,
                 client=client,
                 language=language,
-                verify_ssl=not no_verify_ssl,
+                verify_ssl=verify_ssl,
                 allow_write=allow_write,
                 allow_transport=allow_transport,
                 profile=profile,
@@ -457,6 +533,7 @@ def configure(url, username, password, client, language, no_verify_ssl,
                 profile_scope=True,
                 global_write=global_allow_write,
                 global_transport=global_allow_transport,
+                allow_debug=allow_debug,
             )
         except (ConfigError, ProfileNotFoundError, ValueError) as e:
             _emit_error(errors.classify(e))
@@ -465,7 +542,8 @@ def configure(url, username, password, client, language, no_verify_ssl,
         run_configure_wizard(profile=profile)
 
 
-@cli.command()
+@cli.command(help_group=_SETUP_HELP, help_order=40,
+             short_help="Show local connection settings.")
 def status():
     """Show the active SAP environment profile and connection configuration."""
     config, source = _load_config_with_source()
@@ -499,10 +577,16 @@ def status():
         + ("HARD-REFUSED (environment=prd)" if refused_t
            else f"{'ENABLED' if config.allow_transport else 'DISABLED'} (source: {config.transport_source}{legacy_t})")
     )
+    click.echo(
+        "Debug mode:      "
+        + ("HARD-REFUSED (environment=prd)" if config.debug_source == "hard-refused"
+           else f"{'ENABLED' if config.allow_debug else 'DISABLED'} (source: {config.debug_source})")
+    )
     click.echo(f"Config source:   {source}")
 
 
-@cli.group("profile")
+@cli.group("profile", help_group=_SETUP_HELP, help_order=20,
+           short_help="List, switch or remove profiles.")
 def profile_group():
     """Manage SAP environment profiles (dev, qas, prd, ...)."""
 
@@ -554,7 +638,8 @@ def profile_remove(name):
     click.echo(f"Profile '{name}' removed.")
 
 
-@cli.group("credentials")
+@cli.group("credentials", help_group=_SETUP_HELP, help_order=30,
+           short_help="Store and diagnose profile passwords.")
 def credentials_group():
     """Manage profile passwords stored in the system keystore.
 
@@ -663,7 +748,8 @@ def credentials_doctor(coverage):
     click.echo(credentials_reports.doctor_text())
 
 
-@cli.command("run-unit-test")
+@cli.command("run-unit-test", help_group=_DIAGNOSIS_HELP, help_order=30,
+             short_help="[RUNS ABAP] Unit tests; harmless by default.")
 @click.argument("object_name")
 @click.option("--type", "object_type", default="class",
               type=click.Choice(["program", "class", "interface", "include", "function"]),
@@ -723,7 +809,8 @@ def _fail_on_findings(result, threshold: str) -> None:
         sys.exit(1)
 
 
-@cli.command("run-atc")
+@cli.command("run-atc", help_group=_DIAGNOSIS_HELP, help_order=20,
+             short_help="Run static quality checks.")
 @click.argument("object_name")
 @click.option("--type", "object_type", default="class",
               type=click.Choice(["program", "class", "interface", "include", "function"]))
@@ -743,7 +830,8 @@ def run_atc_cmd(object_name, object_type, group, variant, max_results, fail_on):
     _fail_on_findings(result, fail_on)
 
 
-@cli.command("discovery")
+@cli.command("discovery", help_group=_SETUP_HELP, help_order=50,
+             short_help="List advertised SAP capabilities.")
 @click.option("--emit-markdown", "emit_markdown", default=None,
               type=click.Path(writable=True, dir_okay=False),
               help="Write a generated endpoint table to PATH (local file only).")
@@ -767,7 +855,8 @@ def discovery_cmd(emit_markdown):
     _output(handlers.discovery())
 
 
-@cli.command("get-program")
+@cli.command("get-program", help_group=_SOURCE_HELP,
+             short_help="Read a program's ABAP source.")
 @click.argument("program_name")
 def get_program(program_name):
     """Retrieve ABAP program (report) source code.
@@ -778,13 +867,15 @@ def get_program(program_name):
     _output(handlers.get_program(program_name))
 
 
-@cli.command("list-feeds")
+@cli.command("list-feeds", help_group=_DIAGNOSIS_HELP, help_order=40,
+             short_help="Find diagnostic feeds and filters.")
 def list_feeds_cmd():
     """List /sap/bc/adt/feeds with FQL attributes and query variants (JSON)."""
     _output(handlers.list_feeds())
 
 
-@cli.command("get-dump")
+@cli.command("get-dump", help_group=_DIAGNOSIS_HELP, help_order=60,
+             short_help="Inspect one runtime dump.")
 @click.argument("identifier")
 @click.option("--max-chars", type=click.IntRange(1, 200000), default=20000,
               show_default=True, help="Shared character budget for diagnostic chapter text.")
@@ -800,7 +891,8 @@ def get_dump_cmd(identifier, max_chars):
         sys.exit(1)
 
 
-@cli.command("get-source")
+@cli.command("get-source", help_group=_SOURCE_HELP,
+             short_help="Read source by URI and line range.")
 @click.argument("uri")
 @click.option("--start-line", type=click.IntRange(1), default=1, show_default=True)
 @click.option("--end-line", type=click.IntRange(1), default=None)
@@ -819,7 +911,7 @@ def _debug_config(action=None, yes=False):
     if output.get_format() == "xml":
         _gate(errors.BAD_REQUEST, "Debugger commands support JSON or text, not XML")
     if action:
-        _require_write(config)
+        _require_debug(config)
         _confirm_change([
             f"Action   : Debugger {action}",
             f"Profile  : {config.profile_name or '(environment variables)'}",
@@ -835,9 +927,20 @@ def _debug_output(result):
         sys.exit(1)
 
 
-@cli.group("debug")
+@cli.group("debug", help_group=_DIAGNOSIS_HELP, help_order=70,
+           short_help="[MAY RUN ABAP] Experimental debugger.")
 def debug_group():
-    """Experimental stateful debugger; start a bounded owner with 'serve'."""
+    """Experimental debugger; requires separate allow_debug permission.
+
+    Source writes can remain disabled. serve/breakpoint/listen/attach/step/
+    continue require a non-PRD environment and fresh confirmation per action.
+    Stepping/resuming can execute business writes; this is not a read-only
+    sandbox. Stack/variable reads use an authorized attached session.
+    status/detach/cleanup remain available after disabling debug permission;
+    detaching may let existing execution continue.
+
+    Start a bounded foreground owner with 'serve'.
+    """
 
 
 @debug_group.command("serve")
@@ -849,6 +952,8 @@ def debug_serve(ttl, idle, yes):
 
     Start in another terminal. Ctrl-C/expiry attempts non-terminating cleanup.
     No SAP credentials or cookies are written into the local descriptor.
+    Requires allow_debug, not allow_write. PRD is refused; complete
+    env/dotenv connections also require an explicit SAP_ENVIRONMENT.
     """
     config = _debug_config("serve", yes)
     from sap_adt.debugger.owner import Owner
@@ -884,7 +989,11 @@ def debug_status(session):
 @click.option("--line", required=True, type=click.IntRange(1, 10000000))
 @click.option("--yes", is_flag=True)
 def debug_breakpoint(session, uri, line, yes):
-    """Set one owned source-line breakpoint before listening (POST /breakpoints)."""
+    """Set one owned source-line breakpoint before listening (POST /breakpoints).
+
+    Requires allow_debug, non-PRD and fresh confirmation; not source writes.
+    A matching breakpoint can interrupt application execution.
+    """
     config = _debug_config("breakpoint", yes)
     _debug_output(handlers.debug_operation(config, session, "breakpoint", {"uri": uri, "line": line}))
 
@@ -894,7 +1003,11 @@ def debug_breakpoint(session, uri, line, yes):
 @click.option("--timeout", type=click.IntRange(1, 30), default=15, show_default=True)
 @click.option("--yes", is_flag=True)
 def debug_listen(session, timeout, yes):
-    """Wait for the current user's debuggee (POST /debugger/listeners)."""
+    """Wait for the current user's debuggee (POST /debugger/listeners).
+
+    Requires allow_debug, non-PRD and fresh confirmation; not source writes.
+    Timeout is not a hit or permission to trigger unrelated business code.
+    """
     config = _debug_config("listen", yes)
     _debug_output(handlers.debug_operation(config, session, "listen", {"timeout": timeout}))
 
@@ -904,7 +1017,11 @@ def debug_listen(session, timeout, yes):
 @click.option("--debuggee", required=True)
 @click.option("--yes", is_flag=True)
 def debug_attach(session, debuggee, yes):
-    """Attach this owner's returned debuggee (POST /debugger?method=attach)."""
+    """Attach this owner's returned debuggee (POST /debugger?method=attach).
+
+    Requires allow_debug, non-PRD and fresh confirmation; not source writes.
+    Attachment can pause the target's execution.
+    """
     config = _debug_config("attach", yes)
     _debug_output(handlers.debug_operation(config, session, "attach", {"debuggee": debuggee}))
 
@@ -936,7 +1053,11 @@ def debug_vars(session, ids, parent, limit, max_chars):
 @click.option("--action", type=click.Choice(["into", "over", "return"]), default="over")
 @click.option("--yes", is_flag=True)
 def debug_step(session, action, yes):
-    """Execute one approved step (POST /debugger?method=stepInto/Over/Return)."""
+    """Execute one approved step (POST /debugger?method=stepInto/Over/Return).
+
+    Requires allow_debug, non-PRD and fresh confirmation. Application code
+    may write business data even with allow_write=false. Never blindly retry.
+    """
     config = _debug_config("step " + action, yes)
     _debug_output(handlers.debug_operation(config, session, "step", {
         "action": {"into": "stepInto", "over": "stepOver", "return": "stepReturn"}[action],
@@ -947,7 +1068,11 @@ def debug_step(session, action, yes):
 @click.option("--session", required=True)
 @click.option("--yes", is_flag=True)
 def debug_continue(session, yes):
-    """Resume execution (POST /debugger?method=stepContinue); may write data."""
+    """Resume execution (POST /debugger?method=stepContinue); may write data.
+
+    Requires allow_debug, non-PRD and fresh confirmation. Application code
+    may write business data even with allow_write=false. Never blindly retry.
+    """
     config = _debug_config("continue", yes)
     _debug_output(handlers.debug_operation(config, session, "continue", {}))
 
@@ -955,7 +1080,11 @@ def debug_continue(session, yes):
 @debug_group.command("detach")
 @click.option("--session", required=True)
 def debug_detach(session):
-    """Detach without terminating; remove owned listener/breakpoints and end owner."""
+    """Detach without terminating; remove owned listener/breakpoints and end owner.
+
+    Does not require re-enabling debug or source-write permission.
+    Detaching can allow existing application execution to proceed, not roll back.
+    """
     config = _debug_config()
     _debug_output(handlers.debug_operation(config, session, "detach", {}))
 
@@ -965,14 +1094,20 @@ def debug_detach(session):
 @click.option("--discard-local", is_flag=True, help="If owner unreachable, forget local state ONLY.")
 @click.option("--yes", is_flag=True)
 def debug_cleanup(session, discard_local, yes):
-    """Clean owned resources; stale owners cannot prove remote release."""
+    """Clean owned resources; stale owners cannot prove remote release.
+
+    Does not require re-enabling debug or source-write permission.
+    Detaching can allow existing execution to proceed. Local discard is
+    bookkeeping only and requires its own confirmation.
+    """
     config = _debug_config()
     if discard_local:
         _confirm_change(["Discard local debugger state only; remote state remains unknown."], yes=yes)
     _debug_output(handlers.debug_operation(config, session, "cleanup", {}, discard=discard_local))
 
 
-@cli.command("query-feed")
+@cli.command("query-feed", help_group=_DIAGNOSIS_HELP, help_order=50,
+             short_help="Read a filtered diagnostic feed page.")
 @click.argument("uri")
 @click.option("--query", default="", help="FQL expression advertised by list-feeds.")
 @click.option("--max-results", default=20, show_default=True, type=click.IntRange(1, 500))
@@ -986,7 +1121,8 @@ def query_feed_cmd(uri, query, max_results, page_uri):
     _output(handlers.query_feed(uri, query, max_results, page_uri))
 
 
-@cli.command("get-versions")
+@cli.command("get-versions", help_group=_HISTORY_HELP, help_order=10,
+             short_help="List an object's stored versions.")
 @click.argument("object_type", type=click.Choice([
     "program", "class", "interface", "include", "function", "function-group",
     "table", "structure", "cds-view", "domain", "data-element", "type-group",
@@ -1007,14 +1143,16 @@ def get_versions_cmd(object_type, name, group, max_results):
         sys.exit(1)
 
 
-@cli.command("get-version-source")
+@cli.command("get-version-source", help_group=_HISTORY_HELP, help_order=20,
+             short_help="Read a selected version's source.")
 @click.argument("uri")
 def get_version_source_cmd(uri):
     """Read a content_uri from get-versions (plain source, --format json supported)."""
     _output(handlers.get_version_source(uri))
 
 
-@cli.command("diff-versions")
+@cli.command("diff-versions", help_group=_HISTORY_HELP, help_order=30,
+             short_help="Compare two stored source versions.")
 @click.argument("from_uri")
 @click.argument("to_uri")
 @click.option("--context", default=3, show_default=True, type=click.IntRange(0, 100))
@@ -1023,14 +1161,16 @@ def diff_versions_cmd(from_uri, to_uri, context):
     _output(handlers.diff_versions(from_uri, to_uri, context))
 
 
-@cli.command("get-transport")
+@cli.command("get-transport", help_group=_TRANSPORT_HELP, help_order=20,
+             short_help="Inspect a request's tasks and objects.")
 @click.argument("trkorr")
 def get_transport_cmd(trkorr):
     """Read /cts/transportrequests/<TRKORR>: request/task metadata and objects."""
     _output(handlers.get_transport(trkorr))
 
 
-@cli.command("get-class")
+@cli.command("get-class", help_group=_SOURCE_HELP,
+             short_help="Read a class's ABAP source.")
 @click.argument("class_name")
 def get_class(class_name):
     """Retrieve ABAP class source code.
@@ -1040,7 +1180,8 @@ def get_class(class_name):
     _output(handlers.get_class(class_name))
 
 
-@cli.command("get-function-group")
+@cli.command("get-function-group", help_group=_SOURCE_HELP,
+             short_help="Read a function group's top include.")
 @click.argument("function_group")
 def get_function_group(function_group):
     """Retrieve ABAP function group top-include source code.
@@ -1051,7 +1192,8 @@ def get_function_group(function_group):
     _output(handlers.get_function_group(function_group))
 
 
-@cli.command("get-function")
+@cli.command("get-function", help_group=_SOURCE_HELP,
+             short_help="Read a function module's source.")
 @click.argument("function_name")
 @click.option("--group", required=True, help="Function group that contains the function module")
 def get_function(function_name, group):
@@ -1066,7 +1208,8 @@ def get_function(function_name, group):
     _output(handlers.get_function(function_name, group))
 
 
-@cli.command("get-structure")
+@cli.command("get-structure", help_group=_DATA_HELP,
+             short_help="Inspect a structure's fields.")
 @click.argument("structure_name")
 def get_structure(structure_name):
     """Retrieve ABAP DDIC structure definition.
@@ -1077,7 +1220,8 @@ def get_structure(structure_name):
     _output(handlers.get_structure(structure_name))
 
 
-@cli.command("get-table")
+@cli.command("get-table", help_group=_DATA_HELP,
+             short_help="Inspect table field definitions.")
 @click.argument("table_name")
 def get_table(table_name):
     """Retrieve ABAP DDIC transparent table field definitions.
@@ -1088,7 +1232,8 @@ def get_table(table_name):
     _output(handlers.get_table(table_name))
 
 
-@cli.command("get-package")
+@cli.command("get-package", help_group=_FIND_HELP,
+             short_help="Browse a package's objects.")
 @click.argument("package_name")
 def get_package(package_name):
     """List all objects in an ABAP package.
@@ -1100,7 +1245,8 @@ def get_package(package_name):
     _output(handlers.get_package(package_name))
 
 
-@cli.command("get-type-info")
+@cli.command("get-type-info", help_group=_DATA_HELP,
+             short_help="Inspect a domain or data element.")
 @click.argument("type_name")
 def get_type_info(type_name):
     """Retrieve domain or data element information from DDIC.
@@ -1112,7 +1258,8 @@ def get_type_info(type_name):
     _output(handlers.get_type_info(type_name))
 
 
-@cli.command("get-include")
+@cli.command("get-include", help_group=_SOURCE_HELP,
+             short_help="Read an include's source.")
 @click.argument("include_name")
 def get_include(include_name):
     """Retrieve ABAP include source code.
@@ -1122,7 +1269,8 @@ def get_include(include_name):
     _output(handlers.get_include(include_name))
 
 
-@cli.command("get-interface")
+@cli.command("get-interface", help_group=_SOURCE_HELP,
+             short_help="Read an interface's source.")
 @click.argument("interface_name")
 def get_interface(interface_name):
     """Retrieve ABAP interface source code.
@@ -1132,7 +1280,8 @@ def get_interface(interface_name):
     _output(handlers.get_interface(interface_name))
 
 
-@cli.command("get-transaction")
+@cli.command("get-transaction", help_group=_FIND_HELP,
+             short_help="Inspect transaction metadata.")
 @click.argument("transaction_name")
 def get_transaction(transaction_name):
     """Retrieve transaction properties (package, application component).
@@ -1143,7 +1292,8 @@ def get_transaction(transaction_name):
     _output(handlers.get_transaction(transaction_name))
 
 
-@cli.command("search-object")
+@cli.command("search-object", help_group=_FIND_HELP, help_order=-10,
+             short_help="Find objects by name or wildcard.")
 @click.argument("query")
 @click.option("--max-results", default=100, show_default=True, help="Maximum number of results to return")
 def search_object(query, max_results):
@@ -1159,7 +1309,8 @@ def search_object(query, max_results):
     _output(handlers.search_object(query, max_results))
 
 
-@cli.command("syntax-check")
+@cli.command("syntax-check", help_group=_DIAGNOSIS_HELP, help_order=10,
+             short_help="Check syntax without changing source.")
 @click.argument("object_type")
 @click.argument("object_name")
 @click.option("--group", default=None, help="Function group (required when OBJECT_TYPE is 'function')")
@@ -1187,7 +1338,8 @@ def syntax_check_cmd(object_type, object_name, group):
         sys.exit(1)
 
 
-@cli.command("get-cds-view")
+@cli.command("get-cds-view", help_group=_SOURCE_HELP,
+             short_help="Read a CDS data definition.")
 @click.argument("name")
 def get_cds_view(name):
     """Retrieve CDS View DDL source code.
@@ -1198,7 +1350,8 @@ def get_cds_view(name):
     _output(handlers.get_cds_view(name))
 
 
-@cli.command("get-type-group")
+@cli.command("get-type-group", help_group=_SOURCE_HELP,
+             short_help="Read a type group's source.")
 @click.argument("name")
 def get_type_group(name):
     """Retrieve ABAP type group (TYPE POOL) source code.
@@ -1208,7 +1361,8 @@ def get_type_group(name):
     _output(handlers.get_type_group(name))
 
 
-@cli.command("write-source")
+@cli.command("write-source", help_group=_SOURCE_HELP, help_order=10,
+             short_help="[WRITE] Upload source; needs approval.")
 @click.argument("object_type")
 @click.argument("object_name")
 @click.option("--file", "source_file", required=True, help="Source file path; use - to read from stdin")
@@ -1281,7 +1435,8 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
     click.echo("Write complete.")
 
 
-@cli.command("activate")
+@cli.command("activate", help_group=_SOURCE_HELP, help_order=20,
+             short_help="[WRITE] Activate an object; needs approval.")
 @click.argument("object_type")
 @click.argument("object_name")
 @click.option("--group", default=None, help="Function group (required when OBJECT_TYPE is 'function')")
@@ -1305,7 +1460,8 @@ def activate_cmd(object_type, object_name, group, yes):
     _output(handlers.activate_object(object_type, object_name, group=group))
 
 
-@cli.command("where-used")
+@cli.command("where-used", help_group=_FIND_HELP,
+             short_help="Find references to an object.")
 @click.argument("object_type")
 @click.argument("object_name")
 @click.option("--max-results", default=50, show_default=True, help="Maximum number of results to return")
@@ -1322,7 +1478,8 @@ def where_used_cmd(object_type, object_name, max_results, group):
     _output(handlers.where_used(object_type, object_name, max_results=max_results, group=group))
 
 
-@cli.command("run-sql")
+@cli.command("run-sql", help_group=_DATA_HELP, help_order=10,
+             short_help="[SELECT ONLY] Preview query results.")
 @click.argument("sql")
 @click.option("--max-rows", default=100, show_default=True, help="Maximum rows to return (max 10000)")
 def run_sql_cmd(sql, max_rows):
@@ -1349,7 +1506,8 @@ def run_sql_cmd(sql, max_rows):
     _output(handlers.run_sql(sql, max_rows))
 
 
-@cli.command("list-transports")
+@cli.command("list-transports", help_group=_TRANSPORT_HELP, help_order=10,
+             short_help="Find transport requests.")
 @click.option("--user",   default=None,  help="SAP username to filter by (default: configured username)")
 @click.option("--status", default="D",   show_default=True, help="Transport status: D=in development, R=released")
 def list_transports_cmd(user, status):
@@ -1363,7 +1521,8 @@ def list_transports_cmd(user, status):
     _output(handlers.list_transports(effective_user, status=status))
 
 
-@cli.command("create-transport")
+@cli.command("create-transport", help_group=_TRANSPORT_HELP, help_order=40,
+             short_help="[WRITE] Create a request; needs approval.")
 @click.option("--package", "package", required=True,
               help="Package (DEVCLASS) to create the request for; $TMP for a local request")
 @click.option("--description", required=True, help="Transport request description")
@@ -1394,7 +1553,8 @@ def create_transport_cmd(package, description, ref, yes):
     _output(handlers.create_transport(package, description, ref))
 
 
-@cli.command("release-transport")
+@cli.command("release-transport", help_group=_TRANSPORT_HELP, help_order=50,
+             short_help="[IRREVERSIBLE] Release a transport request.")
 @click.argument("trkorr")
 @click.option("--yes", is_flag=True, default=False, help="Skip confirmation prompt. Use only in trusted automation.")
 @click.option("--dry-run", is_flag=True, default=False,
@@ -1430,7 +1590,8 @@ def release_transport_cmd(trkorr, yes, dry_run):
     _output(result)
 
 
-@cli.group("transport")
+@cli.group("transport", help_group=_TRANSPORT_HELP, help_order=30,
+           short_help="Collect or compare requests (read-only).")
 def transport_group():
     """Transport request utilities (online collection is read-only)."""
 

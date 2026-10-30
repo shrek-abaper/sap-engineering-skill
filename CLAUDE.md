@@ -129,7 +129,7 @@ src/sap_adt/
 ├── cli.py            ← Click group `sap-adt` (commands, gates, confirmations)
 ├── config.py         ← profiles/env/dotenv resolution, ~/.sap-adt-cli
 ├── credentials.py    ← keystore orchestration (+ credentials_reports.py for doctor)
-├── errors.py         ← closed 18-code set + exit tiers
+├── errors.py         ← closed 19-code set + exit tiers
 ├── output.py         ← envelope rendering (format_version = 1)
 ├── adt/              ← client.py, handlers.py, parsers/, coverage.py
 ├── keystore/         ← env/keyring/dpapi/pass/file backends
@@ -139,7 +139,7 @@ src/sap_adt/
 **config.py** - Handles:
 - `~/.sap-adt-cli/config.json` v2 profiles (non-secret fields only, 0600)
 - Process env > explicit dotenv (`SAP_ADT_DOTENV`) > profile; never scans CWD
-- Capability flags (`allow_write`, `allow_transport`), environment (dev/qas/prd)
+- Capability flags (`allow_write`, `allow_transport`, independent profile-only `allow_debug`), environment (dev/qas/prd)
 - Interactive and non-interactive setup wizards; old-config migration
 - Password storage is delegated to `credentials.py` + the `keystore/` backends
 
@@ -206,6 +206,7 @@ Skills have explicit reference loading requirements documented in their `SKILL.m
 ### sap-adt-cli
 
 - **Read-only by default** - Write operations require `allow_write: true` in config
+- **Independent debugger consent** - Setup/controls require `allow_debug: true`, non-PRD and fresh confirmation; no source/transport/global inheritance. Authorized session reads and cleanup do not require re-enabling flags. Debug execution can change business data even when source writes are disabled.
 - **One-time confirmation** - Every write/activate/transport operation shows a preview and requires user `[y/N]` confirmation per operation (never cached)
 - **Passwords stored in the OS keystore** - Non-secret connection settings live in `~/.sap-adt-cli/config.json` (0600, multi-environment profiles); profile passwords are stored only in the OS keystore — backend priority `env` (`SAP_ADT_<PROFILE>_PASSWORD`) → `keyring` → `dpapi` (WSL2) → `pass` → `file` (scrypt+Fernet fallback); manage with `credentials set|forget|status|doctor`; old plaintext-password configs are auto-migrated
 - **Env vars / dotenv override config** - Set `SAP_URL`, `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_CLIENT` per invocation or in a dotenv file declared by `SAP_ADT_DOTENV` (the CLI never scans the CWD or skill folder); `SAP_PROFILE` / `--profile` selects among profiles (a complete set of `SAP_*` connection vars bypasses profiles entirely)

@@ -25,7 +25,8 @@ def check_cli(command, extra_env=None):
         env.update(extra_env or {})
         env.update({
             "SAP_URL": url, "SAP_USERNAME": "OFFLINE", "SAP_PASSWORD": "offline-fixture",
-            "SAP_CLIENT": "000", "SAP_ENVIRONMENT": "qas", "SAP_ALLOW_WRITE": "true",
+            "SAP_CLIENT": "000", "SAP_ENVIRONMENT": "qas", "SAP_ALLOW_DEBUG": "true",
+            "SAP_ALLOW_WRITE": "false", "SAP_ALLOW_TRANSPORT": "false",
             "SAP_ADT_FORMAT": "json", "NO_PROXY": "127.0.0.1", "no_proxy": "127.0.0.1",
             "HOME": home, "USERPROFILE": home, "PYTHONUTF8": "1",
         })
@@ -43,9 +44,9 @@ def check_cli(command, extra_env=None):
                 session = ready["data"]["session"]
                 assert owner.poll() is None
 
-                def invoke(operation, *arguments, expected=0, allow_write=True):
+                def invoke(operation, *arguments, expected=0, allow_debug=True):
                     environment = dict(env)
-                    environment["SAP_ALLOW_WRITE"] = "true" if allow_write else "false"
+                    environment["SAP_ALLOW_DEBUG"] = "true" if allow_debug else "false"
                     result = subprocess.run(
                         [*command, "debug", operation, "--session", session, *arguments],
                         cwd=home, env=environment, capture_output=True, timeout=100,
@@ -75,8 +76,8 @@ def check_cli(command, extra_env=None):
                 contents = descriptor.read_text(encoding="utf-8")
                 for forbidden in ("offline-fixture", "synthetic-cookie", "synthetic-context", "\u4e0a\u6d77"):
                     assert forbidden not in contents
-                # Cleanup remains possible even after disabling new writes.
-                assert invoke("cleanup", allow_write=False)["state"] == "closed"
+                # Cleanup remains possible even after disabling new debugging.
+                assert invoke("cleanup", allow_debug=False)["state"] == "closed"
                 tail, _ = owner.communicate(timeout=40)
                 assert owner.returncode == 0
                 assert json.loads(tail)["data"]["state"] == "closed"
