@@ -173,6 +173,18 @@ the existing native macOS workflow therefore checks these primitives too.
 Redirected stdout/stderr must remain UTF-8 even when Windows Python starts
 with a legacy code page.
 
+The 1.6.2 release gate repeated the same matrix from the 1.6.2 source on
+2026-10-31: Linux passed the 467-test Python suite and 47 npm regressions;
+Windows-local npm regressions passed 42 with 5 platform-specific skips;
+Linux/Windows installed npm runtimes and a clean Python wheel passed the
+diagnostic/debugger smokes; the Windows desktop installer (Inno Setup 6.7.4)
+passed silent install, same-version upgrade and uninstall; both macOS
+targets passed 467 tests (3 skips) and installed-runtime smokes in
+[Actions run 41207366848](https://github.com/shrek-abaper/sap-engineering-skill/actions/runs/41207366848)
+at source `d5e21255fd3793226a6ec797ca4818f98bdc96e1`. The verified
+`write-source` workflow was accepted on a live non-production S/4HANA client
+(see CHANGELOG); the distribution smokes themselves stay offline.
+
 The 1.6.1 release gate includes Linux/Windows native npm runtimes, clean Python
 wheel installations, the Windows silent desktop-installer lifecycle and both
 native macOS workflow targets. Each installed runtime must pass the diagnostic
