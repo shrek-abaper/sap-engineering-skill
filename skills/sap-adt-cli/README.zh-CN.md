@@ -21,6 +21,12 @@ CLI 1.6.1 新增 **Unit 失败证据、测试 Include 源码读取和 Dump 详�
 没有执行测试不等于通过；`--require-tests` 可让空执行结果返回退出码 1。
 Python 安装与 npm 原生运行时使用相同命令和输出契约。
 
+CLI 1.6.2 将 **`write-source` 升级为可核验写入**：绑定基线与上传内容 hash，
+锁内复核基线，写后回读，`finally` 必定解锁，可选激活并回读激活版本。
+各阶段分别报告 `accepted` / `verified` / `failed` / `unknown`；状态未知或部分完成时
+返回非零退出码，不盲目重试，也不回写旧源码充当回滚。
+`--yes` 必须配合 `--expect-baseline-sha256`，只跳过交互确认。
+
 ---
 
 ## 环境要求
@@ -295,7 +301,7 @@ CI 运行期也可以按 profile 直接提供口令：`SAP_ADT_<PROFILE>_PASSWOR
 | `syntax-check <TYPE> <NAME> [--group <FG>]` | 语法检查——只读，无需确认；TYPE 为 `function` 时需指定 `--group` |
 | `where-used <TYPE> <NAME> [--max-results N] [--group <FG>]` | 引用查询（JSON）；TYPE 为 `function` 时需指定 `--group` |
 | `run-sql "<SQL>" [--max-rows N]` | Open SQL SELECT → JSON *（DML 语句被拦截）*；默认返回 100 行，最多 10 000 行 |
-| `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | 写入源代码 *（需 allow_write + 每次确认）*；`--activate` 可在写入后立即激活；TYPE 为 `function` 时需指定 `--group`；`--transport` 指定传输请求编号 |
+| `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>] [--dry-run] [--expect-baseline-sha256 <H>] [--expect-content-sha256 <H>] [--yes]` | 可核验写入 *（需 allow_write + 每次确认）*：Diff 预览、加锁、锁内复核基线、写入、回读、解锁；`--activate` 激活并核验激活版本；`--dry-run` 仅输出 Diff 与 hash；`--yes` 必须配合 `--expect-baseline-sha256`（CLI 1.6.2+）；TYPE 为 `function` 时需指定 `--group`；`--transport` 指定传输请求编号 |
 | `activate <TYPE> <NAME> [--group <FG>]` | 激活 ABAP 对象 *（需 allow_write + 每次确认）*；TYPE 为 `function` 时需指定 `--group` |
 | `list-transports [--user U] [--status D\|R]` | 列出传输请求（JSON，只读）；`--status` 默认为 `D`（开发中） |
 | `list-feeds` | 诊断 Feed 目录，含 FQL 字段、操作符和查询变体 |
@@ -349,6 +355,7 @@ sap-adt run-sql "SELECT * FROM t001 UP TO 5 ROWS"
 # 写入与激活（需 allow_write + 每次确认）
 sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
 sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # 写入并立即激活
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --dry-run    # 仅输出 Diff 与 hash，不写入
 sap-adt activate class ZCL_MY_CLASS
 
 # 传输管理

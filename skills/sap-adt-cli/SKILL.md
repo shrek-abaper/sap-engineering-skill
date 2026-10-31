@@ -12,7 +12,7 @@ description: "Read/write live SAP ABAP source, DDIC metadata and transport reque
 license: MIT
 allowed-tools: [Read, Bash]
 metadata:
-  version: "1.3.1"
+  version: "1.3.2"
   type: hybrid
   output_schema:
     format: mixed
@@ -302,6 +302,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
   `SAP_ENVIRONMENT=dev|qas`; no capability falls back to profile flags on a
   complete environment connection.
 - `run-sql` blocks non-SELECT DML before sending (`DML_REJECTED`, exit 3).
+- Verified write-source (`--dry-run`, `--expect-*-sha256`, JSON `write` result) requires CLI **1.6.2+**; older runtimes reject these options — ask before upgrading.
 - write-source always unlocks (`_action=UNLOCK`, handle via query) in `finally`; a failed/unknown unlock never masks the primary error and never yields success. It binds target/client/user, object, TR, baseline and upload sha256 (canonical: UTF-8, LF, trailing blanks/empty lines removed); `--yes` skips only the prompt. Unattended: `--dry-run` → review diff → `--yes --expect-baseline-sha256 <baseline> --expect-content-sha256 <content>`. No retry, no rollback write. release-transport cannot be undone. **Write-side 2xx = "accepted" only** — release/activate/unlock need independent readback (**references/adt_api.md** top rule); foreign-context unlock is a silent 200 no-op.
 - Debugger cleanup uses detachDebugger, not termination; existing execution
   may proceed. Owner death cannot safely recover SAP context. Inspect ADT/Basis

@@ -1,10 +1,10 @@
 <div align="center">
 
-<h3>SAP ABAP engineering skills and an ADT CLI for AI agents</h3>
+<h3>Governed AI delivery for the SAP ABAP landscape you actually run</h3>
 
-<h4><i>SKILL.md spec · evidence-first reviews · read-only by default · plain skill folders</i></h4>
+<h4><i>ADT capabilities as a deterministic CLI · delivery scenarios as portable Skills · every change bound, verified and traceable</i></h4>
 
-> Four skills handle pre-release ABAP code review, transport request gate assessment, SAP integration reference, and read/write access to ABAP development objects through the ADT REST API. Each one is a `SKILL.md` workflow with its own rules and references, usable from Claude Code, Codex, WorkBuddy and other agent tools that load skills.
+> AI agents can already write ABAP. Delivering it safely into a real SAP system is a different problem: locks and stateful sessions, transports, release gates, audit evidence, and a landscape that is still mostly ECC and on-premise S/4HANA. This project turns the ADT REST API into a governed command-line contract and layers `SKILL.md` workflows on top — code review, transport gate, diagnosis, integration know-how — so that Claude Code, Codex, WorkBuddy and any skill-aware agent can take part in SAP delivery under the controls an enterprise expects.
 
 **ADT REST API · Code Review · Transport Gate · Integration Knowledge · Evidence-First**
 
@@ -20,9 +20,35 @@
 
 **English** · **[中文](README.zh-CN.md)**
 
-**[What you can do](#what-you-can-do)** · **[Quick start](#quick-start)** · **[Usage examples](#usage-examples)** · **[How it works](#how-it-works)** · **[Support and safety](#support-and-safety)** · **[Documentation](#documentation)** · **[License](#contributing-and-license)**
+**[Why this project](#why-this-project)** · **[What you can do](#what-you-can-do)** · **[Quick start](#quick-start)** · **[Usage examples](#usage-examples)** · **[How it works](#how-it-works)** · **[Support and safety](#support-and-safety)** · **[Roadmap](#roadmap)** · **[Documentation](#documentation)** · **[License](#contributing-and-license)**
 
 </div>
+
+---
+
+## Why this project
+
+The ABAP tooling market is moving fast. SAP now ships ADT for VS Code with a built-in MCP server, and the community offers several ADT-based MCP servers. They mostly compete on **how many tools an agent can call**. This project competes on a different axis: **whether what the agent did can be trusted, proven and signed off**.
+
+| | SAP ADT MCP (VS Code / Eclipse) | Community ADT MCP servers | **sap-engineering-skill** |
+|---|---|---|---|
+| Primary focus | ABAP Cloud, RAP generation, clean core | Broad tool coverage for agents | **Governed delivery on existing landscapes** |
+| On-premise reach | VS Code: S/4HANA 2025+ ¹ | Varies, mostly unverified per release | **ECC 6.0 and S/4HANA; real-system protocol facts recorded per release** |
+| Runtime | Inside a running IDE; experimental ¹ | Long-running MCP server | **Stateless CLI: any agent, any shell, any CI** |
+| Write safety | IDE-mediated | Typically lock → write → unlock | **Baseline-bound, read-back verified, staged outcome, no blind retry** |
+| Delivery workflow | Tools | Tools | **Tools + Skills: review, transport gate, diagnosis, integration** |
+
+<sub>¹ As documented by SAP for ADT for VS Code and its MCP server (as of 2026). Check SAP's current documentation for your release.</sub>
+
+### Design principles
+
+1. **Evidence over assertion.** An HTTP 2xx means *accepted*, never *done*. Writes are read back, activation is checked against the active version, and unlock, release and activation results are reported as `accepted`, `verified`, `failed` or `unknown`. Missing evidence is reported as a gap, never filled in by assumption.
+2. **Governed by default.** Read-only until a profile grants write capability; production profiles refuse every write-class operation; every change shows a preview and asks for confirmation; passwords live in the OS keystore, never in config or chat.
+3. **Bound intent.** A write is bound to target system, client, user, object, transport, remote baseline and upload hash. If anything drifts between review and execution, nothing is written. Automation (`--yes`) skips the prompt, not the checks. *(CLI 1.6.2+.)*
+4. **Deterministic contract, portable orchestration.** The CLI gives agents a stable JSON envelope, a closed error-code set and tiered exit codes. Scenarios live in plain `SKILL.md` folders — no vendor lock-in, low token overhead, scriptable in CI.
+5. **Measured, not assumed.** ADT behavior that SAP does not document — lock ownership, silent unlock no-ops, activation reply formats — is measured on real systems, recorded with sanitized fixtures, and labeled with the release it was verified on. What has not been verified is stated as such.
+
+**Complementary by design.** On S/4HANA 2025+ and SAP BTP, SAP's own ADT tooling is the natural editor. This project focuses on the landscapes most enterprises still run, and on the governance layer — gates, evidence, sign-off — that sits above any editor or tool server.
 
 ---
 
@@ -201,6 +227,22 @@ ECC 6.0 and S/4HANA are the target systems. Online use requires the ADT services
 | Amazon Kiro, Cline, Trae and similar tools | Use the agent's own skill directory or import UI; paths vary by tool |
 
 Discovery paths vary between agents — see [docs/agents/](docs/agents/).
+
+---
+
+## Roadmap
+
+Direction, not commitments; each item ships only with offline regression and real-system verification.
+
+| Theme | Goal |
+|---|---|
+| **Change sets** | Multi-object plans bound by one hash: lock all, verify each, activate together, report every stage — from changing an object to delivering a requirement |
+| **Object lifecycle** | Create programs, classes (incl. local and test includes), function groups, then DDIC and CDS, within allowed namespaces and packages |
+| **Gates in the write path** | Syntax check, ATC and ABAP Unit as configurable pre-write gates whose results feed the transport gate as evidence |
+| **Policy and audit** | Package/namespace allow-lists per environment; a local audit trail of every plan hash, transport and stage result |
+| **Compatibility matrix** | Feature detection via ADT discovery; protocol facts verified on additional releases (7.50 / ECC, S/4HANA 2023) |
+| **Enterprise authentication** | SSO / X.509 first, then OAuth for SAP BTP |
+| **Scenario evaluation** | Sandbox benchmarks for requirement → code → test → transport, measuring agent success and unsafe-action rates |
 
 ---
 

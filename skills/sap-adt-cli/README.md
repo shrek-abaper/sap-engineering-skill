@@ -32,6 +32,13 @@ repair. See [test failure diagnosis](references/test-failure-diagnosis.md).
 An empty Unit result is not a pass; `--require-tests` makes it fail the gate.
 Use the same commands with Python or an npm-installed native runtime.
 
+CLI 1.6.2 makes **`write-source` a verified write**: baseline and upload
+hash binding, in-lock baseline re-check, readback, guaranteed unlock and
+optional activation with active-version readback. Each stage reports
+`accepted` / `verified` / `failed` / `unknown`; unknown or partial outcomes
+exit non-zero and are never retried or rolled back by writing old source.
+`--yes` requires `--expect-baseline-sha256` and skips only the prompt.
+
 ---
 
 ## Requirements
@@ -332,7 +339,7 @@ At runtime, CI can instead provide the password per profile via
 | `syntax-check <TYPE> <NAME> [--group <FG>]` | Syntax check — read-only, no confirmation; `--group` required when TYPE is `function` |
 | `where-used <TYPE> <NAME> [--max-results N] [--group <FG>]` | Where-used list — `objects` envelope; `--group` required when TYPE is `function` |
 | `run-sql "<SQL>" [--max-rows N]` | Open SQL SELECT → JSON *(DML statements blocked)*; default 100 rows, max 10 000 |
-| `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>]` | Write source code *(allow_write + confirm each time)*; `--activate` activates after writing; `--group` required when TYPE is `function`; `--transport` pins the transport request |
+| `write-source <TYPE> <NAME> --file <PATH> [--activate] [--group <FG>] [--transport <TRKORR>] [--dry-run] [--expect-baseline-sha256 <H>] [--expect-content-sha256 <H>] [--yes]` | Verified write *(allow_write + confirm each time)*: diff preview, lock, in-lock baseline re-check, write, readback, unlock; `--activate` activates and verifies the active version; `--dry-run` shows the diff and hashes only; `--yes` requires `--expect-baseline-sha256` (CLI 1.6.2+); `--group` required when TYPE is `function`; `--transport` pins the transport request |
 | `activate <TYPE> <NAME> [--group <FG>]` | Activate ABAP object *(allow_write + confirm each time)*; `--group` required when TYPE is `function` |
 | `list-transports [--user U] [--status D\|R]` | List transport requests (JSON, read-only); default `--status D` (in development) |
 | `list-feeds` | Diagnostic feed catalog with FQL attributes and query variants |
@@ -388,6 +395,7 @@ sap-adt run-sql "SELECT * FROM t001 UP TO 5 ROWS"
 # Write & activate (allow_write + confirm each time)
 sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
 sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate   # write + activate in one step
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --dry-run    # diff + hashes, nothing written
 sap-adt activate class ZCL_MY_CLASS
 
 # Transport management

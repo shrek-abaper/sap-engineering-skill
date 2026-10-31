@@ -21,6 +21,9 @@ From 1.6.1, both channels expose richer ABAP Unit evidence,
 `get-dump` for bounded dump details with explicit ST22 fallback. The Skill
 composes these read primitives into diagnosis; no debugger or automatic fix
 is involved. Redirected CLI output is UTF-8, including on Windows.
+From 1.6.2, `write-source` is a verified write (baseline/upload hash binding,
+readback, guaranteed unlock, staged JSON result); `--yes` requires an
+expected baseline.
 Upgrading an older launcher requires reinstalling
 the npm package before running `sap-adt install` again.
 

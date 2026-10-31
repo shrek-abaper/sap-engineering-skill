@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## CLI 1.6.2 / plugin/docs 1.3.2 — 2026-10-31
+
+Verified `write-source`. Real-system acceptance on one non-production
+S/4HANA client with a dedicated probe object and transport; offline
+regressions cover failures that cannot be safely produced live.
+
 
 - `write-source` reliability: baseline read → diff/confirm → lock → in-lock
   baseline re-check → PUT → readback → `finally` unlock → optional activation
@@ -15,6 +20,8 @@
   `WRITE_INCOMPLETE` (exit 3) and `ACTIVATION_FAILED` (exit 1); closed set
   is now 23 codes. Error envelopes of write-source carry the stage `data`.
 - `activate` parses `chkl:messages` failure bodies (E/A/X → `ACTIVATION_FAILED`).
+- README: project positioning (governed delivery layer), design principles
+  and roadmap; `sap-adt-cli` Skill docs updated for the verified write.
 
 ## CLI 1.6.1 / plugin/docs 1.3.1 — 2026-10-30
 
