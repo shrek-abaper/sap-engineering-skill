@@ -31,7 +31,7 @@ RAW_KIND = "raw"
 STRUCTURED_KINDS = (
     "source", "fields", "objects", "rows", "records", "findings", "scalar",
     "capabilities",
-    "feeds", "versions", "diff", "dumps", "debug",
+    "feeds", "versions", "diff", "dumps", "debug", "write",
 )
 
 # data key holding the list whose length is the row_count for that kind.
@@ -229,6 +229,24 @@ def _text_diff(data: dict) -> str:
     return "\n".join(lines)
 
 
+def _text_write(data: dict) -> str:
+    obj = data.get("object", {})
+    lines = [
+        f"object: {obj.get('type')} {obj.get('name')} ({obj.get('uri')})",
+        f"baseline_sha256: {data['baseline']['sha256']}",
+        f"content_sha256: {data['content']['sha256']}",
+        f"plan_sha256: {data.get('plan_sha256')}",
+    ]
+    for stage in ("lock", "write", "unlock", "activation"):
+        if stage in data:
+            lines.append(f"{stage}: {data[stage].get('status')}")
+    if "outcome" in data:
+        lines.append(f"outcome: {data['outcome']}")
+    if data.get("diff"):
+        lines.append(data["diff"])
+    return "\n".join(lines)
+
+
 _TEXT_RENDERERS = {
     "source": _text_source,
     "fields": _text_fields,
@@ -243,6 +261,7 @@ _TEXT_RENDERERS = {
     "diff": _text_diff,
     "dumps": _text_diagnostics,
     "debug": _text_diagnostics,
+    "write": _text_write,
 }
 
 

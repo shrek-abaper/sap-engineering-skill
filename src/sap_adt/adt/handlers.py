@@ -476,24 +476,71 @@ def _extract_lock_handle(resp: requests.Response) -> str:
     return ""
 
 
-def _parse_activation_errors(xml_text: str) -> list:
+_ACTIVATION_ERROR_TYPES = ("E", "A", "X")
+
+
+def parse_activation_response(xml_text: str) -> dict:
+    """Parse an activation reply into messages and still-inactive objects.
+
+    Failure bodies use ``chkl:messages/msg`` (``type`` E/A/X = error, W =
+    warning, I/S = info; text in ``shortText/txt``) and/or
+    ``ioc:inactiveObjects`` entries listing objects that stayed inactive.
+    The legacy ``error/message/checkResult`` attribute shape is kept.
+    Unparseable non-empty bodies are reported, never treated as success.
+    """
+    out = {"messages": [], "inactive_objects": [], "unparsed": False,
+           "activation_executed": None}
     if not xml_text or not xml_text.strip():
-        return []
+        return out
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
-        return []
-    errors = []
+        out["unparsed"] = True
+        return out
     for elem in root.iter():
-        flat = _flat_attribs(elem)
         tl = _tag_local(elem)
-        severity = flat.get("severity", "")
-        text = flat.get("text", "") or flat.get("description", "") or flat.get("shortText", "")
-        if tl in ("error", "message", "checkResult") and text:
-            prefix = f"[{severity.upper()}] " if severity else ""
-            errors.append(f"{prefix}{text}")
-    return errors
+        flat = _flat_attribs(elem)
+        if tl == "properties" and "activationExecuted" in flat:
+            out["activation_executed"] = flat["activationExecuted"].lower() == "true"
+        elif tl == "msg":
+            # Measured on 7.56: the ``line`` attribute is not the source line;
+            # the position is in ``href`` (``...#start=<line>,<col>``).
+            m = re.search(r"#start=(\d+)", flat.get("href") or "")
+            txt = " ".join(
+                (t.text or "").strip() for t in elem.iter()
+                if _tag_local(t) == "txt" and (t.text or "").strip()
+            ) or flat.get("shortText", "")
+            out["messages"].append({
+                "type": (flat.get("type") or "").upper(),
+                "text": txt,
+                "line": m.group(1) if m else flat.get("line"),
+                "object": flat.get("objDescr"),
+            })
+        elif tl in ("error", "message", "checkResult"):
+            text = flat.get("text", "") or flat.get("description", "") or flat.get("shortText", "")
+            if text:
+                sev = (flat.get("severity") or "error").lower()
+                out["messages"].append({
+                    "type": {"error": "E", "warning": "W"}.get(sev, "I"),
+                    "text": text, "line": flat.get("line"), "object": None,
+                })
+        elif tl == "ref" and flat.get("uri"):
+            out["inactive_objects"].append(
+                {"uri": flat.get("uri"), "name": flat.get("name")})
+    return out
 
+
+def activation_errors(parsed: dict) -> list:
+    return [m for m in parsed["messages"] if m["type"] in _ACTIVATION_ERROR_TYPES]
+
+
+def _format_messages(messages: list) -> str:
+    return "\n".join(
+        f"[{m['type'] or '?'}]"
+        + (f" line {m['line']}" if m.get("line") else "")
+        + f" {m['text']}"
+        for m in messages
+    )
 
 
 def syntax_check(
@@ -1230,7 +1277,56 @@ def lock_object(object_uri: str) -> AdtResult:
         handle = _extract_lock_handle(resp)
         if not handle:
             return AdtResult(text="Lock succeeded but no handle returned by SAP — cannot proceed with write.", is_error=True)
-        return AdtResult(text=handle)
+        return AdtResult(text=handle, meta={"corrnr": _lock_field(resp, "CORRNR")})
+    except Exception as e:
+        return _err(e)
+
+
+def _lock_field(resp: requests.Response, field: str) -> str:
+    try:
+        for elem in ET.fromstring(resp.text or "").iter():
+            if _tag_local(elem) == field:
+                return (elem.text or "").strip()
+    except ET.ParseError:
+        pass
+    return ""
+
+
+def read_source_main(object_uri: str, *, stateful: bool = False,
+                     version: Optional[str] = None) -> AdtResult:
+    """GET <object>/source/main as text (``result.text``).
+
+    Without ``version`` ADT returns the working (inactive, if any) version,
+    i.e. what a PUT replaces; ``version="active"`` returns the active one.
+    ``stateful`` keeps the read inside the stateful session owning a lock.
+    """
+    try:
+        resp = make_adt_request(
+            f"{_base()}{object_uri}/source/main",
+            params={"version": version} if version else None,
+            extra_headers=({"X-sap-adt-sessiontype": "stateful"}
+                           if stateful else None),
+        )
+        try:
+            text = resp.content.decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise ParseError(f"source is not valid UTF-8: {e}") from None
+        return AdtResult(text=text)
+    except Exception as e:
+        return _err(e)
+
+
+def object_version(object_uri: str) -> AdtResult:
+    """Return the object's ``adtcore:version`` (active/inactive) as text."""
+    try:
+        resp = make_adt_request(f"{_base()}{object_uri}")
+        root = ET.fromstring(resp.text)
+        for k, v in root.attrib.items():
+            if k.split("}")[-1] == "version":
+                return AdtResult(text=v)
+        raise ParseError("object metadata carries no adtcore:version")
+    except ET.ParseError as e:
+        return _err(ParseError(f"object metadata is not XML: {e}"))
     except Exception as e:
         return _err(e)
 
@@ -1271,6 +1367,8 @@ def unlock_object(object_uri: str, lock_handle: str) -> AdtResult:
     # cookie) it is a measured silent no-op. The normal write-source flow
     # calls this in `finally` within the owning session, and real release
     # was confirmed by an independent fresh-process re-lock 200.
+    # Failures are returned (never swallowed); callers report them separately
+    # from the primary operation's result.
     try:
         make_adt_request(
             f"{_base()}{object_uri}",
@@ -1279,8 +1377,8 @@ def unlock_object(object_uri: str, lock_handle: str) -> AdtResult:
             extra_headers={"X-sap-adt-sessiontype": "stateful"},
         )
         return AdtResult(text="OK")
-    except Exception:
-        return AdtResult(text="unlock error (ignored)", is_error=False)
+    except Exception as e:
+        return _err(e)
 
 
 def activate_object(
@@ -1310,11 +1408,18 @@ def activate_object(
                 )
             },
         )
-        if resp.text and resp.text.strip():
-            errors = _parse_activation_errors(resp.text)
-            if errors:
-                return AdtResult(text="\n".join(errors), is_error=True)
-        return AdtResult(text=f"Activated {object_type.upper()} {object_name.upper()}.")
+        parsed = parse_activation_response(resp.text)
+        failed = activation_errors(parsed)
+        # Listed inactive objects alone are kept in meta, not judged here:
+        # callers verify the active version (2xx is "accepted" only).
+        if failed or parsed["unparsed"] or parsed["activation_executed"] is False:
+            detail = (_format_messages(failed)
+                      or ("activation reply could not be parsed" if parsed["unparsed"]
+                          else "SAP reported activationExecuted=false"))
+            return AdtResult(text=detail, is_error=True,
+                             error_code=errors.ACTIVATION_FAILED, meta=parsed)
+        return AdtResult(text=f"Activated {object_type.upper()} {object_name.upper()}.",
+                         meta=parsed)
     except ValueError as e:
         return _err(e)
     except Exception as e:

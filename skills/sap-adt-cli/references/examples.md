@@ -34,7 +34,7 @@ Source commands print plain ABAP by default; redirect byte-for-byte:
 
 ```bash
 sap-adt get-class ZCL_FOO > zcl_foo.abap
-cat updated.abap | sap-adt write-source class ZCL_FOO --file -
+cat updated.abap | sap-adt write-source class ZCL_FOO --file - --dry-run  # hashes + diff, no write
 ```
 
 ## Dictionary
@@ -65,7 +65,12 @@ sap-adt get-type-group ICON
 ```bash
 sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap
 sap-adt write-source class ZCL_MY_CLASS --file /tmp/zcl.abap --activate
-sap-adt write-source class ZCL_MY_CLASS --file /tmp/z.abap --yes  # trusted automation only
+# unattended (trusted automation only): bind the reviewed baseline and upload
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/z.abap --dry-run   # review data.diff
+sap-adt write-source class ZCL_MY_CLASS --file /tmp/z.abap --activate --yes \
+  --expect-baseline-sha256 <data.baseline.sha256> --expect-content-sha256 <data.content.sha256>
+# exit 3 BASELINE_CHANGED/CONTENT_CHANGED = nothing written (re-run --dry-run);
+# exit 3 WRITE_INCOMPLETE = state unknown/partial: inspect data, never retry blindly
 sap-adt activate class ZCL_MY_CLASS
 ```
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- `write-source` reliability: baseline read → diff/confirm → lock → in-lock
+  baseline re-check → PUT → readback → `finally` unlock → optional activation
+  with active-version readback. Binds target/client/user, object, TR,
+  baseline and upload sha256 (canonical UTF-8/LF rule documented in
+  references/adt_api.md). New `--dry-run`, `--expect-baseline-sha256`,
+  `--expect-content-sha256`; `--yes` now requires an expected baseline and
+  skips only the prompt. stdout is a JSON `write` result (was "Write
+  complete.") with per-stage accepted/verified/failed/unknown status.
+- Unlock errors are no longer swallowed; cleanup failures never mask the
+  primary error. New codes `BASELINE_CHANGED`, `CONTENT_CHANGED`,
+  `WRITE_INCOMPLETE` (exit 3) and `ACTIVATION_FAILED` (exit 1); closed set
+  is now 23 codes. Error envelopes of write-source carry the stage `data`.
+- `activate` parses `chkl:messages` failure bodies (E/A/X → `ACTIVATION_FAILED`).
+
 ## CLI 1.6.1 / plugin/docs 1.3.1 — 2026-10-30
 
 Combines Unit/Dump evidence diagnosis with opt-in experimental debugging.

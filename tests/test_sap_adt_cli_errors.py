@@ -15,8 +15,8 @@ from sap_adt.adt.parsers.common import ParseError  # noqa: E402
 
 class ClosedSetTests(unittest.TestCase):
     def test_closed_set_complete_and_exclusive(self):
-        self.assertEqual(len(errors.ALL_CODES), 19)
-        self.assertEqual(len(set(errors.ALL_CODES)), 19)
+        self.assertEqual(len(errors.ALL_CODES), 23)
+        self.assertEqual(len(set(errors.ALL_CODES)), 23)
         # Every code has an exit tier and nothing has a tier without a code.
         self.assertEqual(set(errors.EXIT_CODE_MAP), set(errors.ALL_CODES))
         self.assertTrue(all(v in (1, 2, 3, 4) for v in errors.EXIT_CODE_MAP.values()))

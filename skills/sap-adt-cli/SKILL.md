@@ -155,7 +155,8 @@ Every read command prints a JSON envelope (source commands print plain ABAP by d
   "kind": "fields", "data": { }, "meta": {"row_count": 0} }
 ```
 
-Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status","hint"} }`.
+Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status","hint"} }`
+(write-source failures add top-level `data` with the per-stage result).
 
 | kind | commands | `data` shape |
 |------|----------|--------------|
@@ -172,6 +173,7 @@ Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status",
 | `versions` | get-versions | `{versions:[{version,is_active,content_uri,transports,history_uri,source_uri,part}],streams,evidence_gaps}` |
 | `diff` | diff-versions, transport diff | `{comparison,diffs:[{from_uri,to_uri,changed,diff}],evidence_gaps}`; transport adds request/object metadata |
 | `debug` | debug primitives | `{session,state,operation,evidence_gaps,...}`; operation-specific evidence in references/debugging.md; foreground serve emits ready/final JSONL |
+| `write` | write-source | `{target,object,transport,baseline,content,plan_sha256,lock,write,unlock,activation,outcome}`; stage `status` ∈ accepted/verified/failed/unknown/not_attempted/skipped; `--dry-run` adds `diff`; failures put the same `data` in the error envelope |
 
 > `doctor --coverage` "available" only guarantees the **resource root**
 > exists — discovery omits sub-paths, HTTP methods and required content
@@ -193,14 +195,18 @@ Full examples: **references/examples.md**.
 | Exit | Meaning | Codes |
 |------|---------|-------|
 | 0 | success, including empty results | — |
-| 1 | operational (9 codes; incl. two release results) | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED`, `RELEASE_UNVERIFIED`, `RELEASE_REJECTED` |
+| 1 | operational (10 codes; incl. two release results) | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED`, `RELEASE_UNVERIFIED`, `RELEASE_REJECTED`, `ACTIVATION_FAILED` |
 | 2 | configuration / credentials | `CONFIG_MISSING`, `PROFILE_NOT_FOUND`, `AUTH_FAILED` |
-| 3 | policy refusal / operation did not happen — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `DEBUG_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED` |
+| 3 | policy refusal / operation did not happen, or write state unknown/partial — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `DEBUG_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED`, `BASELINE_CHANGED`, `CONTENT_CHANGED`, `WRITE_INCOMPLETE` |
 | 4 | requested object does not exist | `OBJECT_NOT_FOUND` |
 
-All 19 codes. **`RELEASE_UNVERIFIED` = release sent, final status unknown
+All 23 codes. **`RELEASE_UNVERIFIED` = release sent, final status unknown
 (readback timeout) — never re-release, verify in SE09/SE10; `RELEASE_REJECTED`
-= still status D / check failed.** Our errors are **JSON envelopes** on stderr;
+= still status D / check failed. `BASELINE_CHANGED`/`CONTENT_CHANGED` =
+nothing written (re-run `--dry-run`, review the new diff); `WRITE_INCOMPLETE`
+= write/readback/unlock/activation state unknown or partial — read `data`,
+check the source and SM12, never retry or write the old source back;
+`ACTIVATION_FAILED` = source written but not active (messages in `data`).** Our errors are **JSON envelopes** on stderr;
 Click usage errors are **plain text** (also exit 2 — distinguish by content).
 `OBJECT_NOT_FOUND` needs a 404 `ExceptionResourceNotFound` body (404 "No
 suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
@@ -247,7 +253,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
-| `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--yes]` | stateful `_action=LOCK`→PUT→`_action=UNLOCK` in `finally` (real-verified Basis 7.56, 2026-09-16) | gated |
+| `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--dry-run] [--expect-baseline-sha256 H] [--expect-content-sha256 H] [--yes]` | baseline→diff/confirm→LOCK→in-lock baseline re-check→PUT→readback→UNLOCK (`finally`)→optional activate + active readback; `--yes` requires `--expect-baseline-sha256`; JSON `write` result | gated |
 | `activate <TYPE> <N> [--group G] [--yes]` | `?method=activate`; no lock/shared session needed, succeeds in a separate process (real-verified Basis 7.56) | gated |
 | `create-transport --package P --description D --ref URI [--yes]` | CreateCorrectionRequest ASX (`DEVCLASS`+`REF` required, `$TMP`=local); real-verified Basis 7.56, 2026-09-17 | gated |
 | `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
@@ -296,7 +302,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
   `SAP_ENVIRONMENT=dev|qas`; no capability falls back to profile flags on a
   complete environment connection.
 - `run-sql` blocks non-SELECT DML before sending (`DML_REJECTED`, exit 3).
-- write-source always unlocks (`_action=UNLOCK`, handle via query) in `finally`; release-transport cannot be undone. **Write-side 2xx = "accepted" only** — release/activate/unlock need independent readback (**references/adt_api.md** top rule); foreign-context unlock is a silent 200 no-op.
+- write-source always unlocks (`_action=UNLOCK`, handle via query) in `finally`; a failed/unknown unlock never masks the primary error and never yields success. It binds target/client/user, object, TR, baseline and upload sha256 (canonical: UTF-8, LF, trailing blanks/empty lines removed); `--yes` skips only the prompt. Unattended: `--dry-run` → review diff → `--yes --expect-baseline-sha256 <baseline> --expect-content-sha256 <content>`. No retry, no rollback write. release-transport cannot be undone. **Write-side 2xx = "accepted" only** — release/activate/unlock need independent readback (**references/adt_api.md** top rule); foreign-context unlock is a silent 200 no-op.
 - Debugger cleanup uses detachDebugger, not termination; existing execution
   may proceed. Owner death cannot safely recover SAP context. Inspect ADT/Basis
   if cleanup is unconfirmed; never infer rollback or kill a recorded PID.

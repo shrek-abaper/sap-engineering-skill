@@ -112,6 +112,7 @@ grep -rnE "<internal-ip>|<real-user>|Nextev|DEVK9[0-9]{6}" \
 | `error.403-csrf.txt` | error | expired-token 403 body |
 | `error.405-whereused-legacy.txt` / `error.405-usageReferences.raw.xml` | error | legacy GET retired / new endpoint requires POST |
 | `error.406-list-transports.txt` | error | legacy worklist Accept rejected |
+| `activate.syntax-error.chkl.xml` | activation | real failed activation (captured 2026-11, Basis 7.56; object name sanitized): `chkl:properties activationExecuted="false"`, `msg type="E"`; source line is in `href#start=`, not the `line` attribute |
 | `error.404-syntaxcheck.txt` | error | legacy syntaxcheck endpoint retired |
 | `error.dml-rejected.txt` | error | DML policy gate rejection |
 | `baseline-exit-codes.tsv` | meta | exit codes of the unmodified CLI per raw file |

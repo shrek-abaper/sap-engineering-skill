@@ -47,7 +47,7 @@ RELEASE_FAIL = """<?xml version="1.0" encoding="utf-8"?>
 
 class ErrorCodeTests(unittest.TestCase):
     def test_closed_set_has_eighteen_and_exit_1(self):
-        self.assertEqual(len(errors.ALL_CODES), 19)
+        self.assertEqual(len(errors.ALL_CODES), 23)
         for code in (errors.RELEASE_UNVERIFIED, errors.RELEASE_REJECTED):
             self.assertIn(code, errors.ALL_CODES)
             self.assertEqual(errors.EXIT_CODE_MAP[code], 1)

@@ -96,8 +96,12 @@ class GateTier3Tests(unittest.TestCase):
 
     def test_user_aborted_at_tty_prompt_is_tier_3_not_success(self):
         self.cfg.allow_write = True
+        handlers = sys.modules["sap_adt.adt.handlers"]
+        baseline = handlers.AdtResult(text="REPORT z.\r\nWRITE 'old'.")
         with patch.object(self.cli, "load_config", return_value=self.cfg), \
-                patch.object(self.cli, "_stdin_is_tty", return_value=True):
+                patch.object(self.cli, "_stdin_is_tty", return_value=True), \
+                patch.object(handlers, "read_source_main", return_value=baseline), \
+                patch.object(handlers, "lock_object") as lock:
             r = CliRunner().invoke(
                 self.cli.cli,
                 ["write-source", "class", "ZCL_X", "--file", self.tmp.name],
@@ -105,6 +109,7 @@ class GateTier3Tests(unittest.TestCase):
             )
         self.assertEqual(r.exit_code, 3, r.output)
         self.assertEqual(_envelope(r)["error"]["code"], "USER_ABORTED")
+        lock.assert_not_called()
 
     def test_max_rows_validation_is_bad_request_tier_1(self):
         with patch.object(self.cli, "load_config", return_value=self.cfg):

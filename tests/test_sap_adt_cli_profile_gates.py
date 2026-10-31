@@ -86,7 +86,10 @@ def _fake_config(*, env="dev", env_source="inferred", allow_write=False,
 
 
 WRITE_COMMANDS = [
-    (["write-source", "class", "ZCL_X"], lambda d: (d / "z.abap",)),
+    # --yes alone no longer authorises an unattended write: the caller must
+    # bind the expected remote baseline (CONFIRM_REQUIRED otherwise).
+    (["write-source", "class", "ZCL_X", "--expect-baseline-sha256", "0" * 64],
+     lambda d: (d / "z.abap",)),
     (["activate", "class", "ZCL_X"], None),
     (["create-transport", "--package", "$TMP", "--description", "x", "--ref", "/sap/bc/adt/programs/programs/zx/source/main"], None),
     (["release-transport", "DEVK900001"], None),
@@ -130,7 +133,12 @@ class CommandGateMatrixTests(unittest.TestCase):
         for cmd, _ in WRITE_COMMANDS:
             r, _ = self._invoke(cmd, cfg)
             if r.exit_code == 3:
-                self.fail((cmd, _env(r)["error"]["code"]))
+                code = _env(r)["error"]["code"]
+                # write-source past its gates reaches the baseline binding
+                # check; the dummy expected hash cannot match the mock.
+                if cmd[0] == "write-source" and code == "BASELINE_CHANGED":
+                    continue
+                self.fail((cmd, code))
 
     def test_prd_authorized_still_refused(self):
         cfg = _fake_config(env="prd", allow_write=True, allow_transport=True,

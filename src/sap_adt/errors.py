@@ -10,8 +10,9 @@ Exit tiers:
 * 0 - success, including empty results;
 * 1 - failure a caller may retry (transient/network/server/parse/request bug);
 * 2 - configuration or credential problem;
-* 3 - refused by safety policy, or an operation that did not happen and needs
-      a human - callers must NOT retry automatically;
+* 3 - refused by safety policy, an operation that did not happen and needs
+      a human, or a write whose end state is unknown/partial - callers must
+      NOT retry automatically;
 * 4 - the requested object does not exist.
 """
 from __future__ import annotations
@@ -41,6 +42,10 @@ USER_ABORTED = "USER_ABORTED"
 DML_REJECTED = "DML_REJECTED"
 RELEASE_UNVERIFIED = "RELEASE_UNVERIFIED"
 RELEASE_REJECTED = "RELEASE_REJECTED"
+BASELINE_CHANGED = "BASELINE_CHANGED"
+CONTENT_CHANGED = "CONTENT_CHANGED"
+WRITE_INCOMPLETE = "WRITE_INCOMPLETE"
+ACTIVATION_FAILED = "ACTIVATION_FAILED"
 
 # Closed set. Every code here MUST appear in EXIT_CODE_MAP (enforced by test).
 ALL_CODES = (
@@ -63,6 +68,10 @@ ALL_CODES = (
     DML_REJECTED,
     RELEASE_UNVERIFIED,
     RELEASE_REJECTED,
+    BASELINE_CHANGED,
+    CONTENT_CHANGED,
+    WRITE_INCOMPLETE,
+    ACTIVATION_FAILED,
 )
 
 EXIT_CODE_MAP = {
@@ -77,6 +86,9 @@ EXIT_CODE_MAP = {
     CONFIRM_REQUIRED: 3,
     USER_ABORTED: 3,
     DML_REJECTED: 3,
+    BASELINE_CHANGED: 3,
+    CONTENT_CHANGED: 3,
+    WRITE_INCOMPLETE: 3,
     # 4 - object does not exist
     OBJECT_NOT_FOUND: 4,
     # 1 - everything else: retryable/operational failures
@@ -89,6 +101,7 @@ EXIT_CODE_MAP = {
     PARSE_FAILED: 1,
     RELEASE_UNVERIFIED: 1,
     RELEASE_REJECTED: 1,
+    ACTIVATION_FAILED: 1,
 }
 
 # Codes produced by the local safety gates rather than HTTP responses.
@@ -135,6 +148,24 @@ DEFAULT_HINTS = {
         "The transport is still modifiable (status D) after release; the release "
         "job failed or reported a check failure."
     ),
+    BASELINE_CHANGED: (
+        "The remote source differs from the confirmed/expected baseline; nothing "
+        "was written. Re-read the object, review the new diff and confirm again."
+    ),
+    CONTENT_CHANGED: (
+        "The content to upload differs from the confirmed/expected content hash; "
+        "nothing was written. Review the file and confirm again."
+    ),
+    WRITE_INCOMPLETE: (
+        "The write did not reach a verified end state (outcome unknown, readback "
+        "mismatch/unavailable, or unlock not confirmed). Inspect data.write/"
+        "activation/unlock, read the object back and check SM12. Do NOT retry "
+        "blindly or write the old source back as a rollback."
+    ),
+    ACTIVATION_FAILED: (
+        "The source was written (see data.write) but activation was rejected; the "
+        "object keeps an inactive version. Fix the reported messages and activate again."
+    ),
 }
 
 
@@ -144,6 +175,8 @@ class ErrorDecision:
     message: str
     http_status: Optional[int] = None
     hint: Optional[str] = None
+    # Optional structured evidence (e.g. per-stage write results).
+    data: Optional[dict] = None
 
     @property
     def exit_code(self) -> int:
@@ -161,6 +194,7 @@ class ErrorDecision:
                 "http_status": self.http_status,
                 "hint": self.hint,
             },
+            **({"data": self.data} if self.data is not None else {}),
         }
 
 
@@ -174,12 +208,14 @@ def decision(
     *,
     http_status: Optional[int] = None,
     hint: Optional[str] = None,
+    data: Optional[dict] = None,
 ) -> ErrorDecision:
     return ErrorDecision(
         code=code,
         message=message,
         http_status=http_status,
         hint=hint if hint is not None else DEFAULT_HINTS.get(code),
+        data=data,
     )
 
 

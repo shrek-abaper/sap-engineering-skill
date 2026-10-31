@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import hashlib
 import json
 import os
 import sys
@@ -10,6 +9,7 @@ from sap_adt import config as config_module
 from sap_adt import credentials, credentials_reports, errors, log_redaction, output, updater
 from sap_adt.adt import client as adt_client
 from sap_adt.adt import handlers
+from sap_adt.adt import source_write
 from sap_adt.config import (
     run_configure_wizard,
     save_config_from_flags,
@@ -1361,78 +1361,170 @@ def get_type_group(name):
     _output(handlers.get_type_group(name))
 
 
+def _sha256_option(value):
+    if value is None:
+        return None
+    v = value.strip().lower()
+    if len(v) != 64 or any(c not in "0123456789abcdef" for c in v):
+        raise click.BadParameter("expected a 64-character hex sha256")
+    return v
+
+
+def _write_target(config) -> dict:
+    return {
+        "profile": getattr(config, "profile_name", None),
+        "environment": getattr(config, "environment", None),
+        "url": getattr(config, "url", None),
+        "client": getattr(config, "client", None),
+        "user": getattr(config, "username", None),
+    }
+
+
+_DIFF_PREVIEW_LINES = 200
+
+
 @cli.command("write-source", help_group=_SOURCE_HELP, help_order=10,
              short_help="[WRITE] Upload source; needs approval.")
 @click.argument("object_type")
 @click.argument("object_name")
-@click.option("--file", "source_file", required=True, help="Source file path; use - to read from stdin")
+@click.option("--file", "source_file", required=True, help="Source file path (UTF-8); use - to read from stdin")
 @click.option("--group",     default=None,  help="Function group (required when OBJECT_TYPE is 'function')")
 @click.option("--transport", default=None,  help="Transport request number (e.g. DEVK900001); omit for auto-assign")
-@click.option("--activate",  is_flag=True,  default=False, help="Activate the object after writing")
-@click.option("--yes",       is_flag=True,  default=False, help="Skip confirmation prompt. Use only in trusted automation.")
-def write_source_cmd(object_type, object_name, source_file, group, transport, activate, yes):
+@click.option("--activate",  is_flag=True,  default=False, help="Activate the object after writing and verify the active version")
+@click.option("--expect-baseline-sha256", "expect_baseline", default=None,
+              callback=lambda _c, _p, v: _sha256_option(v),
+              help="Abort unless the remote source hash equals this (required with --yes; get it from --dry-run)")
+@click.option("--expect-content-sha256", "expect_content", default=None,
+              callback=lambda _c, _p, v: _sha256_option(v),
+              help="Abort unless the canonical upload hash equals this")
+@click.option("--dry-run",   is_flag=True,  default=False, help="Read the baseline and print hashes and diff; no lock or write")
+@click.option("--yes",       is_flag=True,  default=False, help="Skip the interactive prompt only (requires --expect-baseline-sha256). Use only in trusted automation.")
+def write_source_cmd(object_type, object_name, source_file, group, transport, activate,
+                     expect_baseline, expect_content, dry_run, yes):
     """Write ABAP source code to SAP — requires allow_write + confirmation each time.
 
     OBJECT_TYPE: program / class / interface / include / function
     OBJECT_NAME: SAP object name (UPPERCASE recommended)
 
-    Flow: lock → write (PUT) → unlock (always) → activate (optional).
-    The unlock step always runs, even if the write fails.
+    Flow: read baseline → diff + confirm → lock → re-check baseline under
+    the lock → write (PUT) → read back → unlock (always, in finally) →
+    activate + verify active version (optional).
+
+    Hashes are sha256 over canonical UTF-8 text (LF newlines, trailing
+    blanks and trailing empty lines removed, as SAP stores them). --yes
+    skips only the prompt: baseline/content checks still run, and
+    --expect-baseline-sha256 is mandatory. stdout is a JSON result with
+    per-stage status (accepted/verified/failed/unknown); unknown or partial
+    results exit non-zero (WRITE_INCOMPLETE, exit 3) — never retry blindly.
 
     Requires 'allow_write' enabled in config. Run `configure` to enable.
     """
     config = _load_config()
     _require_config(config)
     _require_write(config)
+    if yes and not expect_baseline and not dry_run:
+        _gate(errors.CONFIRM_REQUIRED,
+              "--yes requires --expect-baseline-sha256 (obtain it with --dry-run "
+              "and review the diff); the operation was not performed.")
+    if not yes and not dry_run and not _stdin_is_tty():
+        _gate(errors.CONFIRM_REQUIRED,
+              "Confirmation required but stdin is not a terminal; re-run in a "
+              "terminal or pass --yes with --expect-baseline-sha256 for trusted "
+              "automation.")
 
-    with click.open_file(source_file, "r", encoding="utf-8") as f:
-        content = f.read()
+    def _read_upload() -> str:
+        with click.open_file(source_file, "rb") as f:
+            raw = f.read()
+        try:
+            return source_write.canonical_source(source_write.decode_local(raw))
+        except UnicodeDecodeError as e:
+            _gate(errors.BAD_REQUEST, f"source file is not valid UTF-8: {e}")
 
-    n = 4 if activate else 3
-    byte_count = len(content.encode("utf-8"))
-    preview = [
-        "Action   : Write source code",
-        f"Object   : {object_type.upper()} {object_name.upper()}",
-        f"Size     : {byte_count} bytes",
-        f"Transport: {transport or '(auto-assigned)'}",
-        f"Activate : {'yes' if activate else 'no'}",
-    ]
-    _confirm_change(preview, yes=yes)
-
+    content = _read_upload()
     try:
         uri = handlers.get_object_uri(object_type, object_name, group=group)
     except ValueError as e:
         _gate(errors.BAD_REQUEST, str(e))
 
-    click.echo(f"[1/{n}] Locking {object_type.upper()} {object_name.upper()} ...", err=True, nl=False)
-    lock_result = handlers.lock_object(uri)
-    if lock_result.is_error:
-        click.echo("  FAILED", err=True)
-        _abort_on_error(lock_result, "lock")
-    lock_handle = lock_result.text
-    click.echo(f"  OK  (handle: {hashlib.sha256(lock_handle.encode()).hexdigest()[:8]})", err=True)
-
+    # Bind every request of this command to the resolved (and confirmed)
+    # connection instead of re-resolving the profile per request.
+    adt_client.set_config(config)
     try:
-        click.echo(f"[2/{n}] Writing source ({byte_count} bytes) ...", err=True, nl=False)
-        put_result = handlers.put_source(uri, content, lock_handle, transport=transport)
-        if put_result.is_error:
-            click.echo("  FAILED", err=True)
-            _abort_on_error(put_result, "write")
-        click.echo("  OK", err=True)
+        base = handlers.read_source_main(uri)
+        if base.is_error:
+            _abort_on_error(base, "baseline read")
+        plan = source_write.WritePlan(
+            object_type=object_type, object_name=object_name, group=group,
+            object_uri=uri, transport=transport, activate=activate,
+            target=_write_target(config),
+            baseline=source_write.canonical_source(base.text), content=content,
+            expected_baseline_sha256=expect_baseline,
+            expected_content_sha256=expect_content,
+        )
+        diff = source_write.unified_diff(plan.baseline, plan.content,
+                                         f"{object_type.upper()} {object_name.upper()}")
+        if dry_run:
+            data = {**plan.describe(), "diff": "\n".join(diff)}
+            problem = source_write.precheck(plan)
+            if problem is not None:
+                problem.data = data
+                _emit_error(problem)
+            _output(handlers.AdtResult(kind="write", data=data,
+                                       object=handlers._obj(object_type, object_name),
+                                       meta={"dry_run": True}))
+            return
+        problem = source_write.precheck(plan)
+        if problem is not None:
+            problem.data = plan.describe()
+            _emit_error(problem)
+
+        t = plan.target
+        preview = [
+            "Action   : Write source code",
+            f"Target   : {t['profile']} ({t['environment']}) {t['url']} client {t['client']} user {t['user']}",
+            f"Object   : {object_type.upper()} {object_name.upper()} ({uri})",
+            f"Transport: {transport or '(auto-assigned)'}",
+            f"Baseline : sha256 {plan.baseline_sha256} ({len(plan.baseline.splitlines())} lines)",
+            f"Upload   : sha256 {plan.content_sha256} ({len(plan.content.encode('utf-8'))} bytes)",
+            f"Activate : {'yes' if activate else 'no'}",
+            f"Plan     : sha256 {plan.plan_sha256}",
+        ]
+        if plan.unchanged:
+            preview.append("Diff     : (none — upload equals baseline; write is skipped)")
+        else:
+            preview.append("Diff     :")
+            preview += diff[:_DIFF_PREVIEW_LINES]
+            if len(diff) > _DIFF_PREVIEW_LINES:
+                preview.append(f"... {len(diff) - _DIFF_PREVIEW_LINES} more diff lines (see --dry-run)")
+        if yes:
+            # Unattended: keep the bound plan visible on stderr for audit logs.
+            for line in preview[:8]:
+                click.echo(line, err=True)
+        _confirm_change(preview, yes=yes)
+
+        def _current_hash() -> str:
+            # Re-read the file after confirmation (stdin cannot change: it
+            # was consumed once and only the confirmed buffer is uploaded).
+            if source_file == "-":
+                return source_write.sha256_text(content)
+            try:
+                with open(source_file, "rb") as f:
+                    now = source_write.canonical_source(source_write.decode_local(f.read()))
+            except (OSError, UnicodeDecodeError) as e:
+                return f"unreadable ({type(e).__name__})"
+            return source_write.sha256_text(now)
+
+        report = source_write.execute(
+            plan, current_content_sha256=_current_hash,
+            progress=lambda m: click.echo(m, err=True))
     finally:
-        click.echo(f"[3/{n}] Unlocking ...", err=True, nl=False)
-        handlers.unlock_object(uri, lock_handle)
-        click.echo("  OK", err=True)
+        adt_client.set_config(None)
 
-    if activate:
-        click.echo(f"[4/{n}] Activating ...", err=True, nl=False)
-        act_result = handlers.activate_object(object_type, object_name, group=group)
-        if act_result.is_error:
-            click.echo("  FAILED", err=True)
-            _abort_on_error(act_result, "activate")
-        click.echo("  OK", err=True)
-
-    click.echo("Write complete.")
+    final = report.final_decision()
+    if final is not None:
+        _emit_error(final)
+    _output(handlers.AdtResult(kind="write", data=report.to_data(),
+                               object=handlers._obj(object_type, object_name)))
 
 
 @cli.command("activate", help_group=_SOURCE_HELP, help_order=20,

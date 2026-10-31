@@ -178,6 +178,33 @@ returning 200 (measured 2026-09-17).
   morning). There is no cheap synchronous "is it locked" probe:
   `lockedByEditor="false"` on the object resource is per-session state.
 
+### write-source verification flow (CLI)
+
+The CLI never relies on ETag/If-Match (GET returns an ETag, but PUT
+precondition support is not established). Instead, inside one stateful
+session: baseline `GET source/main` (pre-confirmation) → LOCK (fails with
+`BAD_REQUEST` if the lock's `CORRNR` differs from `--transport`) → stateful
+`GET source/main` re-check against the confirmed baseline hash
+(`BASELINE_CHANGED`, nothing written) → PUT → stateful `GET source/main`
+readback (must equal the upload hash) → UNLOCK in `finally` → with
+`--activate`: activation POST, then object `adtcore:version` and
+`GET source/main?version=active` must match the upload.
+
+Canonical hash: strict UTF-8 (one BOM removed), CRLF/CR → LF, trailing
+U+0020 per line and trailing empty lines removed — exactly what 7.56 stores
+(measured: GET returns CRLF without final newline, PUT drops trailing blanks
+and empty lines, keeps tabs). Any other difference is substantive. GET
+without `version` returns the working (inactive, if any) version, i.e. what
+a PUT replaces.
+
+Statuses per stage: `accepted` (2xx only), `verified` (readback matched),
+`failed`, `unknown`. PUT 5xx / read timeout / connection reset are
+`unknown` unless the readback matches; 4xx and connect timeouts are
+`failed`. Unknown or partial → `WRITE_INCOMPLETE` (exit 3) with the stage
+data in the envelope. The CLI does not retry, and never writes the old
+source back as a "rollback". Unlock 200 in the owning session is reported
+as `accepted`: proof of release still needs an independent LOCK.
+
 ### Legacy forms (rejected by 7.56 — do not reintroduce)
 
 - `POST {object}?method=lock` + only the stateful header → 400
@@ -211,9 +238,13 @@ in process B).
 the object, and the object resource must carry
 `adtcore:version="active"` (inactive → `"inactive"`). Non-empty failure
 bodies use `chkl:messages/msg` (`type` E/A/X) and `ioc:inactiveObjects` per
-the reference implementation. (The older `error/message/checkResult` shape
-is what the current parser looks for; a real failed activation fixture is
-still needed — background: the archived known-issues notes (repo docs/development/archive/sap-adt-cli).)
+the reference implementation. Measured failure (Basis 7.56, syntax error on
+line 3): HTTP 200 with `<chkl:properties checkExecuted="true"
+activationExecuted="false" …/>` and `<msg type="E" line="1"
+href="…/source/main#start=3,0">` — the `line` attribute is **not** the source
+line; the position is in `href#start=`. The CLI maps E/A/X messages or
+`activationExecuted="false"` to `ACTIVATION_FAILED` (fixture
+`tests/fixtures/sap_adt_cli/activate.syntax-error.chkl.xml`).
 
 ## Syntax Check (legacy — see verified facts #2)
 

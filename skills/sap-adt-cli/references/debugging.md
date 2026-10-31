@@ -84,7 +84,7 @@ All commands emit `kind=debug` format-version 1 envelopes; data follows
 `debug-session.schema.json`. JSON is default; text is available, raw XML
 is not. `meta.partial=true` and exit 1 flag truncation/unconfirmed cleanup.
 Timeout is `ok:true`, `timed_out:true`, exit 0, not attachment success.
-Other errors use the closed 19-code registry, with JSON on stderr.
+Other errors use the closed 23-code registry, with JSON on stderr.
 `DEBUG_DISABLED` is a local debug-policy refusal (exit 3), not a reason to
 enable source writes. SAP authorization failures remain `AUTH_FAILED`.
 
