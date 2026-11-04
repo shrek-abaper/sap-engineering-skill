@@ -49,6 +49,7 @@
 | **OData V2 / V4** | CSRF 流程、`$expand`/`$filter`/`$batch`、Deep Insert、错误解析 |
 | **RFC / SAP JCo** | 连接池、BAPI 调用模式、RETURN 表解析、负载均衡 |
 | **SOAP over HTTP RFC** | 无需 JCo 直接调用任意 RFC 函数模块——Python/Node/curl 示例、CSRF 流程、响应解析 |
+| **动态 REST2RFC 网关** | 通过纯 ABAP 网关将已注册 RFC/BAPI 暴露为 JSON——配置驱动路由、事务边界、安全要求与限制（[公开项目](https://github.com/shrek-abaper/sap-rest2rfc-gateway)） |
 | **IDoc / PI-PO** | 控制记录、关键段、状态生命周期、监控事务码 |
 | **BAPI & RAP** | 如何选择、各模块关键 BAPI、RAP OData V4 服务 |
 | **认证鉴权** | Basic Auth、OAuth2（本地 SOAUTH2 + Cloud）、SSL/TLS、ICF 激活 |
@@ -157,6 +158,7 @@ sap-integration-wiki/
 │   │   ├── odata.md                  OData V2/V4 协议指南
 │   │   ├── rfc-jco.md                RFC/JCo 连接与 BAPI 指南
 │   │   ├── soap-rfc-http.md          SOAP over HTTP RFC——无需 JCo
+│   │   ├── rest2rfc-gateway.md       动态 RFC/BAPI 转 HTTP/JSON 网关
 │   │   ├── idoc-pi.md                IDoc 与 SAP PI/PO 指南
 │   │   ├── bapi-rap.md               BAPI vs RAP 选型指南
 │   │   ├── auth.md                   认证配置指南

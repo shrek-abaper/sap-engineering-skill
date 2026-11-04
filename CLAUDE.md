@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `sap-adt-cli` | Read/write ABAP source and metadata via ADT REST API | `skills/sap-adt-cli/` |
 | `abap-code-review` | Pre-release security & quality review (9 dimensions) | `skills/abap-code-review/` |
 | `sap-transport-gate` | Transport Request release gate assessment (10 dimensions) | `skills/sap-transport-gate/` |
-| `sap-integration-wiki` | SAP integration knowledge base (9 domains, 8 technologies) | `skills/sap-integration-wiki/` |
+| `sap-integration-wiki` | SAP integration knowledge base (9 domains, 9 technologies) | `skills/sap-integration-wiki/` |
 
 The three skills `abap-code-review`, `sap-transport-gate`, and `sap-integration-wiki` were previously maintained as standalone public repositories tracked via git subtree. Those repositories were **archived in August 2026** - all updates now happen exclusively in this repo.
 

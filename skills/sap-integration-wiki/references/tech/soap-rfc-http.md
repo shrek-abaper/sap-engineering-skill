@@ -53,6 +53,21 @@ SAP exposes a standard SOAP endpoint at `/sap/bc/soap/rfc` that allows any HTTP 
 | SAP certification | ❌ Not an officially recommended integration path | ✅ SAP-certified integration method |
 | Deployment complexity | Minimal — zero extra installation | High — JVM + native library + classpath |
 
+### SOAP over HTTP RFC vs Dynamic REST2RFC Gateway
+
+These are alternative HTTP transports for existing RFC-enabled functions, not two names for the same endpoint:
+
+| Dimension | SOAP over HTTP RFC | Dynamic REST2RFC Gateway |
+|---|---|---|
+| Endpoint | SAP standard `/sap/bc/soap/rfc` | Custom `/sap/bc/rest2rfc` |
+| Payload | SOAP/XML | JSON |
+| SAP-side additions | Activate the standard ICF service | Deploy ABAP gateway classes, tables, and SICF node |
+| Function exposure | Call the RFC-FM through the SOAP contract | Register and activate the function in `ZTIF_GENERAL_CON` |
+| Typical fit | No custom ABAP allowed or XML is already supported | Many HTTP/JSON consumers; minimize per-interface mapping code |
+| Transaction handling | Caller implements BAPI RETURN and commit handling | Explicit per-function `COMMITMODE`; verify the selected mode |
+
+Choose SOAP when installing a custom gateway is not acceptable. Choose the [dynamic REST2RFC Gateway](rest2rfc-gateway.md) when JSON and configuration-driven reuse justify the one-time SAP-side deployment. Prefer a released standard OData API in either case when one covers the business requirement.
+
 ---
 
 ## 3. Prerequisites and SAP-Side Configuration

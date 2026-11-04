@@ -25,7 +25,7 @@
 | S/4HANA On-Premise: FI document posting | Yes (`BAPI_ACC_DOCUMENT_POST` — no OData equivalent) |
 | S/4HANA Cloud Public Edition | **No** — RFC external access is restricted; use OData V4 |
 | Java application already running in JVM | Yes (JCo is native JVM library) |
-| Non-JVM client (Python, Node.js, .NET) | Use OData instead; or proxy via a Java JCo microservice |
+| Non-JVM client (Python, Node.js, .NET) | Prefer OData when available; to reuse RFC/BAPIs, compare the dynamic REST2RFC Gateway, SOAP over HTTP RFC, and a Java JCo microservice |
 
 ---
 
@@ -437,7 +437,13 @@ For non-JVM runtimes (Python, Node.js, .NET, Go), the **recommended integration 
 
 **When OData is not available** (ECC 6.0, or use cases with no standard OData service):
 
-### Option A: Java JCo Microservice Proxy (Recommended for ECC)
+### Option A: Dynamic REST2RFC Gateway (In-SAP ABAP)
+
+For supported ECC and S/4HANA On-Premise systems, the [dynamic REST2RFC Gateway](rest2rfc-gateway.md) exposes registered RFC/BAPIs through one HTTP/JSON entry point. It is pure ABAP, so external consumers need no SAP SDK and no separate Java middleware. After the initial gateway deployment, additional functions are exposed through configuration rather than per-interface Java or ABAP mapping code.
+
+Choose this when custom ABAP deployment is acceptable and JSON consumers need to reuse existing functions without a suitable standard OData API. Review its configuration allowlist, `COMMITMODE`, authorization, and logging requirements before use.
+
+### Option B: Java JCo Microservice Proxy (External Middleware)
 
 Deploy a lightweight Java service that exposes a REST/gRPC API and calls SAP via JCo internally. Non-JVM applications call the microservice over HTTP.
 
@@ -462,7 +468,7 @@ This pattern:
 - JCo connection pool is managed centrally
 - Enables independent scaling and versioning of the SAP integration layer
 
-### Option B: SAP .NET Connector (NCo) — for .NET Only
+### Option C: SAP .NET Connector (NCo) — for .NET Only
 
 For .NET applications, SAP provides **SAP .NET Connector 3.0 (NCo)**, which is the actively maintained equivalent of JCo for the .NET runtime. It wraps the SAP NW RFC SDK and provides a similar programming model.
 
@@ -470,7 +476,7 @@ For .NET applications, SAP provides **SAP .NET Connector 3.0 (NCo)**, which is t
 - **Supports**: .NET Framework 4.x and .NET 6+
 - **Programming model**: similar to JCo — `RfcDestinationManager`, `IRfcFunction`, `IRfcTable`
 
-### Option C: pyrfc — Python (⚠️ Maintenance Risk)
+### Option D: pyrfc — Python (⚠️ Maintenance Risk)
 
 [pyrfc](https://github.com/SAP/PyRFC) provides Python bindings for RFC via the **SAP NW RFC SDK** (a C library — `libsapnwrfc.so` on Linux). It does **not** wrap the JCo JAR; it is a separate binding to a separate C library.
 
@@ -486,7 +492,7 @@ pip install pyrfc
 - Release cadence is irregular (community-maintained open source)
 - Python 3.12+ compatibility issues have been reported in some environments
 - The SAP NW RFC SDK binary must match the OS and SAP release (separate download from JCo)
-- For production systems, the Java JCo microservice pattern (Option A above) is more operationally predictable
+- For production systems that already operate external Java middleware, the Java JCo microservice pattern (Option B above) is more operationally predictable
 
 **Technical note**: pyrfc wraps `libsapnwrfc.so` (SAP NW RFC SDK, a C library). This is architecturally distinct from SAP JCo, which is a pure Java library (`sapjco3.jar` + `libsapjco3.so`). Both ultimately communicate with the SAP application server over the RFC protocol, but they use different SDK stacks.
 

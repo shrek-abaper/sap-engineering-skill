@@ -1,18 +1,18 @@
 ---
 name: sap-integration-wiki
 description: >
-  Guide for integrating external systems (Java, Python, .NET, Node.js,
-  low-code) with SAP (ECC 6.0, S/4HANA On-Premise/Cloud): OData V2/V4, RFC/JCo,
-  SOAP-over-HTTP RFC without JCo, IDoc/PI-PO, BAPI, RAP, BTP Integration Suite/iFlow,
-  Event Mesh, Cloud Connector, Communication Arrangements, FI-AA, AR/AP, Central Finance
-  (CFIN), Financial Shared Service Center / 财务共享中心 (Kingdee/金蝶, 用友 to SAP).
-  Activate whenever the user asks to connect to SAP, call a SAP API/BAPI/RFC, read or
+  Use when integrating external systems (Java, Python, .NET, Node.js,
+  low-code) with SAP (ECC 6.0, S/4HANA On-Prem/Cloud): OData V2/V4, RFC/JCo,
+  SOAP RFC, dynamic REST2RFC/JSON without JCo, IDoc/PI-PO, BAPI, RAP,
+  BTP Integration Suite/iFlow, Event Mesh, Cloud Connector, Communication Arrangements,
+  FI-AA, AR/AP, Central Finance (CFIN), FSSC / 财务共享中心 (Kingdee/金蝶, 用友 to SAP).
+  Use whenever asked to connect to SAP, call a SAP API/BAPI/RFC, read or
   create SAP data from outside (purchase/sales/production orders, inventory, financial
   documents, AR/AP, assets, material master, business partner), configure JCo
-  destinations, call RFC/BAPI from Python/Java/Node/Go without SAP libraries, handle
-  IDocs, set up S/4HANA Cloud Communication Arrangements, implement retry/idempotency,
+  destinations, call or expose RFC/BAPI as JSON from Python/Java/Node/Go without SAP libraries,
+  handle IDocs, set up S/4HANA Cloud Communication Arrangements, implement retry/idempotency,
   or troubleshoot SAP HTTP 400/401/403, "CSRF token validation failed", "IDoc status 51",
-  "/sap/bc/soap/rfc", JCo/RFC destination errors — even when the user never says "SAP"
+  "/sap/bc/soap/rfc", "/sap/bc/rest2rfc", JCo/RFC destination errors — even when the user never says "SAP"
   and only describes symptoms.
 ---
 
@@ -31,13 +31,13 @@ user's message:
 User phrases that should activate this skill (non-exhaustive): "connect to SAP",
 "get data from SAP", "SAP keeps returning 401", "how do I call BAPI from Java",
 "how do I call SAP RFC from Python", "call SAP without JCo", "SAP SOAP endpoint",
-"SAP OData not working".
+"expose an existing BAPI as JSON", "dynamic REST2RFC", "SAP OData not working".
 
 Object/endpoint names that signal this skill: `BAPI_PO_CREATE1`,
 `API_PURCHASEORDER_PROCESS_SRV`, `BAPI_FIXEDASSET_GETLIST`,
 `BAPI_ASSET_ACQUISITION_POST`, `CFIN OData V4`, `API_CFinRpldSupplierInvoice`,
 `JCo connection`, `RFC destination`, `BTP iFlow`, `Cloud Connector`,
-`SAP Event Mesh`, `Communication Arrangement`.
+`SAP Event Mesh`, `Communication Arrangement`, `/sap/bc/rest2rfc`.
 
 ## Clarifying questions (ask only what is unknown)
 
@@ -81,6 +81,7 @@ Read the relevant file from `references/tech/` based on the recommended approach
 | OData REST V2/V4 | `references/tech/odata.md` | S/4HANA On-Prem or Cloud, standard scenario, HTTP-native client |
 | RFC / JCo (Java remote function call) | `references/tech/rfc-jco.md` | ECC (primary), S/4 when no OData exists, bulk operations, Java-only |
 | SOAP over HTTP RFC (no JCo) | `references/tech/soap-rfc-http.md` | Call any RFC-FM from non-JVM runtime via HTTPS — Python, Node.js, Go, curl; ECC or S/4 On-Prem |
+| Dynamic REST2RFC Gateway (JSON, no JCo) | `references/tech/rest2rfc-gateway.md` | Reuse registered RFC/BAPIs through JSON without per-interface mapping code; custom ABAP deployment is acceptable; no suitable standard OData |
 | IDoc / SAP PI-PO | `references/tech/idoc-pi.md` | Async integration, EDI, partner/supplier message exchange |
 | BAPI or RAP | `references/tech/bapi-rap.md` | ECC BAPIs, S/4HANA RAP OData V4 services, decision on which to use |
 | Authentication (any technology) | `references/tech/auth.md` | Auth failures, first-time setup, OAuth2, SSL/TLS, ICF activation |
@@ -109,7 +110,8 @@ Use this when the user has not specified a technology preference:
 | S/4HANA On-Prem 2020+ | Create/Read PO | OData V2 `API_PURCHASEORDER_PROCESS_SRV` | JCo + `BAPI_PO_CREATE1` |
 | S/4HANA On-Prem 2023+ | Create/Read PO | OData V4 `API_PURCHASEORDER` (if released) | OData V2 |
 | ECC 6.0 | Create/Read PO | JCo + `BAPI_PO_CREATE1` | IDoc `ORDERS` |
-| ECC 6.0 (non-JVM client) | Call any RFC-FM without JCo | SOAP over HTTP (`/sap/bc/soap/rfc`) | Java JCo microservice proxy |
+| ECC 6.0 (non-JVM client, JSON preferred) | Reuse registered RFC-FM without per-interface wrappers | Dynamic REST2RFC Gateway | SOAP over HTTP; Java JCo microservice |
+| ECC 6.0 (non-JVM client, no custom ABAP) | Call any RFC-FM without JCo | SOAP over HTTP (`/sap/bc/soap/rfc`) | Java JCo microservice proxy |
 | S/4HANA Cloud Public | Any | OData V4 / RAP | None (RFC unavailable externally) |
 | Any version | Stock query (real-time) | OData `API_MATERIAL_STOCK_SRV` | `BAPI_MATERIAL_STOCK_REQ_LIST` |
 | Any version | FI posting | JCo + `BAPI_ACC_DOCUMENT_POST` | (no standard OData for posting) |
@@ -171,3 +173,4 @@ When answering an integration question, always structure the response as:
 - **Client**: SAP is multi-tenanted within a single system. Always specify the client (e.g., `100`, `800`) in every connection.
 - **ICF node**: SAP Internet Communication Framework. OData services are only reachable if the corresponding ICF node is activated. Transaction: `SICF`.
 - **SOAP over HTTP RFC**: SAP exposes all RFC-enabled function modules via a standard SOAP endpoint at `/sap/bc/soap/rfc`. No SAP-specific client library is required — any HTTP library works. The ICF node for this path must be activated in `SICF`. Use this when JCo is not practical (non-JVM runtimes, containerised workloads, rapid prototyping). Does not support IDoc, tRFC, or qRFC.
+- **Dynamic REST2RFC Gateway**: A community pure-ABAP option for exposing registered RFC/BAPIs as JSON through `/sap/bc/rest2rfc`. Use it on supported ECC/S/4HANA On-Premise systems when no standard OData fits and configuration-driven exposure is preferable to per-interface wrappers. It requires an initial gateway deployment and is not for S/4HANA Cloud Public Edition. Read `references/tech/rest2rfc-gateway.md` before giving setup, transaction, or security guidance.

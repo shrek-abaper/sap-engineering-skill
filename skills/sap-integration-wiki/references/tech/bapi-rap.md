@@ -151,7 +151,7 @@ PurchaseOrder('4500012345')/com.sap.gateway.srvd_a2x.api_purchaseorder.v0001.Rel
 | **S/4HANA On-Prem 1909–2022** | Works; use OData if available | Recommended for standard objects | Partially available |
 | **S/4HANA On-Prem 2023+** | Works; some BAPIs deprecated | Some APIs deprecated (SAP Note 3502308) | Expanding; preferred for new APIs |
 | **S/4HANA Cloud Public** | Not available externally | Limited | Primary and only method |
-| **Consumer language** | Java/JVM (JCo); other languages via proxy (see `rfc-jco.md §9`) | Any HTTP client | Any HTTP client |
+| **Consumer language** | Java/JVM (JCo); other languages via proxy or dynamic REST2RFC (see `rfc-jco.md §9`) | Any HTTP client | Any HTTP client |
 | **Complexity** | Medium (JCo setup + X-structures) | Low (REST + JSON) | Low (REST + JSON, cleaner) |
 | **Bulk/batch operations** | Efficient | $batch (limited) | $batch JSON format |
 | **FI document posting** | Required (no OData alternative) | N/A | N/A |
@@ -159,11 +159,13 @@ PurchaseOrder('4500012345')/com.sap.gateway.srvd_a2x.api_purchaseorder.v0001.Rel
 | **Long-term roadmap** | Legacy (still supported) | Being replaced by V4 | SAP's strategic direction |
 | **Error details** | RETURN table (detailed) | `innererror` in JSON | `error` in JSON |
 
+A BAPI is the business interface; JCo and dynamic REST2RFC are different ways to invoke it. JCo uses the external SAP RFC SDK. The [dynamic REST2RFC Gateway](rest2rfc-gateway.md) is a community ABAP gateway for registered functions and requires compatible SAP components, explicit transaction configuration, and security review. Neither transport makes BAPI externally available on S/4HANA Cloud Public Edition.
+
 ### Quick selection flowchart
 
 ```
 Is the SAP system ECC 6.0?
-  YES → BAPI via JCo
+  YES → Reuse BAPI; choose JCo or, for HTTP/JSON, dynamic REST2RFC if supported
 
 Is the SAP system S/4HANA Cloud Public Edition?
   YES → OData V4 / RAP only
@@ -171,10 +173,10 @@ Is the SAP system S/4HANA Cloud Public Edition?
 Is the SAP system S/4HANA On-Premise?
   Does a standard OData V2 or V4 API exist for this operation?
     YES → Use OData (prefer V4 if available in your release)
-    NO → Use BAPI via JCo
+    NO → Reuse BAPI; choose JCo or dynamic REST2RFC if supported
 
 Is FI document posting required (GL, vendor invoice)?
-  YES → BAPI_ACC_DOCUMENT_POST via JCo (regardless of version)
+  YES → BAPI_ACC_DOCUMENT_POST; choose JCo or dynamic REST2RFC if supported
 ```
 
 ---

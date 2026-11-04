@@ -1,5 +1,17 @@
 # Changelog
 
+## CLI 1.6.2 / plugin/docs 1.3.3 — 2026-11-04
+
+Documentation-only plugin update; the CLI remains at 1.6.2.
+
+- Added the community dynamic REST2RFC Gateway to `sap-integration-wiki` as
+  an HTTP/JSON transport for registered RFC/BAPIs on supported ECC and
+  S/4HANA On-Premise systems.
+- Added routing, OData/JCo/SOAP selection guidance, configuration allowlist,
+  JSON examples, explicit transaction modes, security and known limitations.
+  Standard OData remains preferred when available; S/4HANA Cloud Public
+  Edition is excluded. Project references use public GitHub URLs only.
+
 ## CLI 1.6.2 / plugin/docs 1.3.2 — 2026-10-31
 
 Verified `write-source`. Real-system acceptance on one non-production

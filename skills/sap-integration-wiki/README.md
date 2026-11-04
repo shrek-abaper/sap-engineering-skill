@@ -56,6 +56,7 @@ Install/readiness guide: [`references/setup.md`](references/setup.md).
 | **OData V2 / V4** | CSRF flow, `$expand`/`$filter`/`$batch`, deep insert, error parsing |
 | **RFC / SAP JCo** | Connection pool, BAPI call pattern, RETURN table parsing, load balancing |
 | **SOAP over HTTP RFC** | Call any RFC-FM via HTTPS without JCo — Python/Node/curl examples, CSRF flow, response parsing |
+| **Dynamic REST2RFC Gateway** | Expose registered RFC/BAPIs as JSON through a pure-ABAP gateway — configuration-driven routing, transaction boundaries, security and limitations ([public project](https://github.com/shrek-abaper/sap-rest2rfc-gateway)) |
 | **IDoc / PI-PO** | Control record, key segments, status lifecycle, monitoring transactions |
 | **BAPI & RAP** | When to use which, key BAPIs by domain, RAP OData V4 services |
 | **Authentication** | Basic Auth, OAuth2 (on-premise SOAUTH2 + Cloud), SSL/TLS, ICF activation |
@@ -166,6 +167,7 @@ sap-integration-wiki/
 │   │   ├── odata.md                  OData V2/V4 protocol guide
 │   │   ├── rfc-jco.md                RFC/JCo connection and BAPI guide
 │   │   ├── soap-rfc-http.md          SOAP over HTTP RFC — no JCo required
+│   │   ├── rest2rfc-gateway.md       Dynamic RFC/BAPI to HTTP/JSON gateway
 │   │   ├── idoc-pi.md                IDoc and SAP PI/PO guide
 │   │   ├── bapi-rap.md               BAPI vs RAP decision guide
 │   │   ├── auth.md                   Authentication setup guide
