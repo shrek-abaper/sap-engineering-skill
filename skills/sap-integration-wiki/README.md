@@ -195,7 +195,7 @@ sap-integration-wiki/
     │   └── idoc-orders05.xml         ORDERS05 IDoc XML example
     └── configs/
         ├── oauth-template.json       OAuth2 config for S/4HANA On-Premise
-        └── jco-props.template        JCo connection properties reference
+        └── jco-props.properties        JCo connection properties reference
 ```
 
 ---

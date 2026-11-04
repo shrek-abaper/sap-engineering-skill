@@ -184,7 +184,7 @@ sap-integration-wiki/
     │   └── idoc-orders05.xml         ORDERS05 IDoc XML 示例
     └── configs/
         ├── oauth-template.json       S/4HANA On-Premise 的 OAuth2 配置模板
-        └── jco-props.template        JCo 连接属性完整参考模板
+        └── jco-props.properties        JCo 连接属性完整参考模板
 ```
 
 ---
