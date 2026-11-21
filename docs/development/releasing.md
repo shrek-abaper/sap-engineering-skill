@@ -30,7 +30,8 @@ local verification alone do not authorize tagging or publication.
 1. Commit/merge the release state; tag `sap-adt-v<cli_version>` (the CLI
    line) and optionally `plugin-v<plugin_version>`.
 2. Publish GitHub Release with the runtime archives, wheel/sdist, npm
-   tarball, Windows desktop installer, plugin + skill zips, `SHA256SUMS`,
+   tarball, Windows desktop installer (when rebuilt and verified for this
+   version), plugin + skill zips, `SHA256SUMS`,
    `release-manifest.json`. Use the artifact list in the manifest, not a
    wildcard over `dist/release/` that could include older releases.
 3. After the release exists, regenerate the manifest/npm staging with

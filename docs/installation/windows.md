@@ -1,9 +1,10 @@
 # Windows runtime and installer
 
-**Runtime / npm: verified locally** on 2026-10-29. The Windows x64 runtime
+**Runtime / npm: CLI 1.6.3 verified locally** on 2026-11-21. The Windows x64 runtime
 was built with Windows Python 3.12 through WSL interop, then installed from
 a locally packed npm package using Windows Node.js. SHA-256 verification,
-ZIP extraction, the npm command shim, `--version` and `--help` passed.
+ZIP extraction, the npm command shim, `--version`, `--help`, and synthetic
+diagnostic/debugger/execution smokes passed.
 This does not verify SAP connectivity.
 
 Windows npm support starts with **CLI 1.5.3**. Older packages may list only
@@ -12,12 +13,16 @@ run `sap-adt install` again. The Windows ZIP and desktop installer are
 available from the corresponding
 [GitHub Release](https://github.com/shrek-abaper/sap-engineering-skill/releases/tag/sap-adt-v1.5.3).
 
-**Desktop installer: silent per-user lifecycle verified locally** on
+**Desktop installer: CLI 1.6.2 silent per-user lifecycle verified locally** on
 Windows 11 x64, using Inno Setup 6.7.4 through WSL interop. Installation into
 a path containing spaces and Chinese characters, runtime startup,
 same-version upgrade, and uninstall passed. A synthetic configuration file
 was preserved. The PATH task and Start Menu shortcuts were disabled for
 this smoke test to avoid changing the host's environment.
+
+CLI 1.6.3 has no rebuilt desktop installer: the compiler was unavailable
+on the build host. Use its npm package or portable Windows ZIP instead.
+Earlier installer verification does not validate the new runtime version.
 
 The PATH cleanup helper is separately tested with native Inno Setup code.
 Actual user PATH mutation, graphical wizard clicks, interactive credential

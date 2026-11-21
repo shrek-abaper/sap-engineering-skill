@@ -322,10 +322,9 @@ class EnvelopeCommandTests(unittest.TestCase):
         self._serve({"oo/classes": payload})
         r = CliRunner().invoke(self.cli.cli, ["get-class", "CL_GUI_FRONTEND_SERVICES"])
         self.assertEqual(r.exit_code, 0, r.output)
-        # CliRunner captures stdout with universal-newline translation; real
-        # redirection preserves CRLF (verified byte-for-byte against DEV).
+        # CliRunner's newline translation varies by platform/Click version.
         expected = payload.decode("utf-8").replace("\r\n", "\n") + "\n"
-        self.assertEqual(r.output, expected)
+        self.assertEqual(r.output.replace("\r\n", "\n"), expected)
 
     def test_source_json_envelope(self):
         self._serve({"oo/classes": fx("get-class.CL_GUI_FRONTEND_SERVICES.abap")})

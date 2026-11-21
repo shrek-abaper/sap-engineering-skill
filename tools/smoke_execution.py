@@ -116,6 +116,7 @@ def check_cli(command: list[str]) -> None:
                 stderr = result.stderr.decode("utf-8", errors="replace")
                 assert result.returncode == expected, (args, result.returncode, stderr)
                 raw = result.stdout.decode("utf-8") if expected == 0 else stderr
+                raw = raw.replace("\r\n", "\n")
                 return json.loads(raw[raw.index('{\n  "ok"'):])
 
             for args in (["run-class", "ZCL_DEMO"], ["run-report", "ZREPORT"],

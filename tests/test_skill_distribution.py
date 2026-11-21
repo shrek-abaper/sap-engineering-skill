@@ -61,7 +61,8 @@ class GeneratedSnapshotTests(unittest.TestCase):
             (root / "docs" / "installation").mkdir(parents=True)
             (root / "docs" / "installation" / "runtime-setup.md").write_text("body")
             (root / "compatibility.json").write_text(
-                (ROOT / "compatibility.json").read_text(encoding="utf-8"))
+                (ROOT / "compatibility.json").read_text(encoding="utf-8"),
+                encoding="utf-8")
             for name in SKILLS:
                 src = ROOT / "skills" / name
                 dst = root / "skills" / name

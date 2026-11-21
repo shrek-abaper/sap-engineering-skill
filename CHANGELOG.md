@@ -24,6 +24,9 @@
   native RFC, server cancellation and automatic asynchronous recovery are
   not claimed.
 - Added an installed-CLI execution smoke to native npm verification.
+- Verified Linux/Windows native npm installation and both macOS 15
+  architectures (Actions run 44876118369). The Windows desktop installer
+  was not rebuilt; use npm or the portable ZIP for CLI 1.6.3.
 
 ## CLI 1.6.2 / plugin/docs 1.3.3 — 2026-11-04
 
