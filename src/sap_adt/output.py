@@ -31,7 +31,7 @@ RAW_KIND = "raw"
 STRUCTURED_KINDS = (
     "source", "fields", "objects", "rows", "records", "findings", "scalar",
     "capabilities",
-    "feeds", "versions", "diff", "dumps", "debug", "write",
+    "feeds", "versions", "diff", "dumps", "debug", "write", "execution",
 )
 
 # data key holding the list whose length is the row_count for that kind.
@@ -248,6 +248,7 @@ def _text_write(data: dict) -> str:
 
 
 _TEXT_RENDERERS = {
+    "execution": _text_diagnostics,
     "source": _text_source,
     "fields": _text_fields,
     "objects": _text_objects,

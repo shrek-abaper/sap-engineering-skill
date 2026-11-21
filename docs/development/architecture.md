@@ -32,7 +32,7 @@ src/sap_adt/
 ├── cli.py            Click group `sap-adt` (commands, gates, confirmations)
 ├── config.py         profiles/env/dotenv resolution, ~/.sap-adt-cli
 ├── credentials.py    keystore orchestration (+ *_reports.py for doctor output)
-├── errors.py         closed 23-code set + exit tiers
+├── errors.py         closed 26-code set + exit tiers
 ├── output.py         envelope rendering (format_version = 1)
 ├── adt/              ADT client, handlers, parsers, coverage
 ├── keystore/         env / keyring / dpapi / pass / file backends
@@ -45,6 +45,13 @@ All SAP HTTP traffic goes through `sap_adt/adt/client.py` (Basic Auth, CSRF,
 retry, redaction, `sap-client` query parameter). Transport collection injects
 its connection with `set_config()` and reuses the ADT handlers for source
 endpoints; it has no HTTP client of its own.
+
+Controlled Class/Report execution and invocation-owned temporary Classes
+live in `adt/execution.py`, reusing verified `source_write.py`. Execution
+POSTs disable CSRF replay and redirects, use isolated in-memory Sessions and
+fetch CSRF on discovery. `allow_execute` is independent and profile-only;
+snippets also require `allow_write`. No persistent cookies or native RFC
+dependencies are added.
 
 ## No compatibility shims
 

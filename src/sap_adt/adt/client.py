@@ -1,4 +1,5 @@
 from typing import Optional
+from contextlib import contextmanager
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import requests
@@ -52,6 +53,20 @@ def _get_session() -> requests.Session:
     return _session
 
 
+@contextmanager
+def isolated_session():
+    """Keep execution cookies/CSRF separate; never persist SAP sessions."""
+    global _session, _csrf_token, _session_cookies
+    previous = _session, _csrf_token, _session_cookies
+    _session, _csrf_token, _session_cookies = None, None, None
+    try:
+        yield
+    finally:
+        if _session is not None:
+            _session.close()
+        _session, _csrf_token, _session_cookies = previous
+
+
 def _safe_url(url: str) -> str:
     """Strip sensitive query parameters before including a URL in any message."""
     try:
@@ -94,6 +109,24 @@ def _auth_headers(config: SapConfig) -> dict:
     return {"X-SAP-Client": config.client}
 
 
+def prepare_csrf() -> None:
+    """Fetch CSRF on discovery, never by GETting an execution endpoint."""
+    global _csrf_token, _session_cookies
+    config = active_config()
+    response = make_adt_request(
+        config.base_url() + "/sap/bc/adt/discovery",
+        extra_headers={"Accept": "application/atomsvc+xml", "x-csrf-token": "fetch"},
+        retry_csrf=False, allow_redirects=False)
+    try:
+        token = response.headers.get("x-csrf-token")
+        if response.status_code != 200 or not token:
+            raise AdtHttpError("No CSRF token received from ADT discovery")
+        _csrf_token = token
+        _session_cookies = dict(response.cookies)
+    finally:
+        response.close()
+
+
 def _fetch_csrf_token(url: str, config: SapConfig,
                       params: Optional[dict] = None) -> str:
     global _session_cookies
@@ -122,6 +155,9 @@ def make_adt_request(
     data=None,
     params: Optional[dict] = None,
     extra_headers: Optional[dict] = None,
+    retry_csrf: bool = True,
+    allow_redirects: bool = True,
+    stream: bool = False,
 ) -> requests.Response:
     global _csrf_token, _session_cookies
 
@@ -149,6 +185,11 @@ def make_adt_request(
     if method in ("POST", "PUT") and _csrf_token:
         headers["x-csrf-token"] = _csrf_token
 
+    request_options = {}
+    if not allow_redirects:
+        request_options["allow_redirects"] = False
+    if stream:
+        request_options["stream"] = True
     resp = _request(
         config,
         method,
@@ -160,9 +201,10 @@ def make_adt_request(
         data=data,
         params=request_params,
         cookies=_session_cookies or {},
+        **request_options,
     )
 
-    if resp.status_code == 403 and "CSRF" in (resp.text or ""):
+    if retry_csrf and resp.status_code == 403 and "CSRF" in (resp.text or ""):
         _csrf_token = _fetch_csrf_token(url, config, request_params)
         headers["x-csrf-token"] = _csrf_token
         resp = _request(
@@ -176,6 +218,7 @@ def make_adt_request(
             data=data,
             params=request_params,
             cookies=_session_cookies or {},
+            **request_options,
         )
 
     try:

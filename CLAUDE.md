@@ -129,7 +129,7 @@ src/sap_adt/
 ├── cli.py            ← Click group `sap-adt` (commands, gates, confirmations)
 ├── config.py         ← profiles/env/dotenv resolution, ~/.sap-adt-cli
 ├── credentials.py    ← keystore orchestration (+ credentials_reports.py for doctor)
-├── errors.py         ← closed 23-code set + exit tiers
+├── errors.py         ← closed 26-code set + exit tiers
 ├── output.py         ← envelope rendering (format_version = 1)
 ├── adt/              ← client.py, handlers.py, parsers/, coverage.py
 ├── keystore/         ← env/keyring/dpapi/pass/file backends
@@ -206,6 +206,7 @@ Skills have explicit reference loading requirements documented in their `SKILL.m
 ### sap-adt-cli
 
 - **Read-only by default** - Write operations require `allow_write: true` in config
+- **Independent execution consent** - `run-class`/`run-report`/`run-abap` require `allow_execute`, non-PRD and fresh confirmation; `--yes` requires a reviewed plan hash. Snippets also require `allow_write` and use invocation-owned `$TMP` Classes. No automatic COMMIT, rollback or execution replay; unknown execution retains the temporary object.
 - **Independent debugger consent** - Setup/controls require `allow_debug: true`, non-PRD and fresh confirmation; no source/transport/global inheritance. Authorized session reads and cleanup do not require re-enabling flags. Debug execution can change business data even when source writes are disabled.
 - **One-time confirmation** - Every write/activate/transport operation shows a preview and requires user `[y/N]` confirmation per operation (never cached)
 - **Passwords stored in the OS keystore** - Non-secret connection settings live in `~/.sap-adt-cli/config.json` (0600, multi-environment profiles); profile passwords are stored only in the OS keystore — backend priority `env` (`SAP_ADT_<PROFILE>_PASSWORD`) → `keyring` → `dpapi` (WSL2) → `pass` → `file` (scrypt+Fernet fallback); manage with `credentials set|forget|status|doctor`; old plaintext-password configs are auto-migrated

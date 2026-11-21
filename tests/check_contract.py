@@ -152,6 +152,26 @@ for node in ast.walk(handler_tree):
 cli_src = (SRC / "sap_adt" / "cli.py").read_text(encoding="utf-8")
 cli_tree = ast.parse(cli_src)
 command_handler: dict[str, set[str]] = {}
+cli_functions = {node.name: node for node in cli_tree.body if isinstance(node, ast.FunctionDef)}
+
+
+def called_handlers(node, seen=None):
+    seen = set() if seen is None else seen
+    names = set()
+    for call in ast.walk(node):
+        if not isinstance(call, ast.Call):
+            continue
+        if (isinstance(call.func, ast.Attribute)
+                and isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "handlers"):
+            names.add(call.func.attr)
+        elif (isinstance(call.func, ast.Name)
+              and call.func.id in cli_functions and call.func.id not in seen):
+            seen.add(call.func.id)
+            names.update(called_handlers(cli_functions[call.func.id], seen))
+    return names
+
+
 for node in ast.walk(cli_tree):
     if not isinstance(node, ast.FunctionDef):
         continue
@@ -170,12 +190,7 @@ for node in ast.walk(cli_tree):
                     command_name = f"{grp} {dec.args[0].value}" if grp else dec.args[0].value
     if not command_name:
         continue
-    funcs = set()
-    for n in ast.walk(node):
-        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-                and isinstance(n.func.value, ast.Name)
-                and n.func.value.id == "handlers"):
-            funcs.add(n.func.attr)
+    funcs = called_handlers(node)
     if funcs:
         command_handler[command_name] = funcs
 

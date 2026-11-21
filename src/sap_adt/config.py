@@ -70,6 +70,8 @@ class SapConfig:
     transport_source: str = "global"
     allow_debug: bool = False
     debug_source: str = "default"       # profile | default | env | hard-refused
+    allow_execute: bool = False
+    execute_source: str = "default"
 
     def base_url(self) -> str:
         from urllib.parse import urlparse
@@ -157,6 +159,13 @@ def effective_debug_capability(section: dict, environment: str) -> Tuple[bool, s
         return False, "hard-refused"
     return section.get("allow_debug") is True, (
         "profile" if "allow_debug" in section else "default")
+
+
+def effective_execute_capability(section: dict, environment: str) -> Tuple[bool, str]:
+    if environment == "prd":
+        return False, "hard-refused"
+    return section.get("allow_execute") is True, (
+        "profile" if "allow_execute" in section else "default")
 
 
 def validate_profile_name(name: str) -> str:
@@ -403,6 +412,7 @@ def _config_from_section(
             section, raw, environment
         )
         allow_debug, dsrc = effective_debug_capability(section, environment)
+        allow_execute, esrc = effective_execute_capability(section, environment)
         return SapConfig(
             url=section["url"],
             username=section["username"],
@@ -419,6 +429,8 @@ def _config_from_section(
             transport_source=tsrc,
             allow_debug=allow_debug,
             debug_source=dsrc,
+            allow_execute=allow_execute,
+            execute_source=esrc,
         )
     except KeyError as e:
         _fail(f"Profile '{name}' in {CONFIG_FILE} is missing required field {e}. Re-run `configure --profile {name}`.")
@@ -449,6 +461,7 @@ def load_env_connection(profile: Optional[str] = None) -> Tuple[Optional[SapConf
             "SAP_ALLOW_WRITE",
             "SAP_ALLOW_TRANSPORT",
             "SAP_ALLOW_DEBUG",
+            "SAP_ALLOW_EXECUTE",
             "SAP_ENVIRONMENT",
         ]
         selected = profile or _profile_override or os.getenv("SAP_PROFILE")
@@ -461,12 +474,14 @@ def load_env_connection(profile: Optional[str] = None) -> Tuple[Optional[SapConf
         raw_transport = _env_bool("SAP_ALLOW_TRANSPORT", dotenv)
         allow_write, allow_transport = raw_write, raw_transport
         allow_debug = _env_bool("SAP_ALLOW_DEBUG", dotenv)
+        allow_execute = _env_bool("SAP_ALLOW_EXECUTE", dotenv)
         wsrc = tsrc = "env"
         dsrc = "env"
         if environment == "prd":
             # Same hard refusal as a prd profile; env cannot override it.
             allow_write = allow_transport = False
             allow_debug = False
+            allow_execute = False
             wsrc = tsrc = "hard-refused"
             dsrc = "hard-refused"
         return SapConfig(
@@ -488,6 +503,8 @@ def load_env_connection(profile: Optional[str] = None) -> Tuple[Optional[SapConf
             transport_source=tsrc,
             allow_debug=allow_debug,
             debug_source=dsrc,
+            allow_execute=allow_execute,
+            execute_source="hard-refused" if environment == "prd" else "env",
         ), _env_source(source_keys, dotenv)
     return None, None
 
@@ -567,6 +584,7 @@ def save_profile(
     allow_write: Optional[bool] = None,
     allow_transport: Optional[bool] = None,
     allow_debug: Optional[bool] = None,
+    allow_execute: Optional[bool] = None,
     environment: Optional[str] = None,
 ) -> SapConfig:
     """Create/update one profile and make it the active profile.
@@ -593,7 +611,8 @@ def save_profile(
     # Carry over unspecified profile-level flags rather than resetting them.
     for key, val in (("allow_write", allow_write),
                      ("allow_transport", allow_transport),
-                     ("allow_debug", allow_debug)):
+                     ("allow_debug", allow_debug),
+                     ("allow_execute", allow_execute)):
         if val is None:
             if key in existing:
                 section[key] = existing[key]
@@ -613,6 +632,7 @@ def save_profile(
 
     w, t, wsrc, tsrc = effective_capabilities(section, raw, env)
     d, dsrc = effective_debug_capability(section, env)
+    e, esrc = effective_execute_capability(section, env)
     return SapConfig(
         url=section["url"],
         username=username,
@@ -628,6 +648,8 @@ def save_profile(
         transport_source=tsrc,
         allow_debug=d,
         debug_source=dsrc,
+        allow_execute=e,
+        execute_source=esrc,
     )
 
 
@@ -683,6 +705,7 @@ def save_config_from_flags(
     global_write: Optional[bool] = None,
     global_transport: Optional[bool] = None,
     allow_debug: Optional[bool] = None,
+    allow_execute: Optional[bool] = None,
 ) -> SapConfig:
     raw = _read_raw() or {}
     name = profile or os.getenv("SAP_PROFILE") or raw.get("active_profile") or DEFAULT_PROFILE_NAME
@@ -735,6 +758,7 @@ def save_config_from_flags(
         allow_write=w,
         allow_transport=t,
         allow_debug=allow_debug,
+        allow_execute=allow_execute,
         environment=environment,
     )
     if not profile_scope:

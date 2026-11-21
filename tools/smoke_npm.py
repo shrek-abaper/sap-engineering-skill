@@ -19,6 +19,7 @@ from pathlib import Path
 from build_runtime import target_id
 from smoke_diagnostics import check_cli
 from smoke_debugger import check_cli as check_debugger
+from smoke_execution import check_cli as check_execution
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -79,7 +80,8 @@ def main() -> int:
                         "get-versions", "get-version-source", "diff-versions",
                         "get-transport", "get-dump", "get-source",
                         "Setup and maintenance", "Test and diagnose",
-                        "Read and change source", "Transport requests"):
+                        "Read and change source", "Transport requests",
+                        "run-class", "run-report", "run-abap"):
             if command not in help_text:
                 raise SystemExit(f"Runtime --help does not list {command}.")
         subprocess.run(
@@ -88,6 +90,7 @@ def main() -> int:
         )
         check_cli([str(bin_path)])
         check_debugger([str(bin_path)])
+        check_execution([str(bin_path)])
         print(f"[smoke_npm] OK: {target}: npm pack -> global install -> runtime install -> {actual}")
     return 0
 

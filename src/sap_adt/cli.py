@@ -36,6 +36,7 @@ _DATA_HELP = (3, "Inspect data and types")
 _DIAGNOSIS_HELP = (4, "Test and diagnose")
 _HISTORY_HELP = (5, "Compare source versions")
 _TRANSPORT_HELP = (6, "Transport requests")
+_EXECUTION_HELP = (7, "Execute ABAP (explicit approval)")
 
 
 class _HelpCommand(click.Command):
@@ -245,6 +246,108 @@ def _require_debug(config: SapConfig) -> None:
         )
 
 
+def _require_execute(config: SapConfig) -> None:
+    if config.is_production:
+        _gate(errors.EXECUTE_DISABLED, "ABAP execution is hard-refused in environment=prd.")
+    if (config.allow_execute and config.from_environment
+            and config.environment_source != "explicit"):
+        _gate(errors.CONFIG_MISSING,
+              "SAP_ENVIRONMENT must be explicit when using SAP_ALLOW_EXECUTE.",
+              exit_code=3)
+    if not config.allow_execute:
+        _gate(errors.EXECUTE_DISABLED,
+              "ABAP execution requires independent allow_execute permission; "
+              "source write, transport and debug permissions do not grant it.")
+
+
+def _execution_options(command):
+    for option in (
+        click.option("--timeout", type=click.IntRange(1, 300), default=30, show_default=True,
+                     help="HTTP execution timeout in seconds; timeout does not cancel SAP code."),
+        click.option("--max-chars", type=click.IntRange(1, 1000000), default=100000,
+                     show_default=True, help="Output character cap; truncation exits non-zero."),
+        click.option("--dry-run", is_flag=True,
+                     help="Read source and print a bound plan; never execute or create objects."),
+        click.option("--expect-plan-sha256", default=None,
+                     callback=lambda _c, _p, v: _sha256_option(v),
+                     help="Require the reviewed dry-run plan hash (mandatory with --yes)."),
+        click.option("--yes", is_flag=True,
+                     help="Approve this exact execution plan; requires --expect-plan-sha256."),
+    ):
+        command = option(command)
+    return command
+
+
+def _run_execution(mode, name=None, source_file=None, *, timeout, max_chars,
+                   dry_run, expect_plan_sha256, yes):
+    config = _load_config()
+    _require_config(config)
+    _require_execute(config)
+    if mode == "abap":
+        _require_write(config)
+    if output.get_format() == "xml":
+        _gate(errors.BAD_REQUEST, "Execution has no XML output; use json or text.")
+    if not dry_run and yes and not expect_plan_sha256:
+        _gate(errors.CONFIRM_REQUIRED,
+              "--yes requires --expect-plan-sha256 from a reviewed --dry-run.")
+    if not dry_run and not yes and not _stdin_is_tty():
+        _gate(errors.CONFIRM_REQUIRED, "Execution requires fresh confirmation or a hash-bound --yes.")
+
+    def read_snippet():
+        try:
+            with click.open_file(source_file, "rb") as stream:
+                return source_write.canonical_source(source_write.decode_local(stream.read()))
+        except (OSError, UnicodeDecodeError) as exc:
+            _gate(errors.BAD_REQUEST, f"Cannot read UTF-8 snippet: {exc}")
+
+    code = read_snippet() if mode == "abap" else None
+    previous = adt_client.config_override()
+    adt_client.set_config(config)
+    try:
+        with adt_client.isolated_session():
+            prepared = handlers.prepare_execution(
+                mode, name, code, _write_target(config), timeout, max_chars)
+            _abort_on_error(prepared, "execution plan")
+            plan = prepared.data["plan"]
+            if expect_plan_sha256 and plan["plan_sha256"] != expect_plan_sha256.lower():
+                _emit_error(errors.decision(
+                    errors.BASELINE_CHANGED, "Execution plan differs from the reviewed plan; not executed.",
+                    data=prepared.data))
+            if dry_run:
+                prepared.meta = {"dry_run": True}
+                if code is not None:
+                    prepared.data["source"] = code
+                _output(prepared)
+                return
+            preview = [
+                f"Action: execute {mode} {name or '(temporary Class in $TMP)'}",
+                f"Target: {json.dumps(plan['target'])}",
+                f"Source: sha256 {plan['source_sha256']}",
+                f"Plan: sha256 {plan['plan_sha256']}",
+                f"Stages: {', '.join(plan['lifecycle'])}",
+                "WARNING: code may commit business data, trigger updates or call external systems.",
+                "No sandbox, automatic rollback, cancellation or execution retry is provided.",
+            ]
+            if code is not None:
+                preview.extend(["ABAP snippet:", code])
+            if yes:
+                for line in preview[:7]:
+                    click.echo(line, err=True)
+            _confirm_change(preview, yes=yes)
+            if mode == "abap" and source_file != "-":
+                current = read_snippet()
+                if source_write.sha256_text(current) != plan["source_sha256"]:
+                    _gate(errors.CONTENT_CHANGED, "Snippet changed after confirmation; not executed.")
+            result = handlers.execute_prepared(plan, code)
+    finally:
+        adt_client.set_config(previous)
+    if result.is_error:
+        _emit_error(errors.decision(
+            result.error_code, result.text, data=result.data,
+            http_status=result.http_status))
+    _output(result)
+
+
 def _require_env_write_context(config, kind: str = "write") -> None:
     """Env-var/.env connections need SAP_ENVIRONMENT before any write.
 
@@ -351,8 +454,9 @@ def cli(profile, keystore, fmt, verbose):
     """Read, check and change ABAP objects in SAP.
 
     SAP source and transport writes require capabilities and confirmation.
-    Debugger controls require separate allow_debug permission. Unit tests
-    and debugger controls can execute application code.
+    Debugger controls require separate allow_debug permission. Arbitrary
+    Class/Report/snippet execution needs independent allow_execute. Unit
+    tests, debugging and execution can change business data.
 
     Start with 'configure', then 'status'. Use '--profile NAME' for one
     command or 'profile use NAME' to switch persistently.
@@ -366,6 +470,51 @@ def cli(profile, keystore, fmt, verbose):
         config_module.set_profile_override(profile)
     if keystore:
         credentials.set_preferred(keystore)
+
+
+@cli.command("run-class", help_group=_EXECUTION_HELP, help_order=10,
+             short_help="[EXECUTE] Run IF_OO_ADT_CLASSRUN; needs approval.")
+@click.argument("name")
+@_execution_options
+def run_class_cmd(name, **options):
+    """Run an existing IF_OO_ADT_CLASSRUN class via ADT oo/classrun.
+
+    JSON execution evidence (text: same evidence, no XML). Requires
+    allow_execute, non-PRD and fresh confirmation. Not an arbitrary-method API.
+    --yes requires the exact --expect-plan-sha256 from --dry-run.
+    """
+    _run_execution("class", name, **options)
+
+
+@cli.command("run-report", help_group=_EXECUTION_HELP, help_order=20,
+             short_help="[EXECUTE] Run a Report with default selections.")
+@click.argument("name")
+@_execution_options
+def run_report_cmd(name, **options):
+    """Run an existing Report via ADT programs/programrun; return List text.
+
+    JSON execution evidence (text: same evidence, no XML). Uses selection
+    defaults only; no GUI, variant, ALV-control or Spool capture is promised.
+    Requires allow_execute, non-PRD and fresh confirmation.
+    """
+    _run_execution("report", name, **options)
+
+
+@cli.command("run-abap", help_group=_EXECUTION_HELP, help_order=30,
+             short_help="[EXECUTE + WRITE] Run a snippet using a temporary Class.")
+@click.option("--file", "source_file", required=True,
+              help="UTF-8 method-body statements, or - for stdin. Use out->write for output.")
+@_execution_options
+def run_abap_cmd(source_file, **options):
+    """Create, write, activate, execute and clean up one invocation-owned Class.
+
+    JSON execution/lifecycle evidence (text: same evidence, no XML).
+    Requires allow_execute AND allow_write, non-PRD and fresh approval of
+    the complete lifecycle. Fixed package $TMP; no generic delete capability.
+    Supports local CALL FUNCTION/BAPI and method calls allowed by SAP.
+    No automatic COMMIT, rollback or business-success inference.
+    """
+    _run_execution("abap", source_file=source_file, **options)
 
 
 @cli.command("update", help_group=_SETUP_HELP, help_order=60,
@@ -448,6 +597,8 @@ def update_cmd(check_only, major, yes):
 @click.option("--allow-debug/--no-allow-debug", default=None,
               help="Enable debugger for THIS profile only (default: disabled; "
                    "independent of writes). Can pause/run ABAP; PRD is refused.")
+@click.option("--allow-execute/--no-allow-execute", default=None,
+              help="Enable ABAP execution for THIS profile only; may change business data. PRD is refused.")
 @click.option("--global-allow-write/--no-global-allow-write", default=None,
               help="Write the LEGACY global fallback switch (applies only when the profile declares neither)")
 @click.option("--global-allow-transport/--no-global-allow-transport", default=None,
@@ -458,7 +609,7 @@ def update_cmd(check_only, major, yes):
 @click.option("--profile", default=None, help="Profile name to create or update (default: active profile, or 'default' on first run)")
 def configure(url, username, password, client, language, no_verify_ssl,
               allow_write, allow_transport, global_allow_write,
-              global_allow_transport, environment, profile, allow_debug):
+              global_allow_transport, environment, profile, allow_debug, allow_execute):
     """Save SAP connection credentials for one environment profile.
 
     The saved profile becomes the active profile. Add more environments
@@ -493,8 +644,14 @@ def configure(url, username, password, client, language, no_verify_ssl,
     Complete env/dotenv connections use SAP_ALLOW_DEBUG and an explicit
     SAP_ENVIRONMENT instead. Debugging may pause execution or let application
     code write business data even when source writes remain disabled.
+
+    ABAP execution uses independent allow_execute (default false).
+    --allow-execute/--no-allow-execute preserve unspecified settings.
+    Complete env/dotenv connections need SAP_ALLOW_EXECUTE and explicit
+    SAP_ENVIRONMENT. Snippet execution additionally needs allow_write.
     """
-    if any([url, username, password, client]) or allow_debug is not None:
+    if (any([url, username, password, client]) or allow_debug is not None
+            or allow_execute is not None):
         if password:
             click.echo(
                 "Warning: passing --password on the command line may expose it in shell history "
@@ -507,7 +664,7 @@ def configure(url, username, password, client, language, no_verify_ssl,
         # by explicit connection/debug flags, not TTY state.
         try:
             verify_ssl = not no_verify_ssl
-            if allow_debug is not None:
+            if allow_debug is not None or allow_execute is not None:
                 context = click.get_current_context()
                 profile = profile or context.find_root().params.get("profile")
                 if context.get_parameter_source("allow_write") == click.core.ParameterSource.DEFAULT:
@@ -534,6 +691,7 @@ def configure(url, username, password, client, language, no_verify_ssl,
                 global_write=global_allow_write,
                 global_transport=global_allow_transport,
                 allow_debug=allow_debug,
+                allow_execute=allow_execute,
             )
         except (ConfigError, ProfileNotFoundError, ValueError) as e:
             _emit_error(errors.classify(e))
@@ -581,6 +739,11 @@ def status():
         "Debug mode:      "
         + ("HARD-REFUSED (environment=prd)" if config.debug_source == "hard-refused"
            else f"{'ENABLED' if config.allow_debug else 'DISABLED'} (source: {config.debug_source})")
+    )
+    click.echo(
+        "Execute mode:    "
+        + ("HARD-REFUSED (environment=prd)" if config.execute_source == "hard-refused"
+           else f"{'ENABLED' if config.allow_execute else 'DISABLED'} (source: {config.execute_source})")
     )
     click.echo(f"Config source:   {source}")
 

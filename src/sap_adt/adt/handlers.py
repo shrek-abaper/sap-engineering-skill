@@ -87,6 +87,29 @@ def _xattr(s: str) -> str:
     return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def prepare_execution(kind, name, code, target, timeout=30, max_chars=100000):
+    from . import execution
+    try:
+        plan, problem = execution.prepare(kind, name, code, target, timeout, max_chars)
+        if problem:
+            return problem
+        return _structured("execution", {"plan": plan}, _obj(kind, name))
+    except Exception as exc:
+        return _err(exc)
+
+
+def execute_prepared(plan, code=None):
+    from . import execution
+    data, code_error = execution.run(plan, code)
+    result = _structured("execution", data, _obj(plan["mode"], plan["name"]),
+                         meta={"partial": bool(data["evidence_gaps"])})
+    if code_error:
+        result.is_error = True
+        result.error_code = code_error
+        result.text = data.get("failure", {}).get("message", "Execution lifecycle incomplete")
+    return result
+
+
 def get_program(program_name: str) -> AdtResult:
     try:
         resp = make_adt_request(f"{_base()}/sap/bc/adt/programs/programs/{_enc(program_name)}/source/main")

@@ -37,7 +37,7 @@ class HelpTests(unittest.TestCase):
         self.assertEqual(list(sections), [
             "Setup and maintenance", "Find objects", "Read and change source",
             "Inspect data and types", "Test and diagnose",
-            "Compare source versions", "Transport requests",
+            "Compare source versions", "Transport requests", "Execute ABAP (explicit approval)",
         ])
         self.assertEqual(self.command_names(sections["Setup and maintenance"]),
                          ["configure", "profile", "credentials", "status",
@@ -50,6 +50,8 @@ class HelpTests(unittest.TestCase):
         self.assertEqual(self.command_names(sections["Transport requests"]),
                          ["list-transports", "get-transport", "transport",
                           "create-transport", "release-transport"])
+        self.assertEqual(self.command_names(sections["Execute ABAP (explicit approval)"]),
+                         ["run-class", "run-report", "run-abap"])
 
     def test_every_visible_command_has_one_registered_group_and_appears_once(self):
         sections = self.sections()

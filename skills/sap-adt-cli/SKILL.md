@@ -1,6 +1,7 @@
 ---
 name: sap-adt-cli
-description: "Read/write live SAP ABAP source, DDIC metadata and transport requests
+description: "Read/write live SAP ABAP source, execute authorized Classes, Reports
+  and ABAP snippets (local CALL FUNCTION/BAPI), inspect DDIC and transport requests
   via the sap-adt CLI. Use for repository search, where-used, syntax checks, ABAP
   Unit failure evidence, test include source, ATC, SQL preview, short dump
   details and stacks, explicitly authorized debugging, Gateway errors, ADT Feeds, object version
@@ -12,7 +13,7 @@ description: "Read/write live SAP ABAP source, DDIC metadata and transport reque
 license: MIT
 allowed-tools: [Read, Bash]
 metadata:
-  version: "1.3.2"
+  version: "1.3.3"
   type: hybrid
   output_schema:
     format: mixed
@@ -112,6 +113,20 @@ handle for `breakpoint → listen → attach → stack/vars`, with approved
 Timeout/unknown control outcome: stop, report gaps, never replay blindly.
 This is experimental; synthetic verification is not a live-SAP attach claim.
 
+## Explicit ABAP execution workflow
+
+Only an explicit request to execute code authorizes `run-class`, `run-report`
+or `run-abap`. Read **references/execution.md** first. Requires CLI **1.6.3+**,
+independent `allow_execute`, non-PRD and fresh approval; snippets also require
+`allow_write` for the complete temporary-Class lifecycle in `$TMP`.
+Use `--dry-run` first; unattended `--yes` requires the reviewed
+`--expect-plan-sha256`. Local functions/BAPIs are called explicitly inside a
+snippet, with typed parameters and explicit output; this is not native RFC.
+Never silently escalate diagnosis, SQL or a failed Unit test into execution.
+Do not automatically COMMIT, retry execution, or delete an object whose
+ownership/execution state is uncertain. Timeout does not cancel SAP code.
+Report execution, business messages, output completeness and cleanup separately.
+
 ## Diagnostic and change-analysis workflow
 
 Load **references/diagnostics-history.md** for these tasks; runnable examples
@@ -174,6 +189,7 @@ Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status",
 | `diff` | diff-versions, transport diff | `{comparison,diffs:[{from_uri,to_uri,changed,diff}],evidence_gaps}`; transport adds request/object metadata |
 | `debug` | debug primitives | `{session,state,operation,evidence_gaps,...}`; operation-specific evidence in references/debugging.md; foreground serve emits ready/final JSONL |
 | `write` | write-source | `{target,object,transport,baseline,content,plan_sha256,lock,write,unlock,activation,outcome}`; stage `status` ∈ accepted/verified/failed/unknown/not_attempted/skipped; `--dry-run` adds `diff`; failures put the same `data` in the error envelope |
+| `execution` | run-class, run-report, run-abap | `{plan,preparation,execution,output,cleanup,evidence_gaps}`; dry-run returns `{plan}` (snippets also `source`); failures retain stage `data`; completed execution does not imply business success |
 
 > `doctor --coverage` "available" only guarantees the **resource root**
 > exists — discovery omits sub-paths, HTTP methods and required content
@@ -197,10 +213,11 @@ Full examples: **references/examples.md**.
 | 0 | success, including empty results | — |
 | 1 | operational (10 codes; incl. two release results) | `CSRF_EXPIRED`, `SERVICE_NOT_ACTIVE`, `BAD_REQUEST`, `SERVER_ERROR`, `LOCKED_BY_OTHER`, `NETWORK_ERROR`, `PARSE_FAILED`, `RELEASE_UNVERIFIED`, `RELEASE_REJECTED`, `ACTIVATION_FAILED` |
 | 2 | configuration / credentials | `CONFIG_MISSING`, `PROFILE_NOT_FOUND`, `AUTH_FAILED` |
-| 3 | policy refusal / operation did not happen, or write state unknown/partial — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `DEBUG_DISABLED`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED`, `BASELINE_CHANGED`, `CONTENT_CHANGED`, `WRITE_INCOMPLETE` |
+| 3 | policy refusal / operation did not happen, or write/execution state failed/unknown/partial — **do not retry** | `WRITE_DISABLED`, `TRANSPORT_DISABLED`, `DEBUG_DISABLED`, `EXECUTE_DISABLED`, `EXECUTION_FAILED`, `EXECUTION_INCOMPLETE`, `CONFIRM_REQUIRED`, `USER_ABORTED`, `DML_REJECTED`, `BASELINE_CHANGED`, `CONTENT_CHANGED`, `WRITE_INCOMPLETE` |
 | 4 | requested object does not exist | `OBJECT_NOT_FOUND` |
 
-All 23 codes. **`RELEASE_UNVERIFIED` = release sent, final status unknown
+All 26 codes. Execution errors may follow business side effects; never replay
+automatically. **`RELEASE_UNVERIFIED` = release sent, final status unknown
 (readback timeout) — never re-release, verify in SE09/SE10; `RELEASE_REJECTED`
 = still status D / check failed. `BASELINE_CHANGED`/`CONTENT_CHANGED` =
 nothing written (re-run `--dry-run`, review the new diff); `WRITE_INCOMPLETE`
@@ -221,6 +238,9 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `profile list\|use\|remove` | manage environments | — |
 | `credentials set\|forget\|status\|doctor [--coverage]` | keystore management; `doctor --coverage` = command/resource matrix for this system | — |
 | `discovery` | ADT resources this system exposes (href/title/content-types) | capabilities |
+| `run-class <NAME>` | explicitly approved IF_OO_ADT_CLASSRUN execution; --dry-run, hash-bound --yes, --timeout, --max-chars; no XML | execution |
+| `run-report <NAME>` | explicitly approved executable Report with default selections; raw List in execution output; no GUI/variant/Spool promise | execution |
+| `run-abap --file FILE` | explicitly approved method-body snippet, local CALL FUNCTION/BAPI/method calls; temporary owned Class in $TMP; writes/activation/cleanup reported separately | execution |
 | `list-feeds` | diagnostic feed catalog and FQL schemas | feeds |
 | `query-feed <URI> [--query FQL] [--max-results N] [--page-uri URI]` | one advertised feed page; `$query`/`$top`; next_uri is explicit, never auto-fetch all | feeds |
 | `get-dump <ID_OR_URI> [--max-chars N]` | runtime dump XML metadata + bounded diagnostic chapters; partial detail exits 1 with gaps/ST22 fallback | dumps |

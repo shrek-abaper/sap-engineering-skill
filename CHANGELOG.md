@@ -1,5 +1,30 @@
 # Changelog
 
+## CLI 1.6.3 / plugin/docs 1.3.4 — 2026-11-21
+
+- Added controlled `run-class` (IF_OO_ADT_CLASSRUN), `run-report` (default
+  selections, raw List output) and `run-abap --file` (method-body snippets
+  including local functions, BAPIs and method calls). All use ADT HTTP,
+  without PyRFC/native RFC dependencies.
+- Added independent profile-only `allow_execute`, capability-only configure
+  updates and `SAP_ALLOW_EXECUTE` with explicit environment. PRD is refused.
+  Snippets additionally require `allow_write`; `--yes` binds a reviewed
+  `--dry-run` plan hash. No automatic business COMMIT or rollback.
+- Temporary Classes are unique and limited to `$TMP`; verified write and
+  activation are reused. Cleanup checks invocation ownership/source and
+  independent absence; unknown execution/lock state retains the object.
+- Unified `execution` evidence separates preparation, protocol completion,
+  bounded raw UTF-8 output, business-success uncertainty and cleanup.
+  Execution POSTs never replay or follow redirects. New exit-3 codes:
+  `EXECUTE_DISABLED`, `EXECUTION_FAILED`, `EXECUTION_INCOMPLETE` (26 total).
+- Live DEV verified local ALPHA conversion, read-only
+  `BAPI_CURRENCY_GETDECIMALS`, Class Run, Report List and syntax-error
+  cleanup. All fixtures were removed with independent absence checks.
+  Other Basis releases, GUI/ALV controls, Report parameters/variants,
+  native RFC, server cancellation and automatic asynchronous recovery are
+  not claimed.
+- Added an installed-CLI execution smoke to native npm verification.
+
 ## CLI 1.6.2 / plugin/docs 1.3.3 — 2026-11-04
 
 Documentation-only plugin update; the CLI remains at 1.6.2.

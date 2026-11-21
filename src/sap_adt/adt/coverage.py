@@ -44,6 +44,10 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("run-unit-test", ["/sap/bc/adt/abapunit/testruns"]),
     ("run-atc", ["/sap/bc/adt/atc/runs", "/sap/bc/adt/atc/worklists"]),
     ("run-sql", ["/sap/bc/adt/datapreview/freestyle"]),
+    ("run-class", ["/sap/bc/adt/oo/classrun"]),
+    ("run-report", ["/sap/bc/adt/programs/programrun"]),
+    ("run-abap", ["/sap/bc/adt/oo/classrun", "/sap/bc/adt/oo/classes",
+                  "/sap/bc/adt/activation", "/sap/bc/adt/deletion/delete"]),
     ("list-transports", ["/sap/bc/adt/cts/transportrequests"]),
     ("get-transport", ["/sap/bc/adt/cts/transportrequests"]),
     ("transport diff", ["/sap/bc/adt/cts/transportrequests"]),
@@ -106,7 +110,9 @@ def compute_coverage(collections: list[dict]) -> dict:
     available_commands = []
     unavailable_commands = []
     for command, prefixes in COMMAND_CAPABILITIES.items():
-        (available_commands if _command_available(prefixes, hrefs)
+        available = (all(p in hrefs for p in prefixes) if command == "run-abap"
+                     else _command_available(prefixes, hrefs))
+        (available_commands if available
          else unavailable_commands).append(command)
 
     referenced = {p for prefixes in COMMAND_CAPABILITIES.values() for p in prefixes}

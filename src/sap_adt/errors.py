@@ -46,6 +46,9 @@ BASELINE_CHANGED = "BASELINE_CHANGED"
 CONTENT_CHANGED = "CONTENT_CHANGED"
 WRITE_INCOMPLETE = "WRITE_INCOMPLETE"
 ACTIVATION_FAILED = "ACTIVATION_FAILED"
+EXECUTE_DISABLED = "EXECUTE_DISABLED"
+EXECUTION_FAILED = "EXECUTION_FAILED"
+EXECUTION_INCOMPLETE = "EXECUTION_INCOMPLETE"
 
 # Closed set. Every code here MUST appear in EXIT_CODE_MAP (enforced by test).
 ALL_CODES = (
@@ -72,6 +75,9 @@ ALL_CODES = (
     CONTENT_CHANGED,
     WRITE_INCOMPLETE,
     ACTIVATION_FAILED,
+    EXECUTE_DISABLED,
+    EXECUTION_FAILED,
+    EXECUTION_INCOMPLETE,
 )
 
 EXIT_CODE_MAP = {
@@ -89,6 +95,9 @@ EXIT_CODE_MAP = {
     BASELINE_CHANGED: 3,
     CONTENT_CHANGED: 3,
     WRITE_INCOMPLETE: 3,
+    EXECUTE_DISABLED: 3,
+    EXECUTION_FAILED: 3,
+    EXECUTION_INCOMPLETE: 3,
     # 4 - object does not exist
     OBJECT_NOT_FOUND: 4,
     # 1 - everything else: retryable/operational failures
@@ -109,12 +118,26 @@ GATE_CODES = frozenset({
     WRITE_DISABLED,
     TRANSPORT_DISABLED,
     DEBUG_DISABLED,
+    EXECUTE_DISABLED,
     CONFIRM_REQUIRED,
     USER_ABORTED,
     DML_REJECTED,
 })
 
 DEFAULT_HINTS = {
+    EXECUTE_DISABLED: (
+        "Enable allow_execute on a non-production profile with "
+        "'configure --allow-execute', or SAP_ALLOW_EXECUTE=true and an explicit "
+        "SAP_ENVIRONMENT. Write/debug permissions do not authorize execution."
+    ),
+    EXECUTION_FAILED: (
+        "Inspect data.execution and stage evidence. Application code may have "
+        "changed business data before failing. Do NOT replay automatically."
+    ),
+    EXECUTION_INCOMPLETE: (
+        "Execution, output or cleanup is unconfirmed. A timeout does not stop "
+        "server-side code. Do NOT replay; inspect SAP and any retained temporary object."
+    ),
     CONFIG_MISSING: "Run 'sap-adt configure' or provide SAP_* environment variables.",
     PROFILE_NOT_FOUND: "List profiles with 'profile list' and create one with 'configure'.",
     AUTH_FAILED: "Check username/password and ADT authorizations (S_ADT, S_DEVELOP).",

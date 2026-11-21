@@ -149,6 +149,7 @@ Publishing and signing remain separate authorized steps.
 .venv/bin/python tests/check_contract.py            # SKILL.md vs code
 .venv/bin/python tools/smoke_diagnostics.py "$PWD/.venv/bin/python" -m sap_adt
 .venv/bin/python tools/smoke_debugger.py "$PWD/.venv/bin/python" -m sap_adt
+.venv/bin/python tools/smoke_execution.py "$PWD/.venv/bin/python" -m sap_adt
 node --test packaging/npm/test/*.test.js             # installer/update error paths
 gitleaks protect --staged --config .gitleaks.toml    # pre-commit secret scan
 ```
@@ -168,7 +169,11 @@ Native Windows runs verify the actual protected DACL, not `chmod` emulation;
 Windows TerminateProcess is abrupt death, not a catchable POSIX SIGTERM.
 Interactive Windows console Ctrl-C remains outside automated verification.
 
-`smoke_npm.py` runs both smokes after packing and isolated installation;
+`smoke_execution.py` checks Class/Report output, the complete temporary-Class
+lifecycle, independent consent and output truncation against a loopback-only
+fixture. It never uses SAP credentials or a live target.
+
+`smoke_npm.py` runs all three smokes after packing and isolated installation;
 the existing native macOS workflow therefore checks these primitives too.
 Redirected stdout/stderr must remain UTF-8 even when Windows Python starts
 with a legacy code page.
