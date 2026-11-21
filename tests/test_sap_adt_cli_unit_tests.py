@@ -115,6 +115,7 @@ class UnitCommandTests(unittest.TestCase):
             username = "DEVELOPER"
             profile_name = "dev"
             allow_write = False
+            allow_execute = False
             allow_transport = False
             environment = "dev"
             environment_source = "inferred"
@@ -179,12 +180,12 @@ class UnitCommandTests(unittest.TestCase):
         self.assertEqual(r.exit_code, 1, r.output)
         self.assertTrue(json.loads(r.stdout)["meta"]["partial"])
 
-    def test_dangerous_without_allow_write_is_gate_3(self):
+    def test_dangerous_without_allow_execute_is_gate_3(self):
         # gate fires before any HTTP call: the mocked request must not run
         with patch.object(self.handlers, "make_adt_request") as no_http:
             r = self._invoke("ZCL_X", "--risk-level", "dangerous")
         self.assertEqual(r.exit_code, 3, r.output)
-        self.assertEqual(json.loads(r.output)["error"]["code"], "WRITE_DISABLED")
+        self.assertEqual(json.loads(r.output)["error"]["code"], "EXECUTE_DISABLED")
         no_http.assert_not_called()
 
     def test_critical_against_prd_profile_refused_before_prompt(self):
@@ -195,7 +196,7 @@ class UnitCommandTests(unittest.TestCase):
         r = self._invoke("ZCL_X", "--risk-level", "critical", "--yes")
         self.assertEqual(r.exit_code, 3, r.output)
         env = json.loads(r.output)["error"]
-        self.assertEqual(env["code"], "WRITE_DISABLED")
+        self.assertEqual(env["code"], "EXECUTE_DISABLED")
 
     def test_inferred_prod_hint_guides_self_service(self):
         # Loose inference: a name containing 'prod' resolves to prd even when
@@ -211,7 +212,7 @@ class UnitCommandTests(unittest.TestCase):
         self.assertIn("--environment dev", message)
 
     def test_dangerous_requires_risk_text_in_confirmation(self):
-        self.cfg.allow_write = True
+        self.cfg.allow_execute = True
         r = self._invoke("ZCL_X", "--risk-level", "dangerous")
         self.assertEqual(r.exit_code, 3, r.output)  # non-TTY -> CONFIRM_REQUIRED
         env = json.loads(r.output)

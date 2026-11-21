@@ -274,6 +274,13 @@ def execute(plan: WritePlan, *, current_content_sha256: Callable[[], str],
                  f"confirmed {plan.content_sha256}); nothing was written")
         return rep
 
+    if plan.object_type.lower() == "table" and not plan.unchanged:
+        from .development import table_is_new
+        if not table_is_new(plan.object_uri):
+            rep.fail("table_conversion", errors.BAD_REQUEST,
+                     "existing or unconfirmed active table: automatic schema conversion is excluded")
+            return rep
+
     if plan.unchanged:
         rep.write = {"status": SKIPPED, "detail": "baseline already equals upload"}
         progress("Source unchanged; lock/write skipped.")
@@ -335,6 +342,13 @@ def _locked_write(plan: WritePlan, rep: WriteReport, progress) -> None:
                      f"!= confirmed {plan.baseline_sha256}); nothing was written")
             return
         rep.baseline_recheck = {"status": "matched", "sha256": cur_sha}
+
+        if plan.object_type.lower() == "table":
+            from .development import table_is_new
+            if not table_is_new(plan.object_uri, stateful=True):
+                rep.fail("table_conversion", errors.BAD_REQUEST,
+                         "active table appeared or cannot be excluded under lock; conversion refused")
+                return
 
         if plan.check_before_write:
             from .development import check_candidate

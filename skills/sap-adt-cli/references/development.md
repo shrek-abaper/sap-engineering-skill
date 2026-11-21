@@ -4,6 +4,12 @@ Requires CLI **1.6.4+**. Check command help first; installing/upgrading,
 changing capability flags and modifying SAP are separate approvals.
 Preserve the selected `--profile` on every call.
 
+CLI **1.6.5+** expands creation/source/metadata/deletion types and adds reviewed
+multi-object manifests. Read **core-workflows.md** for the exact object matrix,
+definition endpoints, no-conversion/no-publication boundaries and separate
+create/source approval phases. Those additions are offline-tested, not covered
+by the older live-verification paragraph below.
+
 ## Class source parts
 
 ```bash
@@ -97,7 +103,8 @@ sap-adt --profile dev create-object package '$ZORDER_LOCAL' \
 
 `program` means an executable Report (`programType=1`), not an arbitrary include.
 Names must use the customer Z/Y namespace, or a namespace accepted by SAP;
-local packages use `$Z`/`$Y` names. Max name length is 30; description is 1-60
+local packages use `$Z`/`$Y` names. Name limits: Table 16, function group 26,
+Include 40, other supported types 30; description is 1-60
 characters. SAP remains authoritative for registered namespaces/authorizations.
 
 `--package` is the target package, or the **super-package** for package creation.

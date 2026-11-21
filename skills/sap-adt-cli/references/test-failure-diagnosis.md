@@ -98,7 +98,11 @@ credentials or present a suggested command as already executed.
 
 Live QAS verification covered dump metadata, formatted chapters, source and
 stack extraction, truncation, ADT navigation and test-include source reads.
-The inspected standard classes returned empty Unit run results; the CLI
-classifies them as not run. Executed-method and setup-failure responses are
-covered by explicitly synthetic fixtures, not claimed as live captures.
-Endpoint availability and chapter layouts remain system-dependent.
+The originally inspected standard classes returned empty Unit runs and remain
+classified as not run. A later DEV-owned harmless Class test executed one method
+(`LTC_ANSWER/TEST_ANSWER`) and passed with no gaps. Setup failures, skipped/mixed
+methods have offline fixture coverage. CLI 1.6.5 DEV acceptance executed two
+harmless methods in multi-object and recursive Package regressions with JUnit,
+and verified that a dangerous Class refused by the server risk ceiling produces
+incomplete/nonzero evidence, not a passing test. Endpoint availability and
+chapter layouts remain system-dependent.

@@ -1,8 +1,9 @@
 ---
 name: sap-adt-cli
-description: "Read/write live SAP ABAP source and class parts, check candidate buffers,
-  create basic objects, inspect RAP/OData, execute authorized Classes, Reports
-  and ABAP snippets (local CALL FUNCTION/BAPI), inspect DDIC and transport requests
+description: "Read/write live SAP ABAP source and class parts, review multi-object changes,
+  create DDIC/RAP objects, run Unit regression with JUnit, inspect RAP/OData,
+  execute typed local functions/BAPIs, Reports with selections and ABAP snippets,
+  inspect DDIC and transport requests
   via the sap-adt CLI. Use for repository search, where-used, syntax checks, ABAP
   Unit failure evidence, test include source, ATC, SQL preview, short dump
   details and stacks, explicitly authorized debugging, Gateway errors, ADT Feeds, object version
@@ -14,7 +15,7 @@ description: "Read/write live SAP ABAP source and class parts, check candidate b
 license: MIT
 allowed-tools: [Read, Bash]
 metadata:
-  version: "1.3.4"
+  version: "1.3.5"
   type: hybrid
   output_schema:
     format: mixed
@@ -131,6 +132,12 @@ Do not automatically COMMIT, retry execution, or delete an object whose
 ownership/execution state is uncertain. Timeout does not cancel SAP code.
 Report execution, business messages, output completeness and cleanup separately.
 
+For CLI **1.6.5+** regression, typed functions, selection/variant Report wrappers,
+expanded lifecycle or change manifests, read **references/core-workflows.md**.
+Check the installed command/options first; earlier compatible runtimes do not
+implement these additions. Do not silently upgrade or fall back to arbitrary
+execution when typed metadata or an endpoint is unavailable.
+
 ## Source development and read-only RAP workflow
 
 Read **references/development.md** before named-part writes, candidate checks,
@@ -148,7 +155,9 @@ the relevant command's help and ask before upgrading older installations.
   baseline hash and the **exact plan hash**, binding part, target and options.
   An absent include is not an empty baseline: only explicitly approved
   `--create-part` may generate it under the parent lock. No blind write retry.
-- `create-object` supports Class, Interface, executable Program and Package.
+- `create-object` supports Class, Interface, executable Program and Package;
+  CLI 1.6.5 extends this to Include, function groups/functions, Domain,
+  Data Element, Structure, Table, CDS, DCL, BDEF, SRVD and unpublished SRVB.
   Requires write permission, non-PRD, absence, validated package/TR and fresh
   confirmation (automation: reviewed plan hash). It never overwrites, writes
   source or activates implicitly. Unknown creation is retained for inspection,
@@ -218,14 +227,14 @@ Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status",
 | `records` | list-transports, get-transport | list: `{transports:[{trkorr,description,status,status_text,owner,target,tasks}]}`; detail: `{transport,objects}` |
 | `findings` | syntax-check, check-source, run-unit-test, run-atc | `{findings:[{severity,text,line,uri}]}`; candidate check adds `status:passed/failed/unavailable`, source URI/hash/reports; Unit adds `test_classes`, `summary`, `evidence_gaps`; alerts retain kind/details/stack |
 | `dumps` | get-dump | `{id,uri,detail_available,fallback,header,termination,sections,text,source,stack,evidence_gaps}`; unsupported detail falls back to ST22 |
-| `scalar` | get-type-info, get-transaction, create-object, get-rap srvb, odata-read metadata | object dictionary; creation has plan/create/readback/outcome; binding has services/status/evidence_gaps |
+| `scalar` | get-type-info, get-transaction, create-object, get-definition, write-definition, delete-object, apply-change-set, get-function-signature, get-rap srvb, odata-read metadata | object dictionary; creation has plan/create/readback/outcome; binding has services/status/evidence_gaps |
 | `capabilities` | discovery | `{collections:[{href,title,content_types}]}` (Atom discovery; use `credentials doctor --coverage` for the command matrix) |
 | `feeds` | list-feeds, query-feed | `{title,entries:[{id,title,summary,content_uri,links,schema}],next_uri}`; schema only in catalog entries |
 | `versions` | get-versions | `{versions:[{version,is_active,content_uri,transports,history_uri,source_uri,part}],streams,evidence_gaps}` |
 | `diff` | diff-versions, transport diff | `{comparison,diffs:[{from_uri,to_uri,changed,diff}],evidence_gaps}`; transport adds request/object metadata |
 | `debug` | debug primitives | `{session,state,operation,evidence_gaps,...}`; operation-specific evidence in references/debugging.md; foreground serve emits ready/final JSONL |
 | `write` | write-source | `{target,object,transport,baseline,content,plan_sha256,lock,candidate_check,part_creation,write,unlock,activation,outcome}`; part-bound source URI and parent activation scope; stage `status` ∈ accepted/verified/failed/unknown/not_attempted/skipped; `--dry-run` adds `diff`; failures retain `data` |
-| `execution` | run-class, run-report, run-abap | `{plan,preparation,execution,output,cleanup,evidence_gaps}`; dry-run returns `{plan}` (snippets also `source`); failures retain stage `data`; completed execution does not imply business success |
+| `execution` | run-class, run-report, run-abap, run-function | `{plan,preparation,execution,output,cleanup,evidence_gaps}`; wrappers add structured `result`; dry-run returns `{plan}` (snippets/wrappers also `source`); failures retain stage `data`; completed execution does not imply business success |
 
 > `doctor --coverage` "available" only guarantees the **resource root**
 > exists — discovery omits sub-paths, HTTP methods and required content
@@ -275,14 +284,20 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `credentials set\|forget\|status\|doctor [--coverage]` | keystore management; `doctor --coverage` = command/resource matrix for this system | — |
 | `discovery` | ADT resources this system exposes (href/title/content-types) | capabilities |
 | `run-class <NAME>` | explicitly approved IF_OO_ADT_CLASSRUN execution; --dry-run, hash-bound --yes, --timeout, --max-chars; no XML | execution |
-| `run-report <NAME>` | explicitly approved executable Report with default selections; raw List in execution output; no GUI/variant/Spool promise | execution |
+| `run-report <NAME> [--variant V] [--parameters-file F]` | native default selections, or explicit temporary-Class SUBMIT wrapper with variant/RSPARAMS; classic List only, no GUI/ALV-control/Spool | execution |
 | `run-abap --file FILE` | explicitly approved method-body snippet, local CALL FUNCTION/BAPI/method calls; temporary owned Class in $TMP; writes/activation/cleanup reported separately | execution |
+| `get-function-signature <NAME> --group G` | observed active-source typed interface and hash; ambiguous/generic/reference types refused | scalar |
+| `run-function <NAME> --group G --input-file F` | typed local CALL FUNCTION/BAPI via reviewed temporary Class; JSON result/SUBRC; no automatic COMMIT or business-success inference | execution |
 | `list-feeds` | diagnostic feed catalog and FQL schemas | feeds |
 | `query-feed <URI> [--query FQL] [--max-results N] [--page-uri URI]` | one advertised feed page; `$query`/`$top`; next_uri is explicit, never auto-fetch all | feeds |
 | `get-dump <ID_OR_URI> [--max-chars N]` | runtime dump XML metadata + bounded diagnostic chapters; partial detail exits 1 with gaps/ST22 fallback | dumps |
 | `get-source <URI> [--start-line N] [--end-line N]` | read a returned repository source/test include URI on the current profile; optional one-based line window | source |
 | `check-source <TYPE> <N> --file F [--part P] [--group G]` | check an unsaved candidate buffer; failed/unavailable is nonzero and preserves evidence; no mutation | findings |
-| `create-object <class\|interface\|program\|package> <N> --package P --description D [--transport T] [--software-component C] [--transport-layer L] [--dry-run] [--yes --expect-plan-sha256 H]` | create once, revalidate absence/dependencies and read back identity/metadata; no implicit save/activation or unknown-outcome cleanup | scalar |
+| `create-object <TYPE> <N> --package P --description D [--group G] [--transport T] [--software-component C] [--transport-layer L] [--service-definition S] [--binding-protocol V2\|V4] [--binding-category 0\|1] [--dry-run] [--yes --expect-plan-sha256 H]` | explicit supported type; create once, revalidate absence/dependencies and read back metadata; no implicit source/activation/publication | scalar |
+| `get-definition <domain\|data-element\|srvb> <N>` | XML definition in scalar envelope; SRVB read-only | scalar |
+| `write-definition <domain\|data-element> <N> --file F [--transport T] [--dry-run] [--yes --expect-plan-sha256 H]` | reviewed XML PUT under lock/readback/unlock; no implicit activation or existing DDIC storage conversion | scalar |
+| `delete-object <TYPE> <N> [--group G] [--transport T] [--dry-run] [--yes --expect-plan-sha256 H]` | one customer object with independent absence readback; table/container/published-or-unknown SRVB deletion refused | scalar |
+| `apply-change-set --file F [--dry-run] [--yes --expect-plan-sha256 H]` | bounded dependency DAG, verified writes, combined activation/readback, final Unit/ATC gates; separate create/source phases, no rollback | scalar |
 | `get-rap <cds\|bdef\|srvd\|srvb> <N>` | explicit RAP sources or binding metadata/service URLs/status; partial binding evidence exits 1 | source\|scalar |
 | `odata-read <SERVICE_ROOT> [--entity-set E] [--top N] [--max-bytes N]` | same-origin runtime metadata or bounded entity GET; no actions, redirects, arbitrary query or next-page traversal | scalar\|rows |
 | `debug serve` | bounded foreground HTTP owner; --ttl/--idle seconds, per-action gate; ready/final JSONL | debug |
@@ -309,7 +324,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `get-package <N>` | package contents | objects |
 | `where-used <TYPE> <N> [--group G] [--max-results N]` | referencing objects | objects |
 | `syntax-check <TYPE> <N> [--group G]` | findings; hard errors exit 1, warnings exit 0 | findings |
-| `run-unit-test <N> [--type T] [--risk-level harmless\|dangerous\|critical] [--duration short\|medium\|long] [--fail-on error\|warning\|info\|never] [--require-tests]` | ABAP Unit evidence; summary distinguishes passed/failed/not_run/incomplete; --require-tests fails runs without executed methods | findings |
+| `run-unit-test [N...] [--type T] [--package P] [--transport T] [--recursive] [--max-objects N] [--risk-level harmless\|dangerous\|critical\|all] [--duration short\|medium\|long\|all] [--junit F] [--dry-run] [--expect-plan-sha256 H] [--yes] [--fail-on error\|warning\|info\|never] [--require-tests]` | repeatable risk/duration sets in one request per object; explicit names OR package OR TR/tasks; aggregate real method evidence/JUnit; no-tests is not passed | findings |
 | `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
@@ -320,8 +335,9 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `transport ping\|collect` | transport utilities (read-only): ping = ADT connectivity (plain text); collect = TR object list + sources into `review_package/` (manifest schema unchanged from tr_collector; `--legacy-config` explicitly opts into the old plaintext collector config — never implicit) | — |
 
 > **Unit risk levels**: `dangerous`/`critical` tests execute ABAP that may
-> modify business data — require `allow_write`, a risk/object/data-change
-> warning in `[y/N]`, and are hard-refused on `environment=prd`. Empty
+> modify business data — CLI 1.6.5+ requires independent `allow_execute`
+> (not `allow_write`), a risk/object/data-change warning in `[y/N]`,
+> and hard-refuses `environment=prd`. `--yes` requires the reviewed plan hash. Empty
 > `runResult` → `ok:true, no_tests_found:true, total:0` (same for an
 > alert-only defective test class, with warning findings).
 > `ok` means the request was parsed, not that tests passed. Inspect

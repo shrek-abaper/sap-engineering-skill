@@ -39,6 +39,19 @@ ATOM = b"""<?xml version="1.0" encoding="utf-8"?>
 
 
 class CapabilitiesParserTests(unittest.TestCase):
+    def test_function_child_templates_preserve_advertised_mime_and_coverage(self):
+        xml = b'''<app:service xmlns:app="http://www.w3.org/2007/app"
+        xmlns:c="http://www.sap.com/adt/compatibility"><app:workspace>
+        <app:collection href="/sap/bc/adt/functions/groups"><c:templateLinks>
+        <c:templateLink template="/sap/bc/adt/functions/groups/{groupname}/fmodules"
+        type="application/vnd.sap.adt.functions.fmodules.v3+xml"/>
+        </c:templateLinks></app:collection></app:workspace></app:service>'''
+        collections = capabilities.parse(xml)["collections"]
+        self.assertEqual(collections[0]["templates"][0]["content_types"],
+                         ["application/vnd.sap.adt.functions.fmodules.v3+xml"])
+        self.assertIn("/sap/bc/adt/functions/groups/{group}/fmodules",
+                      cov._available_hrefs(collections))
+
     def test_parse_collections(self):
         data = capabilities.parse(ATOM)
         c = {x["href"]: x for x in data["collections"]}

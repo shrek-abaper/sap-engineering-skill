@@ -10,7 +10,7 @@ from sap_adt import credentials, credentials_reports, errors, log_redaction, out
 from sap_adt.adt import client as adt_client
 from sap_adt.adt import handlers
 from sap_adt.adt import source_write
-from sap_adt.adt import development, rap
+from sap_adt.adt import development, rap, unit_regression
 from sap_adt.adt.source_parts import PARTS, source_path
 from sap_adt.config import (
     run_configure_wizard,
@@ -250,7 +250,8 @@ def _require_debug(config: SapConfig) -> None:
 
 def _require_execute(config: SapConfig) -> None:
     if config.is_production:
-        _gate(errors.EXECUTE_DISABLED, "ABAP execution is hard-refused in environment=prd.")
+        _gate(errors.EXECUTE_DISABLED, "ABAP execution is hard-refused in environment=prd. "
+              + _production_refusal_hint(config))
     if (config.allow_execute and config.from_environment
             and config.environment_source != "explicit"):
         _gate(errors.CONFIG_MISSING,
@@ -489,15 +490,27 @@ def run_class_cmd(name, **options):
 @cli.command("run-report", help_group=_EXECUTION_HELP, help_order=20,
              short_help="[EXECUTE] Run a Report with default selections.")
 @click.argument("name")
+@click.option("--variant", default=None, help="Explicit SUBMIT wrapper, not native ADT selections")
+@click.option("--parameters-file", type=click.Path(exists=True, dir_okay=False),
+              help="JSON RSPARAMS rows; enables temporary-Class SUBMIT wrapper")
 @_execution_options
-def run_report_cmd(name, **options):
+def run_report_cmd(name, variant, parameters_file, **options):
     """Run an existing Report via ADT programs/programrun; return List text.
 
-    JSON execution evidence (text: same evidence, no XML). Uses selection
-    defaults only; no GUI, variant, ALV-control or Spool capture is promised.
+    JSON execution evidence (text: same evidence, no XML). Native ADT uses
+    defaults only. Variant/parameters explicitly select the generated SUBMIT
+    temporary-Class wrapper; no GUI, ALV-control or Spool capture is promised.
     Requires allow_execute, non-PRD and fresh confirmation.
     """
-    _run_execution("report", name, **options)
+    if variant is None and parameters_file is None:
+        _run_execution("report", name, **options)
+        return
+    from sap_adt.adt import report_execution
+    def build():
+        selections = _read_execution_json(parameters_file) if parameters_file else []
+        binding = report_execution.prepare(name, variant, selections)
+        return binding, lambda token: report_execution.build(binding, token)
+    _run_generated(build, input_file=parameters_file, **options)
 
 
 @cli.command("run-abap", help_group=_EXECUTION_HELP, help_order=30,
@@ -517,6 +530,122 @@ def run_abap_cmd(source_file, **options):
     No automatic COMMIT, rollback or business-success inference.
     """
     _run_execution("abap", source_file=source_file, **options)
+
+
+def _read_execution_json(path):
+    with open(path, encoding="utf-8-sig") as stream:
+        content = stream.read(2097153)
+    if len(content.encode("utf-8")) > 2097152:
+        raise ValueError("execution input exceeds 2 MiB")
+    def unique(pairs):
+        data = {}
+        for key, value in pairs:
+            if key in data:
+                raise ValueError("duplicate JSON input key")
+            data[key] = value
+        return data
+    return json.loads(content, object_pairs_hook=unique,
+                      parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+
+
+def _run_generated(builder, *, input_file, timeout, max_chars, dry_run, expect_plan_sha256, yes):
+    from sap_adt.adt import execution, function_call, lifecycle
+    config = _load_config()
+    _require_config(config)
+    _require_execute(config)
+    if output.get_format() == "xml":
+        _gate(errors.BAD_REQUEST, "Generated execution supports JSON/text only.")
+    if not dry_run and (yes and not expect_plan_sha256 or not yes and not _stdin_is_tty()):
+        _gate(errors.CONFIRM_REQUIRED, "Generated execution requires fresh approval or a reviewed hash.")
+    previous = adt_client.config_override()
+    adt_client.set_config(config)
+    try:
+        with adt_client.isolated_session():
+            try:
+                binding, generate = builder()
+                token = function_call.marker(binding)
+                code = generate(token)
+                plan, failure = execution.prepare("abap", None, code, _write_target(config),
+                                                  timeout, max_chars)
+                if failure:
+                    _abort_on_error(failure)
+                plan["binding"] = binding
+                plan["plan_sha256"] = lifecycle.digest(
+                    {k: v for k, v in plan.items() if k != "plan_sha256"})
+            except Exception as exc:
+                _emit_error(errors.classify(exc))
+            if expect_plan_sha256 and plan["plan_sha256"] != expect_plan_sha256:
+                _gate(errors.BASELINE_CHANGED, "Generated execution plan differs from reviewed hash.")
+            if dry_run:
+                _output(handlers.AdtResult(kind="execution", data={"plan": plan, "source": code},
+                                          meta={"dry_run": True}))
+                return
+            _confirm_change(["Execute generated ABAP using an invocation-owned temporary Class.",
+                             json.dumps(plan, ensure_ascii=False), code,
+                             "WARNING: may change business data; no automatic COMMIT, rollback or replay."],
+                            yes=yes)
+            # Re-read both local input and the actual called object's active source.
+            try:
+                current, _ = builder()
+            except Exception as exc:
+                _emit_error(errors.classify(exc))
+            if current != binding:
+                _gate(errors.BASELINE_CHANGED, "Input or active source changed after confirmation.")
+            data, error = execution.run(plan, code)
+            if error is None:
+                try:
+                    data["result"] = function_call.extract(data, token)
+                    if data["result"]["SUBRC"] != 0:
+                        error = errors.EXECUTION_FAILED
+                        data["evidence_gaps"].append("Function exception or Report List-capture error; do not replay automatically.")
+                except ValueError as exc:
+                    error = errors.EXECUTION_INCOMPLETE
+                    data["evidence_gaps"].append(str(exc))
+            _development_output(handlers.AdtResult(kind="execution", data=data,
+                is_error=error is not None, error_code=error,
+                text="Generated execution/result incomplete; inspect evidence and do not replay." if error else ""))
+    finally:
+        adt_client.set_config(previous)
+
+
+@cli.command("get-function-signature", help_group=_SOURCE_HELP,
+             short_help="Read a typed function interface from active source.")
+@click.argument("name")
+@click.option("--group", required=True)
+def get_function_signature_cmd(name, group):
+    """GET function source and parse its explicit interface; scalar evidence.
+
+    Ambiguous/generic/reference interfaces are refused, never inferred.
+    """
+    from sap_adt.adt import function_call
+    try:
+        data = function_call.signature(name, group)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data))
+
+
+@cli.command("run-function", help_group=_EXECUTION_HELP, help_order=40,
+             short_help="[EXECUTE] Call a typed local function/BAPI and collect JSON.")
+@click.argument("name")
+@click.option("--group", required=True)
+@click.option("--input-file", required=True, type=click.Path(exists=True, dir_okay=False))
+@_execution_options
+def run_function_cmd(name, group, input_file, **options):
+    """Execute a source-bound typed CALL FUNCTION through a temporary Class.
+
+    Execution evidence includes SUBRC and exporting/changing/tables values.
+    Requires only independent allow_execute, non-PRD and fresh reviewed approval.
+    No automatic COMMIT, RFC destination, rollback or business-success inference.
+    """
+    from sap_adt.adt import function_call
+    def build():
+        sig = function_call.signature(name, group)
+        inputs = _read_execution_json(input_file)
+        binding = {"mode": "typed-function-wrapper", "signature": sig,
+                   "inputs": inputs, "source_sha256": sig["source_sha256"], "uri": sig["uri"]}
+        return binding, lambda token: function_call.build(sig, inputs, token)
+    _run_generated(build, input_file=input_file, **options)
 
 
 @cli.command("update", help_group=_SETUP_HELP, help_order=60,
@@ -915,46 +1044,89 @@ def credentials_doctor(coverage):
 
 @cli.command("run-unit-test", help_group=_DIAGNOSIS_HELP, help_order=30,
              short_help="[RUNS ABAP] Unit tests; harmless by default.")
-@click.argument("object_name")
+@click.argument("object_names", nargs=-1)
 @click.option("--type", "object_type", default="class",
-              type=click.Choice(["program", "class", "interface", "include", "function"]),
+              type=click.Choice(["program", "class", "interface", "include", "function", "function-group"]),
               help="Object type containing the tests (default: class)")
 @click.option("--group", default=None, help="Function group (required for --type function)")
-@click.option("--risk-level", default="harmless",
-              type=click.Choice(["harmless", "dangerous", "critical"]),
-              help="harmless is default and read-only; dangerous/critical may modify data and require allow_write")
-@click.option("--duration", default="short",
-              type=click.Choice(["short", "medium", "long"]))
+@click.option("--risk-level", multiple=True, default=("harmless",),
+              type=click.Choice([*unit_regression.RISKS, "all"]),
+              help="Repeat to combine risks; dangerous/critical require allow_execute, not allow_write.")
+@click.option("--duration", multiple=True, default=("short",),
+              type=click.Choice([*unit_regression.DURATIONS, "all"]))
+@click.option("--package", default=None, help="Select test containers in this package.")
+@click.option("--transport", default=None, help="Select containers from a request and its tasks.")
+@click.option("--recursive", is_flag=True, help="Include subpackages; requires --package.")
+@click.option("--max-objects", type=click.IntRange(1, 500), default=100, show_default=True)
+@click.option("--dry-run", is_flag=True)
+@click.option("--expect-plan-sha256", default=None,
+              callback=lambda _c, _p, v: _sha256_option(v))
+@click.option("--junit", type=click.Path(dir_okay=False), default=None,
+              help="Write local JUnit XML; refuses to overwrite an existing report.")
 @click.option("--yes", is_flag=True, default=False,
-              help="Skip confirmation for dangerous/critical (trusted automation only)")
+              help="Approve high-risk tests with the exact reviewed plan hash.")
 @click.option("--fail-on", default="error",
               type=click.Choice(["error", "warning", "info", "never"]))
 @click.option("--require-tests", is_flag=True, default=False,
               help="Exit 1 if no test method executed; an empty run is not a pass.")
-def run_unit_test_cmd(object_name, object_type, group, risk_level, duration, yes, fail_on, require_tests):
-    """Run ABAP Unit tests for a class/program/include (read-only at harmless)."""
+def run_unit_test_cmd(object_names, object_type, group, risk_level, duration, package,
+                      transport, recursive, max_objects, dry_run, expect_plan_sha256,
+                      junit, yes, fail_on, require_tests):
+    """Run selected ABAP Unit containers through POST /abapunit/testruns.
+
+    JSON findings include each run and aggregate methods, alerts and evidence
+    gaps. Risk/duration are explicit sets, not maximum thresholds. High-risk
+    runs require independent execution consent; harmless is not a sandbox.
+    """
     config = _load_config()
     _require_config(config)
-    if risk_level in ("dangerous", "critical"):
-        # Executing code at these levels may modify business data: treat as
-        # a write operation (profile-level prd refusal happens inside the
-        # shared gate), then show the risk-specific confirmation preview.
-        _require_write(config)
-        preview = [
-            f"Action   : Run ABAP Unit tests ({risk_level} risk, {duration} duration)",
-            f"Object   : {object_type.upper()} {object_name.upper()}",
-            f"WARNING  : {risk_level}-level tests may MODIFY BUSINESS DATA on this system.",
-        ]
-        _confirm_change(preview, yes=yes)
-
-    result = handlers.run_unit_test(
-        object_type, object_name, group=group,
-        risk_level=risk_level, duration=duration,
-    )
-    if result.is_error:
-        _abort_on_error(result)
-    click.echo(output.render(result, output.get_format(),
-                             command="run-unit-test", profile=_profile_name()))
+    risks = unit_regression.selection(risk_level, unit_regression.RISKS)
+    durations = unit_regression.selection(duration, unit_regression.DURATIONS)
+    high_risk = bool(set(risks) - {"harmless"})
+    if high_risk:
+        _require_execute(config)
+        if not dry_run and yes and not expect_plan_sha256:
+            _gate(errors.CONFIRM_REQUIRED, "--yes requires a reviewed --expect-plan-sha256.")
+        if not dry_run and not yes and not _stdin_is_tty():
+            _gate(errors.CONFIRM_REQUIRED, "High-risk Unit execution requires fresh confirmation.")
+    if junit and os.path.exists(junit):
+        _gate(errors.BAD_REQUEST, "--junit requires a new report path.")
+    try:
+        prepared = unit_regression.plan(
+            object_names, object_type, group, package, transport, recursive,
+            max_objects, risks, durations, _write_target(config), junit=junit)
+    except unit_regression.SelectionError as exc:
+        _abort_on_error(exc.result, "Unit selection")
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    if expect_plan_sha256 and prepared["plan_sha256"] != expect_plan_sha256:
+        _gate(errors.BASELINE_CHANGED, "Unit scope differs from the reviewed plan; not executed.")
+    if dry_run:
+        _output(handlers.AdtResult(kind="findings", data={"plan": prepared},
+                                   meta={"dry_run": True}))
+        return
+    if output.get_format() == "xml" and len(prepared["objects"]) != 1:
+        _gate(errors.BAD_REQUEST, "Multi-object Unit results have no single raw XML payload.")
+    if high_risk:
+        _confirm_change([
+            "Action: Run high-risk ABAP Unit tests; business data may change.",
+            "Target: " + json.dumps(prepared["target"]),
+            "Plan: " + prepared["plan_sha256"],
+            "Objects: " + ", ".join(o["name"] for o in prepared["objects"]),
+            "Risk/duration: " + ", ".join(risks) + " / " + ", ".join(durations),
+            "No automatic COMMIT, rollback, cancellation or execution retry.",
+        ], yes=yes)
+    result = unit_regression.run(prepared)
+    if junit:
+        try:
+            with open(junit, "xb") as stream:
+                stream.write(unit_regression.junit(result.data))
+        except OSError as exc:
+            result.meta["partial"] = True
+            result.data["evidence_gaps"].append({
+                "code": "JUNIT_WRITE_FAILED",
+                "message": f"Tests may have executed; do not replay to recover the report: {exc}"})
+    _development_output(result)
     if result.meta.get("partial") or (require_tests and result.meta.get("no_tests_found")):
         sys.exit(1)
     _fail_on_findings(result, fail_on)
@@ -1598,12 +1770,18 @@ def check_source_cmd(object_type, object_name, source_file, group, part):
 @click.option("--transport", default=None, help="Required for non-local-package creation")
 @click.option("--software-component", default=None, help="Required only when creating a package")
 @click.option("--transport-layer", default=None, help="Required for a transportable package")
+@click.option("--group", default=None, help="Parent function group")
+@click.option("--service-definition", default=None)
+@click.option("--binding-protocol", type=click.Choice(["V2", "V4"]))
+@click.option("--binding-category", type=click.Choice(["0", "1"]),
+              help="Explicit SAP category value; no inferred UI/API mapping")
 @click.option("--dry-run", is_flag=True)
 @click.option("--expect-plan-sha256", default=None, callback=lambda _c, _p, v: _sha256_option(v))
 @click.option("--yes", is_flag=True, help="Approve the exact reviewed plan hash")
 def create_object_cmd(object_type, object_name, package, description, transport,
-                      software_component, transport_layer, dry_run, expect_plan_sha256, yes):
-    """Create Class/Interface/executable Program/Package using direct ADT POST.
+                      software_component, transport_layer, group, service_definition,
+                      binding_protocol, binding_category, dry_run, expect_plan_sha256, yes):
+    """Create a supported repository object using a direct ADT POST.
 
     Requires allow_write, non-PRD and fresh approval. Re-check absence, package
     and transport, then send once and verify metadata. Does not upload source,
@@ -1624,7 +1802,9 @@ def create_object_cmd(object_type, object_name, package, description, transport,
             plan = development.creation_plan(
                 object_type, object_name, package=package, description=description,
                 transport=transport, target=_write_target(config),
-                software_component=software_component, transport_layer=transport_layer)
+                software_component=software_component, transport_layer=transport_layer,
+                group=group, service_definition=service_definition,
+                binding_protocol=binding_protocol, binding_category=binding_category)
         except Exception as exc:
             _emit_error(errors.classify(exc))
         if expect_plan_sha256 and plan["plan_sha256"] != expect_plan_sha256:
@@ -1650,6 +1830,133 @@ def create_object_cmd(object_type, object_name, package, description, transport,
     finally:
         adt_client.set_config(None)
     _development_output(result)
+
+
+def _reviewed_mutation(builder, *, dry_run, expect_plan_sha256, yes):
+    config = _load_config()
+    _require_config(config)
+    _require_write(config)
+    if output.get_format() == "xml":
+        _gate(errors.BAD_REQUEST, "Use JSON or text for mutation evidence.")
+    if not dry_run and (yes and not expect_plan_sha256 or not yes and not _stdin_is_tty()):
+        _gate(errors.CONFIRM_REQUIRED, "Use a reviewed dry-run hash with --yes or fresh interactive approval.")
+    previous = adt_client.config_override()
+    adt_client.set_config(config)
+    try:
+        with adt_client.isolated_session():
+            try:
+                plan, execute = builder(config)
+            except Exception as exc:
+                _emit_error(errors.classify(exc))
+            if expect_plan_sha256 and plan["plan_sha256"] != expect_plan_sha256:
+                _gate(errors.BASELINE_CHANGED, "Plan differs from reviewed dry-run; nothing changed.")
+            if dry_run:
+                _output(handlers.AdtResult(kind="scalar", data=plan, meta={"dry_run": True}))
+                return
+            _confirm_change(["Action: " + plan["action"],
+                             json.dumps(plan, ensure_ascii=False),
+                             "No automatic rollback, replay, cascade or publication."], yes=yes)
+            _development_output(execute(plan))
+    finally:
+        adt_client.set_config(previous)
+
+
+@cli.command("get-definition", help_group=_SOURCE_HELP,
+             short_help="Read Domain/Data Element/SRVB XML metadata.")
+@click.argument("object_type", type=click.Choice(["domain", "data-element", "srvb"]))
+@click.argument("object_name")
+def get_definition_cmd(object_type, object_name):
+    """GET object metadata; scalar XML evidence, not a text-source endpoint."""
+    from sap_adt.adt import lifecycle
+    try:
+        data = lifecycle.definition(object_type, object_name)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data))
+
+
+@cli.command("apply-change-set", help_group=_SOURCE_HELP,
+             short_help="[WRITE] Apply a reviewed dependency-ordered JSON manifest.")
+@click.option("--file", "manifest_file", required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--dry-run", is_flag=True)
+@click.option("--expect-plan-sha256", callback=lambda _c, _p, v: _sha256_option(v))
+@click.option("--yes", is_flag=True)
+def apply_change_set_cmd(manifest_file, **review):
+    """Verified ordered changes, combined activation and final Unit/ATC evidence.
+
+    Scalar plan/evidence; no atomic transaction, automatic rollback or cascade.
+    Creation and source upload to new objects require separate reviewed phases.
+    High-risk Unit additionally requires independent execution permission.
+    """
+    from sap_adt.adt import change_set
+    def build(config):
+        plan = change_set.prepare(manifest_file, _write_target(config))
+        if plan["unit"] and set(plan["unit"]["risks"]) - {"harmless"}:
+            _require_execute(config)
+        return plan, change_set.execute
+    _reviewed_mutation(build, **review)
+
+
+def _mutation_options(command):
+    for option in (
+        click.option("--transport", default=None),
+        click.option("--group", default=None),
+        click.option("--dry-run", is_flag=True),
+        click.option("--expect-plan-sha256", callback=lambda _c, _p, v: _sha256_option(v)),
+        click.option("--yes", is_flag=True),
+    ):
+        command = option(command)
+    return command
+
+
+@cli.command("write-definition", help_group=_SOURCE_HELP,
+             short_help="[WRITE] Update reviewed Domain/Data Element XML.")
+@click.argument("object_type", type=click.Choice(["domain", "data-element"]))
+@click.argument("object_name")
+@click.option("--file", "source_file", required=True, type=click.Path(exists=True, dir_okay=False))
+@_mutation_options
+def write_definition_cmd(object_type, object_name, source_file, transport, group, **review):
+    """Lock, PUT object XML once, read back and unlock; never convert or activate.
+
+    Scalar plan/evidence; existing Domain storage-type changes are refused.
+    """
+    from sap_adt.adt import lifecycle
+    def build(config):
+        with open(source_file, encoding="utf-8-sig") as stream:
+            content = stream.read(2097153)
+        if len(content.encode("utf-8")) > 2097152:
+            raise ValueError("definition exceeds 2 MiB")
+        plan = lifecycle.plan(object_type, object_name, target=_write_target(config),
+                              content=content, transport=transport, group=group)
+        def execute(prepared):
+            try:
+                with open(source_file, encoding="utf-8-sig") as stream:
+                    same = stream.read(2097153) == content
+            except OSError:
+                same = False
+            if not same:
+                return handlers.AdtResult(is_error=True, error_code=errors.CONTENT_CHANGED,
+                                          text="definition file changed/unreadable after confirmation")
+            return lifecycle.execute(prepared)
+        return plan, execute
+    _reviewed_mutation(build, **review)
+
+
+@cli.command("delete-object", help_group=_SOURCE_HELP,
+             short_help="[WRITE] Delete one reviewed object; no cascade.")
+@click.argument("object_type", type=click.Choice(tuple(development.SPECS)))
+@click.argument("object_name")
+@_mutation_options
+def delete_object_cmd(object_type, object_name, transport, group, **review):
+    """POST /deletion/delete once and independently verify absence.
+
+    Scalar evidence. Table/container deletion and published/unknown SRVB are refused.
+    """
+    from sap_adt.adt import lifecycle
+    def build(config):
+        return (lifecycle.plan(object_type, object_name, target=_write_target(config),
+                               transport=transport, group=group, delete=True), lifecycle.execute)
+    _reviewed_mutation(build, **review)
 
 
 @cli.command("get-rap", help_group=_SOURCE_HELP,

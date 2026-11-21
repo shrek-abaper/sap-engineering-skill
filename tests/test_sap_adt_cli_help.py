@@ -51,7 +51,7 @@ class HelpTests(unittest.TestCase):
                          ["list-transports", "get-transport", "transport",
                           "create-transport", "release-transport"])
         self.assertEqual(self.command_names(sections["Execute ABAP (explicit approval)"]),
-                         ["run-class", "run-report", "run-abap"])
+                         ["run-class", "run-report", "run-abap", "run-function"])
 
     def test_every_visible_command_has_one_registered_group_and_appears_once(self):
         sections = self.sections()

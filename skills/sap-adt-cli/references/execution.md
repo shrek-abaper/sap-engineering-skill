@@ -10,6 +10,13 @@ SQL and Unit requests do not authorize arbitrary execution.
 | `run-class NAME` | Active class implementing `IF_OO_ADT_CLASSRUN~MAIN` | Raw console text inside the JSON execution envelope |
 | `run-report NAME` | Active executable Report, default selection values | Raw List text including page headers; not GUI/ALV control/Spool automation |
 | `run-abap --file FILE` | UTF-8 statements inside a generated method body; `-` accepts stdin | Explicit `out->write` output; variables are not returned automatically |
+| `run-function NAME --group G --input-file F` | CLI 1.6.5+, observed typed local function/BAPI interface | JSON `result` with `SUBRC` and output parameters; temporary Class |
+| `run-report NAME --variant V --parameters-file F` | CLI 1.6.5+, explicit generated SUBMIT wrapper | Classic List serialized in `result`; not native ADT parameter support |
+
+Load **core-workflows.md** for these newer wrappers and their JSON inputs.
+They require only independent execution consent, not generic source-write
+permission. Their protocol/generation coverage is offline; no new live SAP
+acceptance is claimed for arbitrary signatures, variants or SAP releases.
 
 These are ADT HTTP operations, not a native RFC connection. A snippet can
 call local functions (including non-RFC functions), BAPIs and accessible

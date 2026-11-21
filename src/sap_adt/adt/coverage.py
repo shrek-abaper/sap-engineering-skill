@@ -18,11 +18,16 @@ _OO = ["/sap/bc/adt/oo/classes", "/sap/bc/adt/oo/interfaces"]
 _PROG = ["/sap/bc/adt/programs/programs", "/sap/bc/adt/programs/includes"]
 _FUGR = ["/sap/bc/adt/functions/groups"]
 _DDL = ["/sap/bc/adt/ddic/ddl/sources"]
+_NEW_TEXT = ["/sap/bc/adt/ddic/structures", "/sap/bc/adt/ddic/tables",
+             "/sap/bc/adt/acm/dcl/sources", "/sap/bc/adt/bo/behaviordefinitions",
+             "/sap/bc/adt/ddic/srvd/sources"]
+_NEW_XML = ["/sap/bc/adt/ddic/domains", "/sap/bc/adt/ddic/dataelements",
+            "/sap/bc/adt/businessservices/bindings"]
 
 COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("get-program", _PROG),
     ("get-class", _OO),
-    ("get-source", _OO + _PROG + _FUGR + _DDL),
+    ("get-source", _OO + _PROG + _FUGR + _DDL + _NEW_TEXT),
     ("get-function-group", _FUGR),
     ("get-function", _FUGR),
     ("get-include", ["/sap/bc/adt/programs/includes"]),
@@ -42,7 +47,15 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
      ["/sap/bc/adt/repository/informationsystem/usageReferences"]),
     ("syntax-check", ["/sap/bc/adt/checkruns"]),
     ("check-source", ["/sap/bc/adt/checkruns"]),
-    ("create-object", _OO + ["/sap/bc/adt/programs/programs", "/sap/bc/adt/packages"]),
+    ("create-object", _OO + _PROG + _FUGR + _DDL + _NEW_TEXT + _NEW_XML + ["/sap/bc/adt/packages"]),
+    ("get-definition", ["/sap/bc/adt/ddic/domains", "/sap/bc/adt/ddic/dataelements",
+                        "/sap/bc/adt/businessservices/bindings"]),
+    ("write-definition", ["/sap/bc/adt/ddic/domains", "/sap/bc/adt/ddic/dataelements"]),
+    ("delete-object", ["/sap/bc/adt/deletion/delete"]),
+    ("apply-change-set", _OO + _PROG + _FUGR + _DDL + _NEW_TEXT + _NEW_XML),
+    ("get-function-signature", _FUGR),
+    ("run-function", ["/sap/bc/adt/oo/classrun", "/sap/bc/adt/oo/classes",
+                      "/sap/bc/adt/activation", "/sap/bc/adt/deletion/delete"]),
     ("get-rap", _DDL + ["/sap/bc/adt/bo/behaviordefinitions",
                         "/sap/bc/adt/ddic/srvd/sources",
                         "/sap/bc/adt/businessservices/bindings"]),
@@ -74,8 +87,8 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("diff-versions", _OO + _PROG + _FUGR + _DDL),
     ("create-transport", ["/sap/bc/adt/cts/transports"]),
     ("release-transport", ["/sap/bc/adt/cts/transports"]),
-    ("write-source", _OO + _PROG + _FUGR),
-    ("activate", _OO + _PROG + _FUGR + _DDL +
+    ("write-source", _OO + _PROG + _FUGR + _DDL + _NEW_TEXT),
+    ("activate", _OO + _PROG + _FUGR + _DDL + _NEW_TEXT + _NEW_XML +
      ["/sap/bc/adt/activation", "/sap/bc/adt/activation/runs"]),
 ])
 
@@ -93,7 +106,9 @@ EXTERNAL_COMMANDS = [
 
 
 def _available_hrefs(collections: Iterable[dict]) -> set[str]:
-    return {c["href"] for c in collections if c.get("href")}
+    import re
+    resources = [resource for c in collections for resource in [c, *c.get("templates", [])]]
+    return {re.sub(r"\{[^}]+\}", "{group}", c["href"]) for c in resources if c.get("href")}
 
 
 def _command_available(prefixes: list[str], hrefs: set[str]) -> bool:
@@ -120,7 +135,7 @@ def compute_coverage(collections: list[dict]) -> dict:
     available_commands = []
     unavailable_commands = []
     for command, prefixes in COMMAND_CAPABILITIES.items():
-        available = (all(p in hrefs for p in prefixes) if command == "run-abap"
+        available = (all(p in hrefs for p in prefixes) if command in ("run-abap", "run-function")
                      else _command_available(prefixes, hrefs))
         (available_commands if available
          else unavailable_commands).append(command)
@@ -153,7 +168,33 @@ def compute_coverage(collections: list[dict]) -> dict:
         "covered_not_available": unavailable_commands,
         "local_commands": len(LOCAL_COMMANDS),
         "external_commands": EXTERNAL_COMMANDS,
+        "object_operations": object_operations(hrefs),
     }
+
+
+def object_operations(hrefs):
+    from .development import SPECS
+    result = []
+    for kind, spec in SPECS.items():
+        path = "/sap/bc/adt/" + spec[0]
+        text = kind not in ("package", "domain", "data-element", "srvb")
+        operations = {"create": True, "read_text": text, "write_text": text,
+                      "read_definition": kind in ("domain", "data-element", "srvb"),
+                      "write_definition": kind in ("domain", "data-element"),
+                      "activate": kind != "package",
+                      "delete": kind not in ("package", "function-group", "table")}
+        result.append({"type": kind, "adt_type": spec[1], "resource": path,
+                       "implemented_operations": operations,
+                       "discovery_advertised": path in hrefs,
+                       "live_verification": "not_established_by_discovery",
+                       "constraints": ("new/unactivated schemas only; no automatic conversion"
+                                       if kind == "table" else
+                                       "no publish/update; deletion requires confirmed unpublished state"
+                                       if kind == "srvb" else
+                                       "existing storage-type changes require separate conversion assessment"
+                                       if kind in ("domain", "data-element") else
+                                       "explicit group required" if "{group}" in path else None)})
+    return result
 
 
 def render_discovery_markdown(collections: list[dict]) -> str:
@@ -198,4 +239,9 @@ def render_text(report: dict) -> str:
     lines.append(f"local commands (no ADT resource) : {report['local_commands']}")
     for command in report.get("external_commands", []):
         lines.append(f"external runtime (not ADT discovery) : {command['command']} - {command['scope']}")
+    lines.append("Object operations: implemented != discovery-advertised != live-verified")
+    for obj in report.get("object_operations", []):
+        implemented = ",".join(k for k, v in obj["implemented_operations"].items() if v)
+        lines.append(f"  {obj['type']}: {implemented}; discovery={obj['discovery_advertised']}; "
+                     f"live={obj['live_verification']}")
     return "\n".join(lines)

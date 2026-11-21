@@ -64,7 +64,7 @@ class InferenceTests(unittest.TestCase):
         self.assertEqual((w, t, ws), (True, False, "global"))
 
 
-def _fake_config(*, env="dev", env_source="inferred", allow_write=False,
+def _fake_config(*, env="dev", env_source="inferred", allow_write=False, allow_execute=False,
                  allow_transport=False, from_env=False, env_w=False, env_t=False,
                  name="dev"):
     return types.SimpleNamespace(
@@ -73,6 +73,7 @@ def _fake_config(*, env="dev", env_source="inferred", allow_write=False,
         environment=env,
         environment_source=env_source,
         allow_write=allow_write,
+        allow_execute=allow_execute,
         allow_transport=allow_transport,
         from_environment=from_env,
         env_write_requested=env_w,
@@ -168,12 +169,17 @@ class CommandGateMatrixTests(unittest.TestCase):
 
         # dev unauthorized -> gate 3
         self.assertEqual(run(["--yes"], _fake_config()).exit_code, 3)
-        # dev authorized + --yes -> runs
-        self.assertEqual(run(["--yes"], _fake_config(allow_write=True)).exit_code, 0)
+        # Execution consent is independent of repository write permission.
+        cfg = _fake_config(allow_execute=True)
+        cfg.url, cfg.client = "https://sap.example.invalid", "100"
+        plan = run(["--dry-run"], cfg)
+        self.assertEqual(plan.exit_code, 0, plan.output)
+        digest = _env(plan)["data"]["plan"]["plan_sha256"]
+        self.assertEqual(run(["--yes", "--expect-plan-sha256", digest], cfg).exit_code, 0)
         # prd authorized -> still gate 3
-        r = run(["--yes"], _fake_config(env="prd", allow_write=True, name="prd"))
+        r = run(["--yes"], _fake_config(env="prd", allow_execute=True, name="prd"))
         self.assertEqual(r.exit_code, 3)
-        self.assertEqual(_env(r)["error"]["code"], "WRITE_DISABLED")
+        self.assertEqual(_env(r)["error"]["code"], "EXECUTE_DISABLED")
 
 
 class EnvPathGateTests(unittest.TestCase):

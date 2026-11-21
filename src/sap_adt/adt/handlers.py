@@ -298,6 +298,8 @@ def _unit_uri(object_type: str, object_name: str, group: Optional[str]) -> str:
         if not group:
             raise ValueError("--group is required when OBJECT_TYPE is 'function'")
         return f"/sap/bc/adt/functions/groups/{_enc(group.lower())}/fmodules/{_enc(name)}"
+    if t == "function-group":
+        return f"/sap/bc/adt/functions/groups/{_enc(name)}"
     raise ValueError(
         f"Unsupported type: {object_type!r}. "
         "program / class / interface / include / function"
@@ -306,13 +308,14 @@ def _unit_uri(object_type: str, object_name: str, group: Optional[str]) -> str:
 
 def _unit_body(uri: str, *, harmless: bool, dangerous: bool, critical: bool,
                duration: str) -> bytes:
+    durations = {duration} if isinstance(duration, str) else set(duration)
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <aunit:runConfiguration xmlns:aunit="http://www.sap.com/adt/aunit">
 <options>
 <uriType value="semantic"/>
 <testDeterminationStrategy sameProgram="true" assignedTests="false"/>
 <testRiskLevels harmless="{str(harmless).lower()}" dangerous="{str(dangerous).lower()}" critical="{str(critical).lower()}"/>
-<testDurations short="{str(duration=='short').lower()}" medium="{str(duration=='medium').lower()}" long="{str(duration=='long').lower()}"/>
+<testDurations short="{str('short' in durations).lower()}" medium="{str('medium' in durations).lower()}" long="{str('long' in durations).lower()}"/>
 <withNavigationUri enabled="true"/>
 </options>
 <adtcore:objectSets xmlns:adtcore="http://www.sap.com/adt/core">
@@ -331,46 +334,30 @@ AUNIT_ACCEPT = (
 
 def run_unit_test(object_type: str, object_name: str, group: Optional[str] = None,
                   risk_level: str = "harmless", duration: str = "short") -> AdtResult:
-    if risk_level not in ("harmless", "dangerous", "critical"):
+    risks_selected = {risk_level} if isinstance(risk_level, str) else set(risk_level)
+    durations = {duration} if isinstance(duration, str) else set(duration)
+    if not risks_selected or not risks_selected <= {"harmless", "dangerous", "critical"}:
         return _err(ValueError(
             "risk-level must be harmless, dangerous or critical"
         ))
-    if duration not in ("short", "medium", "long"):
+    if not durations or not durations <= {"short", "medium", "long"}:
         return _err(ValueError("duration must be short, medium or long"))
     try:
         uri = _unit_uri(object_type, object_name, group)
-        risks = {
-            "harmless": (True, False, False),
-            "dangerous": (False, True, False),
-            "critical": (False, False, True),
-        }[risk_level]
+        risks = tuple(r in risks_selected for r in ("harmless", "dangerous", "critical"))
         body = _unit_body(uri, harmless=risks[0], dangerous=risks[1],
                           critical=risks[2], duration=duration)
         url = f"{_base()}/sap/bc/adt/abapunit/testruns"
         config_version = "v4"
-        fallback = False
-        try:
-            resp = make_adt_request(
-                url, method="POST", data=body, timeout=300,
-                extra_headers={"Content-Type": AUNIT_CONFIG_V4,
-                               "Accept": AUNIT_ACCEPT},
-            )
-        except AdtHttpError as e:
-            if e.status not in (400, 406, 415):
-                raise
-            resp = make_adt_request(
-                url, method="POST", data=body, timeout=300,
-                extra_headers={"Content-Type": "application/*",
-                               "Accept": "application/*"},
-            )
-            config_version = "application/*"
-            fallback = True
+        resp = make_adt_request(
+            url, method="POST", data=body, timeout=300,
+            extra_headers={"Content-Type": AUNIT_CONFIG_V4, "Accept": AUNIT_ACCEPT},
+            retry_csrf=False, allow_redirects=False,
+        )
         parsed = parse_findings.parse_unit(resp.content)
         meta = parsed.pop("_meta")
         meta["risk_level"] = risk_level
         meta["config_version"] = config_version
-        if fallback:
-            meta["config_version_fallback"] = True
         return _structured("findings", parsed, _obj(object_type, object_name),
                            raw=resp.text, meta=meta)
     except ValueError as e:
@@ -452,10 +439,10 @@ def get_object_uri(object_type: str, object_name: str, group: Optional[str] = No
             raise ValueError("--group is required for object type 'function'")
         return f"/sap/bc/adt/functions/groups/{_enc(group)}/fmodules/{_enc(object_name)}"
     else:
-        raise ValueError(
-            f"Unknown object type: {object_type!r}. "
-            "Supported types: program, class, interface, include, function"
-        )
+        from .development import SPECS, object_uri
+        if t in SPECS:
+            return object_uri(t, object_name, group)
+        raise ValueError(f"Unknown object type: {object_type!r}")
 
 
 def _flat_attribs(elem) -> dict:
@@ -783,8 +770,9 @@ def source_uri(uri: str, base: Optional[str] = None) -> str:
     roots = (
         r"oo/(?:classes|interfaces)/[^/]+/(?:source/main|includes/(?:testclasses|definitions|implementations|macros))",
         r"programs/(?:programs|includes)/[^/]+/source/main",
-        r"functions/groups/[^/]+/(?:source/main|fmodules/[^/]+/source/main)",
-        r"ddic/(?:ddl/sources|typegroups)/[^/]+/source/main",
+        r"functions/groups/[^/]+/(?:source/main|(?:fmodules|includes)/[^/]+/source/main)",
+        r"ddic/(?:ddl/sources|srvd/sources|typegroups|structures|tables)/[^/]+/source/main",
+        r"(?:acm/dcl/sources|bo/behaviordefinitions)/[^/]+/source/main",
     )
     if not re.fullmatch(r"/sap/bc/adt/(?:" + "|".join(roots) + ")", urlsplit(target).path):
         raise ValueError("Expected a repository source URI returned by SAP")
@@ -1296,6 +1284,7 @@ def lock_object(object_uri: str) -> AdtResult:
                     "dataname=com.sap.adt.lock.result"
                 ),
             },
+            retry_csrf=False, allow_redirects=False,
         )
         handle = _extract_lock_handle(resp)
         if not handle:
@@ -1381,6 +1370,7 @@ def put_source(
                 "Content-Type": "text/plain; charset=utf-8",
                 "X-sap-adt-sessiontype": "stateful",
             },
+            retry_csrf=False, allow_redirects=False,
         )
         return AdtResult(text="OK")
     except Exception as e:
@@ -1402,6 +1392,7 @@ def unlock_object(object_uri: str, lock_handle: str) -> AdtResult:
             method="POST",
             params={"_action": "UNLOCK", "lockHandle": lock_handle},
             extra_headers={"X-sap-adt-sessiontype": "stateful"},
+            retry_csrf=False, allow_redirects=False,
         )
         return AdtResult(text="OK")
     except Exception as e:
@@ -1413,12 +1404,31 @@ def activate_object(
     object_name: str,
     group: Optional[str] = None,
 ) -> AdtResult:
+    result = activate_objects([{"type": object_type, "name": object_name, "group": group}])
+    if not result.is_error:
+        result.text = f"Activated {object_type.upper()} {object_name.upper()}."
+    return result
+
+
+def activate_objects(objects: list[dict]) -> AdtResult:
+    """Request combined activation once; callers must verify every active object."""
     try:
-        uri = get_object_uri(object_type, object_name, group=group)
+        if not objects or len(objects) > 500:
+            raise ValueError("combined activation requires 1-500 explicit objects")
+        for obj in objects:
+            if obj["type"].lower() == "table":
+                from .development import table_is_new
+                uri = get_object_uri("table", obj["name"])
+                if not table_is_new(uri):
+                    raise ValueError("activation of existing/uncertain table schema changes is excluded")
+        references = "".join(
+            f'<adtcore:objectReference adtcore:uri="{_xattr(get_object_uri(o["type"], o["name"], group=o.get("group")))}" '
+            f'adtcore:name="{_xattr(o["name"].upper())}"/>'
+            for o in objects)
         body = (
             '<?xml version="1.0" encoding="utf-8"?>'
             '<adtcore:objectReferences xmlns:adtcore="http://www.sap.com/adt/core">'
-            f'<adtcore:objectReference adtcore:uri="{_xattr(uri)}" adtcore:name="{_xattr(object_name.upper())}"/>'
+            f'{references}'
             '</adtcore:objectReferences>'
         ).encode("utf-8")
         # Verified 2026-09-16 on Basis 7.56: activation REQUIRES the
@@ -1434,6 +1444,7 @@ def activate_object(
                     "application/vnd.sap.adt.activation.request+xml; charset=utf-8"
                 )
             },
+            retry_csrf=False, allow_redirects=False,
         )
         parsed = parse_activation_response(resp.text)
         failed = activation_errors(parsed)
@@ -1445,7 +1456,7 @@ def activate_object(
                           else "SAP reported activationExecuted=false"))
             return AdtResult(text=detail, is_error=True,
                              error_code=errors.ACTIVATION_FAILED, meta=parsed)
-        return AdtResult(text=f"Activated {object_type.upper()} {object_name.upper()}.",
+        return AdtResult(text="Activation accepted; active versions require readback.",
                          meta=parsed)
     except ValueError as e:
         return _err(e)

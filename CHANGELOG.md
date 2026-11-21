@@ -1,5 +1,47 @@
 # Changelog
 
+## CLI 1.6.5 / plugin/docs 1.3.6 — unreleased candidate
+
+- Extend ABAP Unit to bounded explicit/Package/TR-task regression selection,
+  repeatable risk/duration sets, aggregate evidence and local JUnit. Each object
+  executes once; unknown requests stop the remainder. Dangerous/critical Unit
+  now requires independent `allow_execute`, non-PRD and reviewed confirmation,
+  not generic `allow_write`. JUnit dry-runs bind the new report path without
+  writing it.
+- Add `get-function-signature` and typed `run-function` with source-derived
+  interfaces, JSON inputs/outputs and classical exception status. Add explicit
+  `run-report --variant/--parameters-file` SUBMIT/List-capture wrappers; native
+  Report defaults remain unchanged. Both use the existing execution-owned
+  temporary Class and do not require generic write consent or auto-COMMIT.
+- Extend controlled creation/source lifecycle to Include, Function Group/
+  Function, Domain, Data Element, Structure, Table, CDS, DCL, BDEF, SRVD and
+  unpublished SRVB. Domain/Data Element definitions use locked object-root XML
+  updates, not text-source endpoints. SRVB requires explicit protocol/category
+  and service definition; unsupported mutation contracts fail closed.
+- Add reviewed `delete-object` with independent absence readback, excluding
+  tables, containers and published/unknown bindings. Existing DDIC storage
+  conversions, cascade deletion and service publication are not automated.
+- Add bounded dependency-ordered `apply-change-set`, per-object verified writes,
+  combined activation/readback and final Unit/ATC evidence gates. Creation and
+  first writes against generated stubs remain separately reviewed phases.
+  Partial changes are retained and reported, never automatically rolled back.
+- Separate implemented object operations, discovery advertisement and live
+  verification in the compatibility report. Honor discovery's advertised
+  child-resource templates, parent-bound Function Include names and modern
+  TABLES row types; generate the correct TABLES-before-CHANGING call order.
+- DEV acceptance covers typed inputs/outputs and classical exceptions,
+  parameterized/variant Report List capture, DDIC/RAP development, two-object
+  Unit/JUnit and recursive Package selection, and dependency-ordered changes
+  with real final Unit/ATC gates. Execution-only paths keep generic writes off.
+  All owned fixtures were independently confirmed absent; saved permissions
+  were unchanged. DEV rejects dangerous Unit classes at its server risk limit:
+  the CLI reports incomplete/nonzero, never overrides that policy.
+- New DDIC definitions accept identity-matched `version=new` evidence when a
+  backend ignores the active-version query. Table writes and activation require
+  confirmed new-object metadata; existing/uncertain table conversion stays
+  blocked. Physical table activation, published service runtime, non-local
+  transport mutation and cross-system behavior are not claimed verified.
+
 ## CLI 1.6.4 / plugin/docs 1.3.5 — 2026-11-21
 
 - Supplement the release with the Windows x64 desktop installer, built on the

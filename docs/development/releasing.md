@@ -3,7 +3,13 @@
 **Nothing in this document is executed by an agent without explicit
 authorization.** Remote publishing is a separate, human-approved step.
 
-CLI **1.6.4** / plugin/docs **1.3.5** adds Class source parts, candidate-buffer
+CLI **1.6.5** / plugin/docs **1.3.6** adds Unit regression/JUnit, typed local
+functions, Report selections/variants, expanded DDIC/RAP lifecycle and reviewed
+multi-object development. Isolated DEV acceptance verified these workflows and
+cleanup; the backend's dangerous-Unit risk ceiling remains in force. Physical
+Table activation, service publication and non-local transport mutation are not
+claimed live-certified. See the Skill's `references/core-workflows.md`.
+CLI 1.6.4 / plugin/docs 1.3.5 added Class source parts, candidate-buffer
 checks, controlled basic-object creation and read-only RAP/OData evidence.
 Snippet execution now needs only `allow_execute`; its invocation-owned
 temporary-Class lifecycle does not enable generic source writes.
@@ -103,9 +109,9 @@ Guidance:
 
 ## Versioning
 
-- CLI: `1.6.4` (single source: `pyproject.toml`; runtime/npm/installers
+- CLI: `1.6.5` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.3.5` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.3.6` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

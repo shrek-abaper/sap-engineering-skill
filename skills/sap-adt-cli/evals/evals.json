@@ -106,6 +106,45 @@
         "Keeps generic create-object/write-source/activate gated and never retries or deletes the unknown execution."
       ],
       "files": []
+    },
+    {
+      "id": 9,
+      "name": "regression-execute-only-scope-and-junit",
+      "prompt": "Offline planning only: do not contact SAP, run CLI commands, inspect credentials or source implementation. Installed CLI 1.6.5; profile dev, allow_execute=true, allow_write=false, environment=dev. User approves preparing a Unit regression of package ZORDER including subpackages, explicit harmless+dangerous and short+medium sets, maximum 80 objects, with local JUnit evidence. Save plan.json with steps [{argv: array or null, precondition: string, explanation: string}], required_config and safety_boundaries. Unknown hashes are returned dependencies, never invented runnable arguments. Explain whether enabling allow_write is necessary and whether four combinations mean four executions per object. A supplied previous run executed zero methods, and another had a timeout after one completed object: explain both without claiming pass, retrying or widening scope.",
+      "expected_output": "A package/recursive bounded dry-run followed only by reviewed hash-bound confirmation, execute-only permission, repeatable explicit sets once per object, local JUnit and accurate empty/partial outcomes.",
+      "expectations": [
+        "Keeps allow_write=false and requires only existing independent execution consent for dangerous Unit.",
+        "Plans --package ZORDER --recursive --max-objects 80, repeated risks/durations, dry-run and reviewed hash-bound approval without invented hashes.",
+        "Uses --junit with a new local report path and does not request Cartesian-product repeated executions.",
+        "No-method and timed-out evidence are not passing and are not automatically replayed."
+      ],
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "typed-function-and-report-wrapper-boundaries",
+      "prompt": "Offline planning only: no SAP calls, CLI execution, credential access, source implementation inspection or config changes. CLI 1.6.5, profile dev, allow_execute=true, allow_write=false. Prepare a typed local Z_ORDER_READ call in group ZORDER, importing IV_ORDER='123', and a Report ZORDER_REPORT with variant TEST and parameter P_MODE='TEST'. Actual function interface is not yet supplied; do not guess its types. Save plan.json with steps [{argv: array or null, precondition: string, explanation: string}], input_examples and safety_boundaries. Explain active signature/hash validation, typed JSON results, actual ADT-vs-wrapper transport, source-write permission and transaction behavior. A prior function output was truncated after possible side effects: state recovery without replay or automatic deletion.",
+      "expected_output": "Read actual function signature, conditionally construct importing JSON, reviewed run-function; Report selections JSON and explicit SUBMIT wrapper; execute-only owned Class lifecycle with strict incomplete-output handling and no native-parameter/COMMIT claims.",
+      "expectations": [
+        "Reads get-function-signature with explicit group and does not invent types; proposes run-function with input-file and reviewed dry-run approval.",
+        "Report uses --variant and --parameters-file with RSPARAMS-style rows and explicitly identifies generated SUBMIT rather than native ADT parameter support.",
+        "Keeps allow_write=false; source-bound wrappers require SAP development permissions and do not provide automatic COMMIT or business-success inference.",
+        "Truncated result remains incomplete after possible side effects; no replay, rollback or deletion of unknown execution."
+      ],
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "ddic-rap-manifest-phase-boundaries",
+      "prompt": "Offline planning only: do not contact SAP, execute CLI commands, inspect credentials/source implementation or change config. CLI 1.6.5, profile dev allow_write=true allow_execute=false. User wants a new Include ZORDER_INC, Domain ZORDER_DOM, Data Element ZORDER_DTEL, Structure ZORDER_STR, Table ZORDER_TAB, CDS ZI_ORDER, DCL ZR_ORDER, BDEF ZI_ORDER_B, SRVD ZORDER_SRV and unpublished SRVB ZORDER_O4 in $TMP; function Z_ORDER_READ in existing group ZORDER is also requested. Existing ZORDER_OLD table has data. Draft plan.json with object_operations and phases, commands represented as argv arrays only when inputs/parents/hashes are known, otherwise argv:null with explicit dependencies. Explain correct text-vs-XML writes, group inheritance, numeric SRVB category approval, multi-object manifest ordering/activation/final regression, and whether one approval can overwrite unobserved newly generated stubs. User suggests automatically changing ZORDER_OLD storage type, publishing the service, deleting the group on failure and treating discovery as live verification; respond explicitly to each boundary.",
+      "expected_output": "Full requested type matrix with Domain/DTEL root XML and text sources elsewhere, SRVB explicit definition/protocol/category and no update/publication, separately reviewed create/source phases, bounded DAG/final gates, no automatic conversion/container deletion or inflated verification claims.",
+      "expectations": [
+        "Identifies supported create-object types and get-definition/write-definition operations for Domain/DTEL, preserves function --group, and does not invent SRVB source/update support.",
+        "Names --service-definition, --binding-protocol and --binding-category with explicit numeric 0/1 approval for SRVB; never publishes to make a preview work.",
+        "Provides a schema_version 1 manifest bounded to 100 operations with a dependency DAG, separately reviewed create/source phases, activation/readback before final Unit/ATC and no atomic rollback claim.",
+        "Refuses automatic populated-table conversion/group cascade deletion and distinguishes implemented, discovery-advertised and live-verified support."
+      ],
+      "files": []
     }
   ]
 }
