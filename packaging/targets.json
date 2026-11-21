@@ -7,25 +7,25 @@
       "status": "verified-local",
       "python_floor": "3.10",
       "installer": "packaging/windows/setup.iss (Inno Setup 6, per-user default)",
-      "notes": "CLI 1.6.4 Windows x64 runtime built with Windows Python 3.12 via WSL interop on 2026-11-21; ZIP and isolated npm install passed diagnostic/debugger/execution cross-process smokes, including execute-only snippets with generic source writes disabled. Windows-local npm regressions: 42 passed, 5 platform-specific skips. The 1.6.4 desktop installer was built with official portable Inno Setup 6.7.4 and passed native PATH cleanup tests, silent per-user install in a Unicode/space path, same-version upgrade and uninstall; synthetic configuration and user/machine PATH were preserved. Interactive wizard, actual PATH mutation, elevated installation, live Windows SAP access and live debugger attachment are unverified."
+      "notes": "CLI 1.6.5 Windows x64 runtime built with Windows Python 3.12 via WSL interop on 2026-11-22; ZIP and isolated npm install passed diagnostic/debugger/execution cross-process smokes, including execute-only snippets with generic source writes disabled. Windows-local npm regressions: 42 passed, 5 platform-specific skips. The 1.6.5 desktop installer was built with official portable Inno Setup 6.7.4 and passed native PATH cleanup tests, silent per-user install in a Unicode/space path, same-version upgrade and uninstall; synthetic configuration and user/machine PATH were preserved. Interactive wizard, actual PATH mutation, elevated installation, live Windows SAP access and live debugger attachment are unverified."
     },
     "linux-x86_64": {
       "status": "verified-local",
       "python_floor": "3.10",
       "installer": "portable tar.gz (dist/runtime/sap-adt-<ver>-linux-x86_64.tar.gz)",
-      "notes": "CLI 1.6.4 verified on Ubuntu 24.04 glibc 2.39 (WSL2), 2026-11-21: 518 Python and 47 npm tests, clean wheel install and native npm diagnostic/debugger/execution cross-process smokes, including execute-only snippets with generic source writes disabled. DEV verified local object creation, Class source parts, candidate checks, activation/Unit, RAP source/unpublished-binding evidence and technical OData V2 preview; all 36 attempted development probes independently verified absent. Published RAP/V4 runtime and non-local package/TR creation were not live-verified. glibc floor applies to other distros; do not generalize to musl/older glibc without a real build there. Live debugger attachment is unverified."
+      "notes": "CLI 1.6.5 verified on Ubuntu 24.04 glibc 2.39 (WSL2), 2026-11-22: 560 Python and 47 npm tests, clean wheel install and native npm diagnostic/debugger/execution cross-process smokes, including execute-only snippets with generic source writes disabled. DEV accepted typed Function/TABLES/exception execution, Report selections/variant, DDIC/RAP lifecycle, harmless multi-object/Package Unit/JUnit and ordered changes with Unit/ATC gates; owned fixtures were independently confirmed absent and saved permissions unchanged. Dangerous Unit execution was refused by the server risk ceiling; physical Table activation, published RAP/V4 runtime and non-local TR mutation were not live-certified. See core-workflows.md. glibc floor applies to other distros; do not generalize to musl/older glibc without a real build there. Live debugger attachment is unverified."
     },
     "darwin-aarch64": {
       "status": "verified-ci",
       "python_floor": "3.10",
       "installer": "portable tar.gz",
-      "notes": "Experimental CLI 1.6.4 macOS 15+ Apple Silicon runtime, verified 2026-11-21. Native macos-15 CI with Python 3.14 passed 518 Python tests (3 skips), 46 npm tests (1 skip), runtime build and isolated npm diagnostic/debugger/execution cross-process smokes: Actions run 44904521434, source f2a61e3e99f8f8de2ddaa1e7b4a7af27fba49004. Execution smokes keep generic source writes disabled. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
+      "notes": "Experimental CLI 1.6.5 macOS 15+ Apple Silicon runtime, verified 2026-11-22. Native macos-15 CI with Python 3.14 passed 560 Python tests (3 skips), 46 npm tests (1 skip), runtime build and isolated npm diagnostic/debugger/execution cross-process smokes: Actions run 44951555059, source b417e220d700c1c97ce8f561e336cd824b3811e4. Execution smokes keep generic source writes disabled. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
     },
     "darwin-x86_64": {
       "status": "verified-ci",
       "python_floor": "3.10",
       "installer": "portable tar.gz",
-      "notes": "Experimental CLI 1.6.4 macOS 15+ Intel runtime, verified 2026-11-21. Native macos-15-intel CI with Python 3.14 passed 518 Python tests (3 skips), 46 npm tests (1 skip), runtime build and isolated npm diagnostic/debugger/execution cross-process smokes: Actions run 44904521434, source f2a61e3e99f8f8de2ddaa1e7b4a7af27fba49004. Execution smokes keep generic source writes disabled. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
+      "notes": "Experimental CLI 1.6.5 macOS 15+ Intel runtime, verified 2026-11-22. Native macos-15-intel CI with Python 3.14 passed 560 Python tests (3 skips), 46 npm tests (1 skip), runtime build and isolated npm diagnostic/debugger/execution cross-process smokes: Actions run 44951555059, source b417e220d700c1c97ce8f561e336cd824b3811e4. Execution smokes keep generic source writes disabled. No personal Mac, older macOS, live SAP, Keychain, Gatekeeper/quarantine, signing or notarization verification."
     }
   }
 }

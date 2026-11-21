@@ -1,6 +1,6 @@
 # Changelog
 
-## CLI 1.6.5 / plugin/docs 1.3.6 — unreleased candidate
+## CLI 1.6.5 / plugin/docs 1.3.6 — 2026-11-22
 
 - Extend ABAP Unit to bounded explicit/Package/TR-task regression selection,
   repeatable risk/duration sets, aggregate evidence and local JUnit. Each object
@@ -41,6 +41,12 @@
   confirmed new-object metadata; existing/uncertain table conversion stays
   blocked. Physical table activation, published service runtime, non-local
   transport mutation and cross-system behavior are not claimed verified.
+- Rebuild and verify Linux/Windows and both native macOS runtimes, clean Python
+  installation, npm packages and the Windows desktop installer. Linux passed
+  560 Python tests and 47 npm regressions; both native macOS jobs passed their
+  suites and installation smokes in Actions run 44951555059. The Windows
+  installer passed native PATH helper tests, silent install, same-version
+  upgrade and uninstall without changing configuration or user/machine PATH.
 
 ## CLI 1.6.4 / plugin/docs 1.3.5 — 2026-11-21
 

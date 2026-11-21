@@ -187,6 +187,21 @@ the existing native macOS workflow therefore checks these primitives too.
 Redirected stdout/stderr must remain UTF-8 even when Windows Python starts
 with a legacy code page.
 
+The 1.6.5 release gate on 2026-11-22 passed 560 Python tests and 47 npm
+regressions on Linux, a clean wheel installation and all three installed
+runtime smokes. Windows-native ZIP/npm and the Inno Setup 6.7.4 desktop
+installer passed; Windows-local npm regressions passed 42 tests with 5
+platform-specific skips. Silent per-user install in a Unicode/space path,
+same-version upgrade, uninstall and native PATH cleanup tests preserved the
+synthetic configuration and both user/machine PATH. Both native macOS targets
+passed 560 Python tests (3 skips), 46 npm tests (1 skip), builds and isolated
+installation smokes in
+[Actions run 44951555059](https://github.com/shrek-abaper/sap-engineering-skill/actions/runs/44951555059),
+source `b417e220d700c1c97ce8f561e336cd824b3811e4`.
+These native builds do not certify live SAP access on Windows/macOS. Isolated
+DEV acceptance and remaining server-risk/DDIC/service/transport limits are
+documented in the Skill's `references/core-workflows.md`.
+
 The 1.6.4 release gate on 2026-11-21 passed 518 Python tests and 47 npm
 regressions on Linux, plus a clean wheel installation and all three installed
 runtime smokes. Windows-native ZIP/npm installation passed all three smokes;
