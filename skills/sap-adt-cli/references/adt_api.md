@@ -3,6 +3,25 @@
 SAP ABAP Development Tools (ADT) exposes a REST API under `/sap/bc/adt/`.
 Authentication is HTTP Basic Auth with the `X-SAP-Client` header for client selection.
 
+## Source development and RAP (CLI 1.6.4+)
+
+Operational contract and measured verification scope: **development.md**.
+
+| Capability | Protocol |
+|---|---|
+| Class parts | GET/PUT `/oo/classes/{name}/source/main` or `/includes/{definitions,implementations,testclasses}`; lock/activate parent Class |
+| Explicit absent include generation | POST `/oo/classes/{name}/includes?lockHandle=...&corrNr=...`, `application/vnd.sap.adt.oo.classincludes+xml`; only after reviewed absence and `--create-part` |
+| Candidate buffer | POST `/checkruns?reporters=abapCheckRun`, `application/vnd.sap.adt.checkobjects+xml`; artifact URI/content type and base64 UTF-8 content; response `checkmessages+xml` |
+| Class / Interface / Report create | POST `/oo/classes`, `/oo/interfaces`, `/programs/programs`; respective `application/vnd.sap.adt.oo.classes.v2+xml`, `oo.interfaces.v2+xml`, `programs.programs.v2+xml`; metadata readback, no implicit source save/activation |
+| Package create | POST `/packages`, `application/vnd.sap.adt.packages.v2+xml`; responsible SAP user uppercase, package attributes/super-package/transport and required empty container nodes; metadata + parent/component/layer verification |
+| RAP source | GET `/ddic/ddl/sources/{n}/source/main`, `/bo/behaviordefinitions/{n}/source/main`, `/ddic/srvd/sources/{n}/source/main` |
+| Binding evidence | GET `/businessservices/bindings/{n}`; OData service groups at `/businessservices/odatav2/{binding}` or `/odatav4/{binding}` with servicename/serviceversion/srvdname |
+| Runtime preview | Same-origin GET returned `/sap/opu/odata[4]/.../$metadata`, optionally a metadata-declared entity set with bounded `$top`; **not ADT**, no publish/actions/redirects/next-link traversal |
+
+These paths are relative to `/sap/bc/adt` except the explicit runtime path.
+Creation/include generation are sent once; unknown outcomes never authorize
+replay or automatic deletion. Missing check reports never mean a passed check.
+
 ## Diagnostic feeds and historical comparisons (read-only)
 
 These commands require CLI 1.6.0 or newer. See

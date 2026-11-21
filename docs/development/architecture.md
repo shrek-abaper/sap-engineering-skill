@@ -50,8 +50,11 @@ Controlled Class/Report execution and invocation-owned temporary Classes
 live in `adt/execution.py`, reusing verified `source_write.py`. Execution
 POSTs disable CSRF replay and redirects, use isolated in-memory Sessions and
 fetch CSRF on discovery. `allow_execute` is independent and profile-only;
-snippets also require `allow_write`. No persistent cookies or native RFC
-dependencies are added.
+from CLI 1.6.4, snippet-owned `$TMP` Class creation/write/activation/cleanup
+is covered by execution authorization without `allow_write`. Generic
+source-write commands retain their independent gate; SAP development
+permissions are still needed for the temporary Class. No persistent cookies
+or native RFC dependencies are added.
 
 ## No compatibility shims
 

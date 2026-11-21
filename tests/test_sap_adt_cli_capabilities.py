@@ -81,6 +81,16 @@ class CoverageComputeTests(unittest.TestCase):
         self.assertEqual(r["local_commands"], len(cov.LOCAL_COMMANDS))
         self.assertNotIn("status", cov.COMMAND_CAPABILITIES)
 
+    def test_development_roots_do_not_claim_odata_runtime_availability(self):
+        r = cov.compute_coverage(self.collections + [
+            {"href": "/sap/bc/adt/oo/classes"},
+            {"href": "/sap/bc/adt/businessservices/bindings"}])
+        for command in ("check-source", "create-object", "get-rap"):
+            self.assertIn(command, r["implemented_available"])
+        self.assertNotIn("odata-read", r["implemented_available"] + r["covered_not_available"])
+        self.assertEqual(r["external_commands"][0]["command"], "odata-read")
+        self.assertIn("not ADT discovery", cov.render_text(r))
+
 
 class DiscoveryCliTests(unittest.TestCase):
     def setUp(self):

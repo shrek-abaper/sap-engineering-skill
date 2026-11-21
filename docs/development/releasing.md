@@ -3,7 +3,11 @@
 **Nothing in this document is executed by an agent without explicit
 authorization.** Remote publishing is a separate, human-approved step.
 
-CLI **1.6.3** / plugin/docs **1.3.4** adds controlled Class, Report and
+CLI **1.6.4** / plugin/docs **1.3.5** adds Class source parts, candidate-buffer
+checks, controlled basic-object creation and read-only RAP/OData evidence.
+Snippet execution now needs only `allow_execute`; its invocation-owned
+temporary-Class lifecycle does not enable generic source writes.
+CLI 1.6.3 / plugin/docs 1.3.4 added controlled Class, Report and
 temporary-Class snippet execution, including local function/BAPI calls.
 Independent execution permission and reviewed-plan confirmation apply;
 unknown execution is never replayed. CLI 1.6.2 / plugin/docs 1.3.3 added
@@ -99,9 +103,9 @@ Guidance:
 
 ## Versioning
 
-- CLI: `1.6.3` (single source: `pyproject.toml`; runtime/npm/installers
+- CLI: `1.6.4` (single source: `pyproject.toml`; runtime/npm/installers
   inherit it).
-- Plugin/docs: `1.3.4` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.3.5` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

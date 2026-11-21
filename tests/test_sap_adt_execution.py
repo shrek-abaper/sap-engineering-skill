@@ -189,23 +189,27 @@ class ExecutionTests(unittest.TestCase):
             config = self.cfg.SapConfig(self.config.url, "U", "secret", "400", allow_execute=True)
             for key, value in changes.items():
                 setattr(config, key, value)
-            with self.subTest(changes=changes), patch.object(self.cli, "_load_config", return_value=config), \
-                 patch.object(self.h, "prepare_execution") as prepare:
-                result = CliRunner().invoke(self.cli.cli, ["run-class", "ZTEST", "--dry-run"])
-                self.assertEqual(result.exit_code, 3, result.output)
-                self.assertEqual(json.loads(result.stderr)["error"]["code"], expected)
-                prepare.assert_not_called()
+            for args in (["run-class", "ZTEST"], ["run-report", "ZTEST"],
+                         ["run-abap", "--file", "-"]):
+                with self.subTest(changes=changes, command=args[0]), \
+                     patch.object(self.cli, "_load_config", return_value=config), \
+                     patch.object(self.h, "prepare_execution") as prepare:
+                    result = CliRunner().invoke(self.cli.cli, [*args, "--dry-run"])
+                    self.assertEqual(result.exit_code, 3, result.output)
+                    self.assertEqual(json.loads(result.stderr)["error"]["code"], expected)
+                    prepare.assert_not_called()
 
-    def test_noninteractive_execution_needs_hash_and_snippet_write_permission(self):
+    def test_noninteractive_execution_needs_hash(self):
         with patch.object(self.cli, "_load_config", return_value=self.config):
-            result = CliRunner().invoke(self.cli.cli, ["run-class", "ZTEST", "--yes"])
-            self.assertEqual(result.exit_code, 3)
-            self.assertEqual(json.loads(result.stderr)["error"]["code"], "CONFIRM_REQUIRED")
-            result = CliRunner().invoke(self.cli.cli, ["run-abap", "--file", "-", "--dry-run"])
-            self.assertEqual(json.loads(result.stderr)["error"]["code"], "WRITE_DISABLED")
+            for args in (["run-class", "ZTEST"], ["run-report", "ZTEST"],
+                         ["run-abap", "--file", "-"]):
+                with self.subTest(command=args[0]):
+                    result = CliRunner().invoke(self.cli.cli, [*args, "--yes"])
+                    self.assertEqual(result.exit_code, 3)
+                    self.assertEqual(json.loads(result.stderr)["error"]["code"], "CONFIRM_REQUIRED")
 
     def test_dry_run_and_reviewed_plan_only_execute_once(self):
-        self.config.allow_write = True
+        self.assertFalse(self.config.allow_write)
         with patch.object(self.cli, "_load_config", return_value=self.config), \
              patch.object(self.h, "execute_prepared", return_value=self.h.AdtResult(
                  kind="execution", data={"execution": {"status": "completed"}})) as execute:
@@ -225,6 +229,47 @@ class ExecutionTests(unittest.TestCase):
                 input="out->write( 'hello' ).")
             self.assertEqual(result.exit_code, 0, result.output)
             execute.assert_called_once()
+
+    def test_execute_only_snippet_completes_owned_lifecycle(self):
+        def complete(_mode, _name, _timeout, _max_chars, data):
+            data["execution"] = {"status": "completed"}
+            data["output"]["text"] = "hello"
+
+        stack, _, create, _, delete, execute = self.temporary_patches(invoke=complete)
+        with stack, patch.object(self.cli, "_load_config", return_value=self.config):
+            runner = CliRunner()
+            source = "out->write( 'hello' )."
+            args = ["run-abap", "--file", "-"]
+            dry = runner.invoke(self.cli.cli, [*args, "--dry-run"], input=source)
+            self.assertEqual(dry.exit_code, 0, dry.output)
+            create.assert_not_called()
+            digest = json.loads(dry.stdout)["data"]["plan"]["plan_sha256"]
+            result = runner.invoke(
+                self.cli.cli, [*args, "--yes", "--expect-plan-sha256", digest],
+                input=source)
+        self.assertEqual(result.exit_code, 0, result.output)
+        data = json.loads(result.stdout)["data"]
+        self.assertEqual(data["execution"]["status"], "completed")
+        self.assertEqual(data["output"]["text"], "hello")
+        self.assertEqual(data["cleanup"]["status"], "verified")
+        create.assert_called_once()
+        execute.assert_called_once()
+        delete.assert_called_once()
+        self.assertFalse(self.config.allow_write)
+
+    def test_execute_permission_does_not_authorize_generic_writes(self):
+        for args in (
+            ["create-object", "class", "ZTEST", "--package", "$TMP", "--description", "Probe"],
+            ["write-source", "class", "ZTEST", "--file", "-"],
+            ["activate", "class", "ZTEST"],
+        ):
+            with self.subTest(command=args[0]), \
+                 patch.object(self.cli, "_load_config", return_value=self.config), \
+                 patch.object(self.client, "make_adt_request") as request:
+                result = CliRunner().invoke(self.cli.cli, args)
+                self.assertEqual(result.exit_code, 3, result.output)
+                self.assertEqual(json.loads(result.stderr)["error"]["code"], "WRITE_DISABLED")
+                request.assert_not_called()
 
     def test_execute_capability_is_strict_profile_only(self):
         capability = self.cfg.effective_execute_capability

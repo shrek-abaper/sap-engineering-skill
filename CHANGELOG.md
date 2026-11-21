@@ -1,5 +1,26 @@
 # Changelog
 
+## CLI 1.6.4 / plugin/docs 1.3.5 — 2026-11-21
+
+- Let `run-abap` use independent `allow_execute` without `allow_write`, like
+  Class/Report execution. Execution approval includes only its invocation-owned
+  `$TMP` Class lifecycle; generic create/write/activate commands retain the
+  write gate. SAP development permissions and all execution safeguards remain.
+- Add named Class main/definitions/implementations/testclasses reads and verified
+  writes. Bind part/options to reviewed plan hashes; lock/activate the parent.
+  Missing include generation requires explicit `--create-part`, with no blind replay.
+- Add `check-source` for unsaved UTF-8 buffers and opt-in
+  `write-source --check-before-write`; failed/unavailable checks prevent saving.
+- Add controlled `create-object` for Class, Interface, executable Program and
+  Package: absence/package/TR preflight, fresh approval, one POST and metadata
+  readback; no overwrite, implicit source upload/activation or unknown-outcome deletion.
+- Add `get-rap` source/binding evidence and same-origin bounded `odata-read`
+  metadata/entity GET. No RAP publication/actions/business-data writes.
+- DEV verified local creation/cleanup, all four Class parts, missing test include,
+  candidate rejection, activation/Unit, RAP source/unpublished-binding evidence
+  and technical OData V2 preview. Published RAP/V4 runtime and non-local package/TR
+  creation remain offline-tested rather than live-verified.
+
 ## CLI 1.6.3 / plugin/docs 1.3.4 — 2026-11-21
 
 - Added controlled `run-class` (IF_OO_ADT_CLASSRUN), `run-report` (default

@@ -43,7 +43,7 @@ class HelpTests(unittest.TestCase):
                          ["configure", "profile", "credentials", "status",
                           "discovery", "update"])
         self.assertEqual(self.command_names(sections["Test and diagnose"]),
-                         ["syntax-check", "run-atc", "run-unit-test", "list-feeds",
+                         ["check-source", "syntax-check", "run-atc", "run-unit-test", "list-feeds",
                           "query-feed", "get-dump", "debug"])
         self.assertEqual(self.command_names(sections["Compare source versions"]),
                          ["get-versions", "get-version-source", "diff-versions"])
@@ -72,10 +72,10 @@ class HelpTests(unittest.TestCase):
 
     def test_source_reading_is_alphabetical_then_writing_and_activation(self):
         names = self.command_names(self.sections()["Read and change source"])
-        self.assertEqual(names[-2:], ["write-source", "activate"])
-        self.assertEqual(names[:-2], sorted(names[:-2]))
-        self.assertIn("get-source", names[:-2])
-        self.assertIn("get-function-group", names[:-2])
+        self.assertEqual(names[-3:], ["create-object", "write-source", "activate"])
+        self.assertEqual(names[:-3], sorted(names[:-3]))
+        self.assertIn("get-source", names[:-3])
+        self.assertIn("get-function-group", names[:-3])
         self.assertNotIn("get-table", names)
         self.assertIn("get-table", self.command_names(
             self.sections()["Inspect data and types"]))

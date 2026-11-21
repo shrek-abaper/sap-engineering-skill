@@ -128,50 +128,42 @@ if not set(parser_modules).issubset(implemented):
 
 # ------------------ 4. command -> handler kind consistency ------------------
 
-# Parse handlers.py: handler function -> kind literal it emits.
-handler_src = (SRC / "sap_adt" / "adt" / "handlers.py").read_text(encoding="utf-8")
-handler_tree = ast.parse(handler_src)
-
-# Any function emitting a kind directly (_structured("kind", ...)).
-emit_kind: dict[str, str] = {}
-for node in ast.walk(handler_tree):
-    if not isinstance(node, ast.FunctionDef):
-        continue
-    for n in ast.walk(node):
-        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
-                and n.func.id == "_structured" and n.args
-                and isinstance(n.args[0], ast.Constant)
-                and isinstance(n.args[0].value, str)):
-            emit_kind[node.name] = n.args[0].value
-            break
-
-# helpers like _source_result/_fields_result call _structured indirectly via
-# being the one returning it; the loop above already captures them.
-
-# Parse cli.py: command -> handler functions it calls.
 cli_src = (SRC / "sap_adt" / "cli.py").read_text(encoding="utf-8")
 cli_tree = ast.parse(cli_src)
-command_handler: dict[str, set[str]] = {}
-cli_functions = {node.name: node for node in cli_tree.body if isinstance(node, ast.FunctionDef)}
+module_trees = {"cli": cli_tree}
+for module in ("handlers", "development", "rap"):
+    module_trees[module] = ast.parse(
+        (SRC / "sap_adt" / "adt" / f"{module}.py").read_text(encoding="utf-8"))
+functions = {(module, node.name): node
+             for module, tree in module_trees.items() for node in tree.body
+             if isinstance(node, ast.FunctionDef)}
 
 
-def called_handlers(node, seen=None):
+def emitted_kinds(module, node, seen=None):
+    """Follow local helpers/module adapters and collect all literal output kinds."""
     seen = set() if seen is None else seen
-    names = set()
+    kinds = set()
     for call in ast.walk(node):
         if not isinstance(call, ast.Call):
             continue
-        if (isinstance(call.func, ast.Attribute)
-                and isinstance(call.func.value, ast.Name)
-                and call.func.value.id == "handlers"):
-            names.add(call.func.attr)
-        elif (isinstance(call.func, ast.Name)
-              and call.func.id in cli_functions and call.func.id not in seen):
-            seen.add(call.func.id)
-            names.update(called_handlers(cli_functions[call.func.id], seen))
-    return names
+        for keyword in call.keywords:
+            if keyword.arg == "kind" and isinstance(keyword.value, ast.Constant):
+                kinds.add(keyword.value.value)
+        if isinstance(call.func, ast.Name):
+            target = (module, call.func.id)
+            if call.func.id == "_structured" and call.args and isinstance(call.args[0], ast.Constant):
+                kinds.add(call.args[0].value)
+        elif isinstance(call.func, ast.Attribute) and isinstance(call.func.value, ast.Name):
+            target = (call.func.value.id, call.func.attr)
+        else:
+            continue
+        if target in functions and target not in seen:
+            seen.add(target)
+            kinds.update(emitted_kinds(target[0], functions[target], seen))
+    return kinds
 
 
+command_kinds: dict[str, set[str]] = {}
 for node in ast.walk(cli_tree):
     if not isinstance(node, ast.FunctionDef):
         continue
@@ -190,26 +182,7 @@ for node in ast.walk(cli_tree):
                     command_name = f"{grp} {dec.args[0].value}" if grp else dec.args[0].value
     if not command_name:
         continue
-    funcs = called_handlers(node)
-    if funcs:
-        command_handler[command_name] = funcs
-
-
-def actual_kinds(handler_names: set[str]) -> set[str]:
-    """Resolve direct kinds and kinds via private helpers (_source_result)."""
-    out: set[str] = set()
-    by_name = {n.name: n for n in ast.walk(handler_tree) if isinstance(n, ast.FunctionDef)}
-    for h in handler_names:
-        if h in emit_kind:
-            out.add(emit_kind[h])
-            continue
-        fn = by_name.get(h)
-        if fn is None:
-            continue
-        for n in ast.walk(fn):
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in emit_kind:
-                out.add(emit_kind[n.func.id])
-    return out
+    command_kinds[command_name] = emitted_kinds("cli", node)
 
 
 # Declared kinds from the index table ("| cmd ... | one-liner | kind |").
@@ -227,15 +200,11 @@ for line in idx.splitlines():
         declared[c] = kind
 
 for cmd, kind in sorted(declared.items()):
-    handlers = command_handler.get(cmd)
-    if not handlers:
-        failures.append(f"[command-kind] {cmd}: not wired to any handler")
-        continue
-    got = actual_kinds(handlers)
-    if kind not in got:
+    got = command_kinds.get(cmd, set())
+    if not set(kind.split("|")).issubset(got):
         failures.append(
             f"[command-kind] {cmd}: SKILL declares {kind}, handler(s) "
-            f"{sorted(handlers)} emit {sorted(got) or 'no structured kind'}"
+            f"emit {sorted(got) or 'no structured kind'}"
         )
 
 # ------------------- 5. docs layout: inward-only, links resolve -------------------

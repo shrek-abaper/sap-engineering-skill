@@ -1,6 +1,7 @@
 ---
 name: sap-adt-cli
-description: "Read/write live SAP ABAP source, execute authorized Classes, Reports
+description: "Read/write live SAP ABAP source and class parts, check candidate buffers,
+  create basic objects, inspect RAP/OData, execute authorized Classes, Reports
   and ABAP snippets (local CALL FUNCTION/BAPI), inspect DDIC and transport requests
   via the sap-adt CLI. Use for repository search, where-used, syntax checks, ABAP
   Unit failure evidence, test include source, ATC, SQL preview, short dump
@@ -13,7 +14,7 @@ description: "Read/write live SAP ABAP source, execute authorized Classes, Repor
 license: MIT
 allowed-tools: [Read, Bash]
 metadata:
-  version: "1.3.3"
+  version: "1.3.4"
   type: hybrid
   output_schema:
     format: mixed
@@ -22,7 +23,7 @@ metadata:
   permissions:
     read_paths: ["references/", "~/.sap-adt-cli/"]
     write_paths: ["~/.sap-adt-cli/"]
-    network_endpoints: ["SAP profile base_url /sap/bc/adt/"]
+    network_endpoints: ["SAP profile base_url /sap/bc/adt/", "Same SAP origin /sap/opu/odata/ and /sap/opu/odata4/ (read-only)"]
     requires_elevation: false
 ---
 
@@ -117,8 +118,11 @@ This is experimental; synthetic verification is not a live-SAP attach claim.
 
 Only an explicit request to execute code authorizes `run-class`, `run-report`
 or `run-abap`. Read **references/execution.md** first. Requires CLI **1.6.3+**,
-independent `allow_execute`, non-PRD and fresh approval; snippets also require
-`allow_write` for the complete temporary-Class lifecycle in `$TMP`.
+independent `allow_execute`, non-PRD and fresh approval. CLI **1.6.4+** includes
+the owned `$TMP` temporary-Class lifecycle in execution authorization; leave
+`allow_write` disabled unless generic source changes are separately approved.
+CLI 1.6.3 still requires `allow_write` for snippets. SAP development permissions
+remain necessary; execution is not read-only even with `allow_write=false`.
 Use `--dry-run` first; unattended `--yes` requires the reviewed
 `--expect-plan-sha256`. Local functions/BAPIs are called explicitly inside a
 snippet, with typed parameters and explicit output; this is not native RFC.
@@ -126,6 +130,38 @@ Never silently escalate diagnosis, SQL or a failed Unit test into execution.
 Do not automatically COMMIT, retry execution, or delete an object whose
 ownership/execution state is uncertain. Timeout does not cancel SAP code.
 Report execution, business messages, output completeness and cleanup separately.
+
+## Source development and read-only RAP workflow
+
+Read **references/development.md** before named-part writes, candidate checks,
+object creation or RAP preview. These additions require CLI **1.6.4+**; check
+the relevant command's help and ask before upgrading older installations.
+
+- Use `get-class --part main|definitions|implementations|testclasses`; never
+  substitute the main source for a requested include. `write-source --part`
+  locks and optionally activates the **parent Class**, not just the include.
+- `check-source --file` checks the supplied UTF-8 artifact without saving.
+  `syntax-check` still checks stored source. `--check-before-write` makes a
+  passed candidate check under lock a prerequisite to PUT. Failed/unavailable
+  checks are not a pass; activation and Unit remain separate evidence.
+- Review a `write-source --dry-run` diff first. Non-main `--yes` requires both
+  baseline hash and the **exact plan hash**, binding part, target and options.
+  An absent include is not an empty baseline: only explicitly approved
+  `--create-part` may generate it under the parent lock. No blind write retry.
+- `create-object` supports Class, Interface, executable Program and Package.
+  Requires write permission, non-PRD, absence, validated package/TR and fresh
+  confirmation (automation: reviewed plan hash). It never overwrites, writes
+  source or activates implicitly. Unknown creation is retained for inspection,
+  never replayed/deleted automatically.
+- `get-rap cds|bdef|srvd|srvb NAME` reads source/binding evidence. Inspect binding
+  status, definitions, runtime URLs and gaps; no automatic dependency-chain
+  completeness claim. Unpublished services may have no runtime URL.
+- `odata-read SERVICE_ROOT` fetches runtime `$metadata`; an explicitly requested
+  `--entity-set NAME --top N` reads one metadata-declared collection. These are
+  **OData runtime endpoints, not ADT**. Same origin only, bounded bytes/rows,
+  no redirect, arbitrary query, action or pagination traversal. ADT access does
+  not imply OData authorization. Never publish/unpublish RAP services or modify
+  business data to make a preview work.
 
 ## Diagnostic and change-analysis workflow
 
@@ -175,20 +211,20 @@ Errors on stderr: `{ "ok": false, …, "error": {"code","message","http_status",
 
 | kind | commands | `data` shape |
 |------|----------|--------------|
-| `source` | get-program/class/function-group/function/include/interface/cds-view/type-group, get-version-source, get-source | `{source, line_count}`; get-source adds URI and one-based range metadata; default output = verbatim source |
+| `source` | get-program/class/function-group/function/include/interface/cds-view/type-group, get-version-source, get-source, get-rap cds/bdef/srvd | `{source, line_count}`; get-source adds URI and one-based range metadata; default output = verbatim source |
 | `fields` | get-table, get-structure | `{fields:[{name,type,length,decimals,is_key,not_null}]}` (S/4 DDL: length null for element refs, listed in `meta.unparsed_types`; no description key) |
 | `objects` | search-object, get-package, where-used | `{objects:[{name,type,uri,package,description}]}`; where-used may add optional `usage_line`/`usage_uri` |
-| `rows` | run-sql | `{columns:[{name,type}], rows:[[…]]}` |
+| `rows` | run-sql, odata-read --entity-set | `{columns:[{name,type}], rows:[[…]]}`; OData adds budgets, returned/limit_reached/truncated and non-followed pagination |
 | `records` | list-transports, get-transport | list: `{transports:[{trkorr,description,status,status_text,owner,target,tasks}]}`; detail: `{transport,objects}` |
-| `findings` | syntax-check, run-unit-test, run-atc | `{findings:[{severity,text,line,uri}]}`; Unit adds `test_classes`, `summary`, `evidence_gaps`; alerts retain kind/details/stack |
+| `findings` | syntax-check, check-source, run-unit-test, run-atc | `{findings:[{severity,text,line,uri}]}`; candidate check adds `status:passed/failed/unavailable`, source URI/hash/reports; Unit adds `test_classes`, `summary`, `evidence_gaps`; alerts retain kind/details/stack |
 | `dumps` | get-dump | `{id,uri,detail_available,fallback,header,termination,sections,text,source,stack,evidence_gaps}`; unsupported detail falls back to ST22 |
-| `scalar` | get-type-info, get-transaction | object dictionary; type info has `resolved_as: domain\|dataelement` |
+| `scalar` | get-type-info, get-transaction, create-object, get-rap srvb, odata-read metadata | object dictionary; creation has plan/create/readback/outcome; binding has services/status/evidence_gaps |
 | `capabilities` | discovery | `{collections:[{href,title,content_types}]}` (Atom discovery; use `credentials doctor --coverage` for the command matrix) |
 | `feeds` | list-feeds, query-feed | `{title,entries:[{id,title,summary,content_uri,links,schema}],next_uri}`; schema only in catalog entries |
 | `versions` | get-versions | `{versions:[{version,is_active,content_uri,transports,history_uri,source_uri,part}],streams,evidence_gaps}` |
 | `diff` | diff-versions, transport diff | `{comparison,diffs:[{from_uri,to_uri,changed,diff}],evidence_gaps}`; transport adds request/object metadata |
 | `debug` | debug primitives | `{session,state,operation,evidence_gaps,...}`; operation-specific evidence in references/debugging.md; foreground serve emits ready/final JSONL |
-| `write` | write-source | `{target,object,transport,baseline,content,plan_sha256,lock,write,unlock,activation,outcome}`; stage `status` ∈ accepted/verified/failed/unknown/not_attempted/skipped; `--dry-run` adds `diff`; failures put the same `data` in the error envelope |
+| `write` | write-source | `{target,object,transport,baseline,content,plan_sha256,lock,candidate_check,part_creation,write,unlock,activation,outcome}`; part-bound source URI and parent activation scope; stage `status` ∈ accepted/verified/failed/unknown/not_attempted/skipped; `--dry-run` adds `diff`; failures retain `data` |
 | `execution` | run-class, run-report, run-abap | `{plan,preparation,execution,output,cleanup,evidence_gaps}`; dry-run returns `{plan}` (snippets also `source`); failures retain stage `data`; completed execution does not imply business success |
 
 > `doctor --coverage` "available" only guarantees the **resource root**
@@ -245,6 +281,10 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `query-feed <URI> [--query FQL] [--max-results N] [--page-uri URI]` | one advertised feed page; `$query`/`$top`; next_uri is explicit, never auto-fetch all | feeds |
 | `get-dump <ID_OR_URI> [--max-chars N]` | runtime dump XML metadata + bounded diagnostic chapters; partial detail exits 1 with gaps/ST22 fallback | dumps |
 | `get-source <URI> [--start-line N] [--end-line N]` | read a returned repository source/test include URI on the current profile; optional one-based line window | source |
+| `check-source <TYPE> <N> --file F [--part P] [--group G]` | check an unsaved candidate buffer; failed/unavailable is nonzero and preserves evidence; no mutation | findings |
+| `create-object <class\|interface\|program\|package> <N> --package P --description D [--transport T] [--software-component C] [--transport-layer L] [--dry-run] [--yes --expect-plan-sha256 H]` | create once, revalidate absence/dependencies and read back identity/metadata; no implicit save/activation or unknown-outcome cleanup | scalar |
+| `get-rap <cds\|bdef\|srvd\|srvb> <N>` | explicit RAP sources or binding metadata/service URLs/status; partial binding evidence exits 1 | source\|scalar |
+| `odata-read <SERVICE_ROOT> [--entity-set E] [--top N] [--max-bytes N]` | same-origin runtime metadata or bounded entity GET; no actions, redirects, arbitrary query or next-page traversal | scalar\|rows |
 | `debug serve` | bounded foreground HTTP owner; --ttl/--idle seconds, per-action gate; ready/final JSONL | debug |
 | `debug status` | private local owner state; all clients require --session HANDLE | debug |
 | `debug breakpoint` | one owned external source breakpoint; --uri SOURCE --line N; fresh gate | debug |
@@ -261,7 +301,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `diff-versions <FROM_URI> <TO_URI> [--context N]` | local unified diff of two version contents; `--format text` for patch output | diff |
 | `get-transport <TRKORR>` | request/task metadata and deduplicated objects; read-only | records |
 | `transport diff` | request object diffs; missing baselines/unsupported objects/limits exit 1 with evidence gaps | diff |
-| `get-program / -class / -function-group / -function --group / -include / -interface / -cds-view / -type-group` | read source | source |
+| `get-program / -class / -function-group / -function --group / -include / -interface / -cds-view / -type-group` | read source; get-class accepts --part main/definitions/implementations/testclasses | source |
 | `get-table / get-structure <N>` | DDIC fields (DDL on S/4) | fields |
 | `get-type-info <N>` | domain/data element with `resolved_as` | scalar |
 | `get-transaction <CODE>` | package/application/facets | scalar |
@@ -273,7 +313,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
-| `write-source <TYPE> <N> --file F [--group G] [--transport T] [--activate] [--dry-run] [--expect-baseline-sha256 H] [--expect-content-sha256 H] [--yes]` | baseline→diff/confirm→LOCK→in-lock baseline re-check→PUT→readback→UNLOCK (`finally`)→optional activate + active readback; `--yes` requires `--expect-baseline-sha256`; JSON `write` result | gated |
+| `write-source <TYPE> <N> --file F [--part P] [--create-part] [--check-before-write] [--group G] [--transport T] [--activate] [--dry-run] [--expect-baseline-sha256 H] [--expect-content-sha256 H] [--expect-plan-sha256 H] [--yes]` | baseline→diff/confirm→parent LOCK→baseline re-check→optional candidate check/include generation→PUT/readback→UNLOCK→optional parent activation/readback; non-main --yes also requires the plan hash | write |
 | `activate <TYPE> <N> [--group G] [--yes]` | `?method=activate`; no lock/shared session needed, succeeds in a separate process (real-verified Basis 7.56) | gated |
 | `create-transport --package P --description D --ref URI [--yes]` | CreateCorrectionRequest ASX (`DEVCLASS`+`REF` required, `$TMP`=local); real-verified Basis 7.56, 2026-09-17 | gated |
 | `release-transport <TRKORR> [--dry-run] [--yes]` | release with TRSTATUS readback (2s poll, 120s); dry-run = preflight only | gated |
@@ -339,4 +379,5 @@ Layers: this file = operational contract; `references/` = task detail. Project h
 - `references/diagnostics-history.md` — feeds, per-part history, version and transport diffs; baseline semantics, limits and live verification scope (new commands require CLI source with these additions)
 - `references/updating.md` — explicit update/check, install-channel detection, confirmation and failure recovery (CLI 1.6.0+)
 - `references/test-failure-diagnosis.md` — Unit evidence, test include reads, dump details, correlation, stopping rules and diagnosis report (CLI 1.6.1+)
+- `references/development.md` — class parts, missing-include consent, candidate buffers, verified creation and bounded read-only RAP/OData (CLI 1.6.4+)
 - `references/debugging.md` — explicitly authorized experimental debugger, owner lifetime, IPC, action gates and cleanup (CLI 1.6.1+)

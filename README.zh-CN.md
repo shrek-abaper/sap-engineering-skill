@@ -62,6 +62,7 @@ ABAP 工具正在快速演进：SAP 推出了内置 MCP Server 的 ADT for VS Co
 | 在真实系统上读写 ABAP 对象与传输请求 | [`sap-adt-cli`](skills/sap-adt-cli/) | 需要：已安装的 CLI、连接 Profile 与相应权限 |
 | 诊断 ABAP Unit 失败与运行时 Dump | [`sap-adt-cli`](skills/sap-adt-cli/) | 已有证据可离线分析；采集新证据需要 CLI 1.6.1+ 与 SAP 连接 |
 | 显式调试已批准的非生产目标 | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | CLI 1.6.1+ 实验性能力；有时限的前台会话进程、独立 `allow_debug` 与逐次控制确认；诊断不会自动升级为调试 |
+| 编辑 Class 分区、检查候选源码、创建基础对象并只读查看 RAP/OData | [`sap-adt-cli`](skills/sap-adt-cli/references/development.md) | CLI 1.6.4+；受控创建与写入、缺失 include 显式授权、同源限量预览；不含 RAP 发布 |
 
 `abap-code-review` 覆盖 9 个审查维度，`sap-transport-gate` 覆盖 10 个。各维度的检查项、支持的对象类型和报告契约写在对应 Skill 的 README 与 `references/` 中，本页不重复。
 
@@ -207,7 +208,7 @@ ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升�
 
 - **默认只读。** 写入、激活与传输请求发布需要在 Profile 中开启能力，并且每次操作都重新确认 `[y/N]`。`--yes` 面向可信自动化，不是一次性总授权。标记为 `environment=prd` 的 Profile 会拒绝所有写类操作，与开关无关。
 - **调试独立授权。** `allow_debug` 默认关闭，源码写权限可保持关闭；仍限制非生产环境并逐次确认。调试会推进目标程序，可能产生业务写入，并不是只读沙箱。
-- **ABAP 执行独立授权。** CLI 1.6.3 起提供 `run-class`、`run-report`、`run-abap`，要求独立 `allow_execute`、非生产环境和当次确认；`--yes` 必须绑定已审阅的 dry-run 计划 hash。片段通过 `$TMP` 临时 Class 执行本地函数、BAPI 或方法调用，还需 `allow_write`。不依赖原生 RFC，不自动 COMMIT、回滚或重放；执行状态未知时可能保留临时对象供人工检查。详见[执行说明](skills/sap-adt-cli/references/execution.md)。
+- **ABAP 执行独立授权。** CLI 1.6.3 起提供 `run-class`、`run-report`、`run-abap`，要求独立 `allow_execute`、非生产环境和当次确认；`--yes` 必须绑定已审阅的 dry-run 计划 hash。CLI 1.6.4 起，片段使用的调用专属 `$TMP` 临时 Class 生命周期纳入执行授权，不再要求 `allow_write`，通用源码写命令仍受该开关控制。SAP 账号仍需临时对象开发权限；关闭源码写开关不代表执行不会修改业务数据。不依赖原生 RFC，不自动 COMMIT、回滚或重放；执行状态未知时可能保留临时对象供人工检查。详见[执行说明](skills/sap-adt-cli/references/execution.md)。
 - **SQL 预览只允许 SELECT。** 非 SELECT 的 DML 在发出请求前即被拒绝。
 - **密码不写入配置文件。** 密码通过操作系统密钥库，或显式声明的环境变量/dotenv 层提供，取决于机器上可用的后端；`sap-adt credentials doctor` 可查看当前生效的后端。
 - **传输门控不执行传输**，也不索取 SAP 凭据。在线采集是只读操作，由 CLI 完成。

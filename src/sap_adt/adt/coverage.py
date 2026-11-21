@@ -41,6 +41,11 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("where-used",
      ["/sap/bc/adt/repository/informationsystem/usageReferences"]),
     ("syntax-check", ["/sap/bc/adt/checkruns"]),
+    ("check-source", ["/sap/bc/adt/checkruns"]),
+    ("create-object", _OO + ["/sap/bc/adt/programs/programs", "/sap/bc/adt/packages"]),
+    ("get-rap", _DDL + ["/sap/bc/adt/bo/behaviordefinitions",
+                        "/sap/bc/adt/ddic/srvd/sources",
+                        "/sap/bc/adt/businessservices/bindings"]),
     ("run-unit-test", ["/sap/bc/adt/abapunit/testruns"]),
     ("run-atc", ["/sap/bc/adt/atc/runs", "/sap/bc/adt/atc/worklists"]),
     ("run-sql", ["/sap/bc/adt/datapreview/freestyle"]),
@@ -79,6 +84,11 @@ LOCAL_COMMANDS = [
     "status", "configure", "profile list", "profile use", "profile remove",
     "credentials set", "credentials forget", "credentials status",
     "credentials doctor", "discovery", "debug serve", "debug status",
+]
+
+EXTERNAL_COMMANDS = [
+    {"command": "odata-read",
+     "scope": "OData runtime; availability and authorization are not inferred from ADT discovery"},
 ]
 
 
@@ -142,6 +152,7 @@ def compute_coverage(collections: list[dict]) -> dict:
         },
         "covered_not_available": unavailable_commands,
         "local_commands": len(LOCAL_COMMANDS),
+        "external_commands": EXTERNAL_COMMANDS,
     }
 
 
@@ -185,4 +196,6 @@ def render_text(report: dict) -> str:
     for cmd in missing:
         lines.append(f"  {cmd}")
     lines.append(f"local commands (no ADT resource) : {report['local_commands']}")
+    for command in report.get("external_commands", []):
+        lines.append(f"external runtime (not ADT discovery) : {command['command']} - {command['scope']}")
     return "\n".join(lines)

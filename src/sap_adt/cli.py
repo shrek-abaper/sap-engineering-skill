@@ -10,6 +10,8 @@ from sap_adt import credentials, credentials_reports, errors, log_redaction, out
 from sap_adt.adt import client as adt_client
 from sap_adt.adt import handlers
 from sap_adt.adt import source_write
+from sap_adt.adt import development, rap
+from sap_adt.adt.source_parts import PARTS, source_path
 from sap_adt.config import (
     run_configure_wizard,
     save_config_from_flags,
@@ -283,8 +285,6 @@ def _run_execution(mode, name=None, source_file=None, *, timeout, max_chars,
     config = _load_config()
     _require_config(config)
     _require_execute(config)
-    if mode == "abap":
-        _require_write(config)
     if output.get_format() == "xml":
         _gate(errors.BAD_REQUEST, "Execution has no XML output; use json or text.")
     if not dry_run and yes and not expect_plan_sha256:
@@ -501,7 +501,7 @@ def run_report_cmd(name, **options):
 
 
 @cli.command("run-abap", help_group=_EXECUTION_HELP, help_order=30,
-             short_help="[EXECUTE + WRITE] Run a snippet using a temporary Class.")
+             short_help="[EXECUTE] Run a snippet using a temporary Class.")
 @click.option("--file", "source_file", required=True,
               help="UTF-8 method-body statements, or - for stdin. Use out->write for output.")
 @_execution_options
@@ -509,8 +509,10 @@ def run_abap_cmd(source_file, **options):
     """Create, write, activate, execute and clean up one invocation-owned Class.
 
     JSON execution/lifecycle evidence (text: same evidence, no XML).
-    Requires allow_execute AND allow_write, non-PRD and fresh approval of
-    the complete lifecycle. Fixed package $TMP; no generic delete capability.
+    Requires allow_execute, non-PRD and fresh approval of the complete
+    lifecycle, including temporary source writes; allow_write is not required.
+    Fixed package $TMP; SAP development permissions are still required.
+    No generic source-write or delete capability is granted.
     Supports local CALL FUNCTION/BAPI and method calls allowed by SAP.
     No automatic COMMIT, rollback or business-success inference.
     """
@@ -1335,12 +1337,23 @@ def get_transport_cmd(trkorr):
 @cli.command("get-class", help_group=_SOURCE_HELP,
              short_help="Read a class's ABAP source.")
 @click.argument("class_name")
-def get_class(class_name):
+@click.option("--part", type=click.Choice(PARTS), default="main", show_default=True)
+def get_class(class_name, part):
     """Retrieve ABAP class source code.
 
     CLASS_NAME is the class name, e.g. ZCL_MY_CLASS or CL_SALV_TABLE.
     """
-    _output(handlers.get_class(class_name))
+    if part == "main":
+        _output(handlers.get_class(class_name))
+    else:
+        uri = handlers.get_object_uri("class", class_name)
+        result = development.part_baseline(uri, part)
+        if result.is_error:
+            _output(result)
+        _output(handlers.AdtResult(kind="source", data={
+            "source": result.text, "line_count": len(result.text.splitlines()),
+            "uri": source_path(uri, part), "part": part},
+            object=handlers._obj("class", class_name), raw=result.text))
 
 
 @cli.command("get-function-group", help_group=_SOURCE_HELP,
@@ -1546,6 +1559,132 @@ def _write_target(config) -> dict:
 _DIFF_PREVIEW_LINES = 200
 
 
+def _development_output(result):
+    if result.is_error:
+        _emit_error(errors.decision(result.error_code or errors.SERVER_ERROR,
+                                   result.text, http_status=result.http_status,
+                                   data=result.data))
+    _output(result)
+
+
+@cli.command("check-source", help_group=_DIAGNOSIS_HELP,
+             short_help="Check a local candidate buffer without saving.")
+@click.argument("object_type")
+@click.argument("object_name")
+@click.option("--file", "source_file", required=True, type=click.Path(exists=True, dir_okay=False))
+@click.option("--group", default=None)
+@click.option("--part", type=click.Choice(PARTS), default="main", show_default=True)
+def check_source_cmd(object_type, object_name, source_file, group, part):
+    """POST a base64 UTF-8 candidate artifact to /checkruns; never save or activate.
+
+    Returns findings plus passed/failed/unavailable and the checked content hash.
+    """
+    try:
+        uri = handlers.get_object_uri(object_type, object_name, group=group)
+        source_path(uri, part)
+        with open(source_file, "rb") as stream:
+            content = source_write.decode_local(stream.read())
+    except (ValueError, OSError) as exc:
+        _gate(errors.BAD_REQUEST, str(exc))
+    _development_output(development.check_candidate(uri, content, part=part))
+
+
+@cli.command("create-object", help_group=_SOURCE_HELP, help_order=5,
+             short_help="[WRITE] Create a basic object without overwriting.")
+@click.argument("object_type", type=click.Choice(tuple(development.SPECS)))
+@click.argument("object_name")
+@click.option("--package", required=True, help="Target package; for package creation, the super-package")
+@click.option("--description", required=True)
+@click.option("--transport", default=None, help="Required for non-local-package creation")
+@click.option("--software-component", default=None, help="Required only when creating a package")
+@click.option("--transport-layer", default=None, help="Required for a transportable package")
+@click.option("--dry-run", is_flag=True)
+@click.option("--expect-plan-sha256", default=None, callback=lambda _c, _p, v: _sha256_option(v))
+@click.option("--yes", is_flag=True, help="Approve the exact reviewed plan hash")
+def create_object_cmd(object_type, object_name, package, description, transport,
+                      software_component, transport_layer, dry_run, expect_plan_sha256, yes):
+    """Create Class/Interface/executable Program/Package using direct ADT POST.
+
+    Requires allow_write, non-PRD and fresh approval. Re-check absence, package
+    and transport, then send once and verify metadata. Does not upload source,
+    activate, delete or retry an uncertain create. stdout: scalar plan/evidence.
+    """
+    config = _load_config()
+    _require_config(config)
+    _require_write(config)
+    if output.get_format() == "xml":
+        _gate(errors.BAD_REQUEST, "Creation plans have no XML output; use json or text.")
+    if not dry_run and yes and not expect_plan_sha256:
+        _gate(errors.CONFIRM_REQUIRED, "--yes requires --expect-plan-sha256 from a reviewed dry-run.")
+    if not dry_run and not yes and not _stdin_is_tty():
+        _gate(errors.CONFIRM_REQUIRED, "Creation requires fresh confirmation or a hash-bound --yes.")
+    adt_client.set_config(config)
+    try:
+        try:
+            plan = development.creation_plan(
+                object_type, object_name, package=package, description=description,
+                transport=transport, target=_write_target(config),
+                software_component=software_component, transport_layer=transport_layer)
+        except Exception as exc:
+            _emit_error(errors.classify(exc))
+        if expect_plan_sha256 and plan["plan_sha256"] != expect_plan_sha256:
+            _emit_error(errors.decision(errors.BASELINE_CHANGED,
+                        "creation plan differs from reviewed dry-run; nothing created", data=plan))
+        if dry_run:
+            _output(handlers.AdtResult(kind="scalar", data=plan, meta={"dry_run": True}))
+            return
+        preview = [
+            "Action: Create object (no overwrite, source upload or activation)",
+            "Target: " + json.dumps(plan["target"], ensure_ascii=False),
+            f"Object: {object_type} {object_name.upper()}; package {package.upper()}",
+            f"Description: {description}",
+            f"Transport: {transport or '(local)'}",
+            f"Software component/layer: {software_component or '-'} / {transport_layer or '-'}",
+            f"Plan sha256: {plan['plan_sha256']}",
+        ]
+        if yes:
+            for line in preview:
+                click.echo(line, err=True)
+        _confirm_change(preview, yes=yes)
+        result = development.create(plan)
+    finally:
+        adt_client.set_config(None)
+    _development_output(result)
+
+
+@cli.command("get-rap", help_group=_SOURCE_HELP,
+             short_help="Read CDS/BDEF/SRVD source or SRVB runtime evidence.")
+@click.argument("object_type", type=click.Choice(tuple(rap.RESOURCES)))
+@click.argument("object_name")
+def get_rap_cmd(object_type, object_name):
+    """Read RAP ADT sources/binding metadata; never publish or modify services.
+
+    Source objects return source. Bindings return scalar evidence with service
+    definitions, OData runtime URLs and explicit gaps, not an inferred full graph.
+    """
+    result = rap.get_object(object_type, object_name)
+    _output(result)
+    if (result.meta or {}).get("partial"):
+        raise SystemExit(1)
+
+
+@cli.command("odata-read", help_group=_DATA_HELP,
+             short_help="Read OData metadata or a bounded entity collection.")
+@click.argument("service_url")
+@click.option("--entity-set", default=None, help="Plain EntitySet declared by this service's metadata")
+@click.option("--top", default=20, type=click.IntRange(1, 100), show_default=True)
+@click.option("--max-bytes", default=2097152, type=click.IntRange(1024, 2097152), show_default=True)
+def odata_read_cmd(service_url, entity_set, top, max_bytes):
+    """GET runtime $metadata, optionally one entity set; same SAP origin only.
+
+    Uses /sap/opu/odata or /sap/opu/odata4, not ADT. No redirects, arbitrary query,
+    actions or next-link traversal. Total decompressed response budget is bounded.
+    Returns scalar metadata or rows (JSON by default). Runtime access can require
+    separate authorizations; ADT access is not proof of OData availability.
+    """
+    _output(rap.read_odata(service_url, entity_set=entity_set, top=top, max_bytes=max_bytes))
+
+
 @cli.command("write-source", help_group=_SOURCE_HELP, help_order=10,
              short_help="[WRITE] Upload source; needs approval.")
 @click.argument("object_type")
@@ -1554,6 +1693,14 @@ _DIFF_PREVIEW_LINES = 200
 @click.option("--group",     default=None,  help="Function group (required when OBJECT_TYPE is 'function')")
 @click.option("--transport", default=None,  help="Transport request number (e.g. DEVK900001); omit for auto-assign")
 @click.option("--activate",  is_flag=True,  default=False, help="Activate the object after writing and verify the active version")
+@click.option("--part", type=click.Choice(PARTS), default="main", show_default=True,
+              help="Class source part; lock/activation still affect the parent class")
+@click.option("--check-before-write", is_flag=True,
+              help="Require a successful candidate-buffer syntax check under lock before PUT")
+@click.option("--create-part", is_flag=True,
+              help="Explicitly generate an absent non-main class include under the parent lock")
+@click.option("--expect-plan-sha256", default=None, callback=lambda _c, _p, v: _sha256_option(v),
+              help="Bind target, part, content and options to a reviewed dry-run (required for --yes with non-main parts)")
 @click.option("--expect-baseline-sha256", "expect_baseline", default=None,
               callback=lambda _c, _p, v: _sha256_option(v),
               help="Abort unless the remote source hash equals this (required with --yes; get it from --dry-run)")
@@ -1563,7 +1710,8 @@ _DIFF_PREVIEW_LINES = 200
 @click.option("--dry-run",   is_flag=True,  default=False, help="Read the baseline and print hashes and diff; no lock or write")
 @click.option("--yes",       is_flag=True,  default=False, help="Skip the interactive prompt only (requires --expect-baseline-sha256). Use only in trusted automation.")
 def write_source_cmd(object_type, object_name, source_file, group, transport, activate,
-                     expect_baseline, expect_content, dry_run, yes):
+                     expect_baseline, expect_content, dry_run, yes, part,
+                     check_before_write, expect_plan_sha256, create_part):
     """Write ABAP source code to SAP — requires allow_write + confirmation each time.
 
     OBJECT_TYPE: program / class / interface / include / function
@@ -1585,6 +1733,10 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
     config = _load_config()
     _require_config(config)
     _require_write(config)
+    if output.get_format() == "xml":
+        _gate(errors.BAD_REQUEST, "Verified source writes have no XML output; use json or text.")
+    if yes and part != "main" and not expect_plan_sha256 and not dry_run:
+        _gate(errors.CONFIRM_REQUIRED, "--yes with a class part requires --expect-plan-sha256 from a reviewed dry-run.")
     if yes and not expect_baseline and not dry_run:
         _gate(errors.CONFIRM_REQUIRED,
               "--yes requires --expect-baseline-sha256 (obtain it with --dry-run "
@@ -1606,6 +1758,9 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
     content = _read_upload()
     try:
         uri = handlers.get_object_uri(object_type, object_name, group=group)
+        source_path(uri, part)
+        if create_part and part == "main":
+            raise ValueError("--create-part requires a non-main class part")
     except ValueError as e:
         _gate(errors.BAD_REQUEST, str(e))
 
@@ -1613,7 +1768,8 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
     # connection instead of re-resolving the profile per request.
     adt_client.set_config(config)
     try:
-        base = handlers.read_source_main(uri)
+        base = (development.part_baseline(uri, part, allow_missing=create_part)
+                if part != "main" else handlers.read_source_main(uri))
         if base.is_error:
             _abort_on_error(base, "baseline read")
         plan = source_write.WritePlan(
@@ -1623,7 +1779,13 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
             baseline=source_write.canonical_source(base.text), content=content,
             expected_baseline_sha256=expect_baseline,
             expected_content_sha256=expect_content,
+            part=part, check_before_write=check_before_write,
+            create_part=create_part, baseline_absent=bool((base.meta or {}).get("absent")),
         )
+        if expect_plan_sha256 and expect_plan_sha256 != plan.plan_sha256:
+            _emit_error(errors.decision(errors.BASELINE_CHANGED,
+                        "write plan differs from the reviewed plan; nothing was written",
+                        data=plan.describe()))
         diff = source_write.unified_diff(plan.baseline, plan.content,
                                          f"{object_type.upper()} {object_name.upper()}")
         if dry_run:
@@ -1646,12 +1808,16 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
             "Action   : Write source code",
             f"Target   : {t['profile']} ({t['environment']}) {t['url']} client {t['client']} user {t['user']}",
             f"Object   : {object_type.upper()} {object_name.upper()} ({uri})",
+            f"Part     : {part}; activation scope: parent object",
+            f"Generate : {'missing include only' if create_part else 'not authorized'}; baseline absent: {plan.baseline_absent}",
             f"Transport: {transport or '(auto-assigned)'}",
             f"Baseline : sha256 {plan.baseline_sha256} ({len(plan.baseline.splitlines())} lines)",
             f"Upload   : sha256 {plan.content_sha256} ({len(plan.content.encode('utf-8'))} bytes)",
             f"Activate : {'yes' if activate else 'no'}",
+            f"Precheck : {'required before PUT' if check_before_write else 'not requested'}",
             f"Plan     : sha256 {plan.plan_sha256}",
         ]
+        preview_header_length = len(preview)
         if plan.unchanged:
             preview.append("Diff     : (none — upload equals baseline; write is skipped)")
         else:
@@ -1661,7 +1827,7 @@ def write_source_cmd(object_type, object_name, source_file, group, transport, ac
                 preview.append(f"... {len(diff) - _DIFF_PREVIEW_LINES} more diff lines (see --dry-run)")
         if yes:
             # Unattended: keep the bound plan visible on stderr for audit logs.
-            for line in preview[:8]:
+            for line in preview[:preview_header_length]:
                 click.echo(line, err=True)
         _confirm_change(preview, yes=yes)
 

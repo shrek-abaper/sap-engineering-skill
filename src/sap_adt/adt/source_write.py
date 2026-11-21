@@ -32,6 +32,7 @@ from typing import Callable, Optional
 
 from .. import errors
 from . import handlers
+from .source_parts import source_path
 
 ACCEPTED = "accepted"
 VERIFIED = "verified"
@@ -85,6 +86,21 @@ class WritePlan:
     content: str
     expected_baseline_sha256: Optional[str] = None
     expected_content_sha256: Optional[str] = None
+    part: str = "main"
+    check_before_write: bool = False
+    create_part: bool = False
+    baseline_absent: bool = False
+
+    def __post_init__(self):
+        source_path(self.object_uri, self.part)
+        if self.create_part and self.part == "main":
+            raise ValueError("--create-part requires a non-main class part")
+        if self.baseline_absent and not self.create_part:
+            raise ValueError("absent source requires explicit include generation authorization")
+
+    @property
+    def source_options(self):
+        return {"part": self.part} if self.part != "main" else {}
 
     @property
     def baseline_sha256(self) -> str:
@@ -96,7 +112,7 @@ class WritePlan:
 
     @property
     def unchanged(self) -> bool:
-        return self.baseline == self.content
+        return not self.baseline_absent and self.baseline == self.content
 
     @property
     def plan_sha256(self) -> str:
@@ -104,6 +120,8 @@ class WritePlan:
             "url": self.target.get("url"), "client": self.target.get("client"),
             "user": self.target.get("user"), "object_uri": self.object_uri,
             "transport": self.transport, "activate": self.activate,
+            "part": self.part, "check_before_write": self.check_before_write,
+            "create_part": self.create_part, "baseline_absent": self.baseline_absent,
             "baseline_sha256": self.baseline_sha256,
             "content_sha256": self.content_sha256,
         }
@@ -116,9 +134,11 @@ class WritePlan:
             "object": {"type": self.object_type.upper(),
                        "name": self.object_name.upper(),
                        "group": self.group.upper() if self.group else None,
-                       "uri": self.object_uri},
+                       "uri": self.object_uri, "part": self.part,
+                       "source_uri": source_path(self.object_uri, self.part)},
             "transport": {"requested": self.transport},
             "baseline": {"sha256": self.baseline_sha256,
+                         "absent": self.baseline_absent,
                          "lines": _line_count(self.baseline),
                          "expected_sha256": self.expected_baseline_sha256},
             "content": {"sha256": self.content_sha256,
@@ -127,6 +147,9 @@ class WritePlan:
                         "expected_sha256": self.expected_content_sha256},
             "unchanged": self.unchanged,
             "activate_requested": self.activate,
+            "activation_scope": "parent_object",
+            "check_before_write": self.check_before_write,
+            "create_part": self.create_part,
             "plan_sha256": self.plan_sha256,
         }
 
@@ -174,6 +197,8 @@ class WriteReport:
     write: dict = field(default_factory=lambda: {"status": NOT_ATTEMPTED})
     unlock: dict = field(default_factory=lambda: {"status": NOT_ATTEMPTED})
     activation: dict = field(default_factory=lambda: {"status": NOT_ATTEMPTED})
+    candidate_check: dict = field(default_factory=lambda: {"status": NOT_ATTEMPTED})
+    part_creation: dict = field(default_factory=lambda: {"status": NOT_ATTEMPTED})
     primary: Optional[errors.ErrorDecision] = None
     primary_stage: Optional[str] = None
 
@@ -195,7 +220,8 @@ class WriteReport:
         w = self.write
         nothing_written = w["status"] in (NOT_ATTEMPTED, SKIPPED) or (
             w["status"] == FAILED and w.get("request") != ACCEPTED)
-        if clean and nothing_written and self.activation["status"] != UNKNOWN:
+        if (clean and nothing_written and self.activation["status"] != UNKNOWN
+                and self.part_creation["status"] in (NOT_ATTEMPTED, FAILED)):
             return "not_written"
         if clean and w["status"] == VERIFIED and self.activation["status"] == FAILED:
             return "partial"
@@ -208,6 +234,8 @@ class WriteReport:
         data.update({
             "lock": self.lock, "write": self.write,
             "activation": self.activation, "unlock": self.unlock,
+            "candidate_check": self.candidate_check,
+            "part_creation": self.part_creation,
             "outcome": self.outcome,
         })
         return data
@@ -226,7 +254,8 @@ class WriteReport:
 
 def _readback_matches(plan: WritePlan, *, stateful: bool,
                       version: Optional[str] = None) -> tuple[Optional[bool], dict]:
-    r = handlers.read_source_main(plan.object_uri, stateful=stateful, version=version)
+    r = handlers.read_source_main(plan.object_uri, stateful=stateful, version=version,
+                                 **plan.source_options)
     if r.is_error:
         return None, {"error": _err(r)}
     got = sha256_text(canonical_source(r.text))
@@ -286,14 +315,20 @@ def _locked_write(plan: WritePlan, rep: WriteReport, progress) -> None:
                      f"confirmed {plan.transport}; nothing was written")
             return
         progress("Re-checking baseline under lock ...")
-        cur = handlers.read_source_main(plan.object_uri, stateful=True)
+        if plan.part != "main":
+            from .development import part_baseline
+            cur = part_baseline(plan.object_uri, plan.part, allow_missing=plan.create_part,
+                                stateful=True)
+        else:
+            cur = handlers.read_source_main(plan.object_uri, stateful=True)
         if cur.is_error:
             rep.baseline_recheck = {"status": FAILED, "error": _err(cur)}
             rep.fail("baseline", cur.error_code or errors.SERVER_ERROR,
                      f"baseline re-check: {cur.text}", cur.http_status)
             return
         cur_sha = sha256_text(canonical_source(cur.text))
-        if cur_sha != plan.baseline_sha256:
+        if (cur_sha != plan.baseline_sha256
+                or bool((cur.meta or {}).get("absent")) != plan.baseline_absent):
             rep.baseline_recheck = {"status": "changed", "sha256": cur_sha}
             rep.fail("baseline", errors.BASELINE_CHANGED,
                      f"remote source changed after confirmation (sha256 {cur_sha} "
@@ -301,13 +336,38 @@ def _locked_write(plan: WritePlan, rep: WriteReport, progress) -> None:
             return
         rep.baseline_recheck = {"status": "matched", "sha256": cur_sha}
 
+        if plan.check_before_write:
+            from .development import check_candidate
+            checked = check_candidate(plan.object_uri, plan.content, part=plan.part,
+                                      stateful=True)
+            rep.candidate_check = checked.data or {"status": "unavailable",
+                                                  "error": _err(checked)}
+            if checked.is_error or rep.candidate_check["status"] != "passed":
+                rep.fail("candidate_check", errors.BAD_REQUEST,
+                         "candidate source check did not pass; nothing was written")
+                return
+
+        if plan.baseline_absent:
+            from .development import generate_part
+            rep.part_creation = {"status": UNKNOWN}
+            try:
+                stub = generate_part(plan.object_uri, plan.part, handle, plan.transport)
+                rep.part_creation = {"status": VERIFIED,
+                                     "generated_sha256": sha256_text(canonical_source(stub))}
+            except Exception as exc:
+                decision = errors.classify(exc)
+                rep.part_creation["error"] = {"code": decision.code, "message": decision.message}
+                rep.fail("part_creation", errors.WRITE_INCOMPLETE,
+                         "include generation unverified; do not retry automatically")
+                return
+
         body = plan.content.encode("utf-8")
         if hashlib.sha256(body).hexdigest() != plan.content_sha256:
             rep.fail("content", errors.CONTENT_CHANGED, "upload body does not match the confirmed hash")
             return
         progress(f"Writing source ({len(body)} bytes) ...")
         put = handlers.put_source(plan.object_uri, plan.content, handle,
-                                  transport=plan.transport)
+                                  transport=plan.transport, **plan.source_options)
         if put.is_error and not _outcome_unknown(put):
             rep.write = {"status": FAILED, "error": _err(put)}
             rep.fail("write", put.error_code or errors.SERVER_ERROR, f"write: {put.text}",

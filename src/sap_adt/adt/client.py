@@ -82,12 +82,23 @@ def _redact(text, config: SapConfig) -> str:
     return log_redaction.redact(text, secret=config.password, username=config.username)
 
 
-def _wrap_error(exc: Exception, config: SapConfig, method: str, url: str) -> AdtHttpError:
+def _wrap_error(exc: Exception, config: SapConfig, method: str, url: str,
+                *, stream: bool = False) -> AdtHttpError:
     """Translate requests exceptions into sanitized AdtHttpError instances."""
     safe_url = _safe_url(url)
     if isinstance(exc, requests.HTTPError) and exc.response is not None:
         response = exc.response
-        body = _redact(response.text or "", config)[:_MAX_BODY_CHARS]
+        if stream:
+            try:
+                body = next(response.iter_content(chunk_size=_MAX_BODY_CHARS), b"")
+                body = body[:_MAX_BODY_CHARS].decode("utf-8", errors="replace")
+            except requests.RequestException:
+                body = "(error response body unavailable)"
+            finally:
+                response.close()
+        else:
+            body = response.text or ""
+        body = _redact(body, config)[:_MAX_BODY_CHARS]
         return AdtHttpError(
             f"HTTP {response.status_code} for {method} {safe_url}: {body}".rstrip(": "),
             status=response.status_code,
@@ -224,5 +235,5 @@ def make_adt_request(
     try:
         resp.raise_for_status()
     except requests.HTTPError as e:
-        raise _wrap_error(e, config, method, url) from None
+        raise _wrap_error(e, config, method, url, stream=stream) from None
     return resp

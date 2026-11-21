@@ -102,7 +102,7 @@ def check_cli(command: list[str]) -> None:
                 "SAP_URL": f"http://127.0.0.1:{server.server_port}",
                 "SAP_USERNAME": "FIXTURE", "SAP_PASSWORD": "fixture",
                 "SAP_CLIENT": "000", "SAP_ENVIRONMENT": "dev",
-                "SAP_ALLOW_EXECUTE": "true", "SAP_ALLOW_WRITE": "true",
+                "SAP_ALLOW_EXECUTE": "true", "SAP_ALLOW_WRITE": "false",
                 "SAP_ADT_FORMAT": "json", "NO_PROXY": "127.0.0.1", "no_proxy": "127.0.0.1",
                 "HOME": home, "USERPROFILE": home, "PYTHONUTF8": "1",
             })
@@ -133,6 +133,13 @@ def check_cli(command: list[str]) -> None:
                 if args[0] == "run-abap":
                     assert result["data"]["cleanup"]["status"] == "verified"
                     assert len(objects) == 2
+            for args in (
+                ["create-object", "class", "ZPROBE", "--package", "$TMP", "--description", "Probe"],
+                ["write-source", "class", "ZCL_DEMO", "--file", str(snippet)],
+                ["activate", "class", "ZCL_DEMO"],
+            ):
+                denied = invoke(args, 3)
+                assert denied["error"]["code"] == "WRITE_DISABLED"
             denied = invoke(["run-class", "ZCL_DEMO", "--dry-run"], 3,
                             {"SAP_ALLOW_EXECUTE": "false"})
             assert denied["error"]["code"] == "EXECUTE_DISABLED"

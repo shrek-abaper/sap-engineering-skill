@@ -24,9 +24,15 @@ authorizations and background/GUI dependencies still apply.
   debug and TLS settings. `--no-allow-execute` disables the capability.
 - Complete env/dotenv connections use `SAP_ALLOW_EXECUTE=true` with explicit
   `SAP_ENVIRONMENT=dev|qas`. PRD is hard-refused regardless of flags.
-- `run-abap` also needs `allow_write`: its approval covers creating,
-  writing, activating, executing and attempting to delete one owned Class.
-  Package is fixed to `$TMP`; no generic create/delete command is exposed.
+- CLI **1.6.4+**: `run-abap` needs only `allow_execute`, not `allow_write`.
+  Execution approval covers creating, writing, activating, executing and
+  attempting to delete one invocation-owned Class in the fixed `$TMP` package.
+  CLI 1.6.3 still requires both flags for snippets.
+- Keep `allow_write=false` to deny generic `create-object`, `write-source` and
+  `activate` operations. Execution authorization does not enable these commands.
+  The SAP user still needs development permissions for the temporary Class.
+  These CLI gates do not restrict arbitrary ABAP to RFC calls or prevent
+  business/source changes performed by the approved code.
 - Each invocation requires fresh confirmation. `--yes` only skips the
   prompt when `--expect-plan-sha256` matches the reviewed dry-run plan.
 

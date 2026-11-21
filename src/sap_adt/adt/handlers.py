@@ -1316,7 +1316,7 @@ def _lock_field(resp: requests.Response, field: str) -> str:
 
 
 def read_source_main(object_uri: str, *, stateful: bool = False,
-                     version: Optional[str] = None) -> AdtResult:
+                     version: Optional[str] = None, part: str = "main") -> AdtResult:
     """GET <object>/source/main as text (``result.text``).
 
     Without ``version`` ADT returns the working (inactive, if any) version,
@@ -1324,8 +1324,9 @@ def read_source_main(object_uri: str, *, stateful: bool = False,
     ``stateful`` keeps the read inside the stateful session owning a lock.
     """
     try:
+        from .source_parts import source_path
         resp = make_adt_request(
-            f"{_base()}{object_uri}/source/main",
+            f"{_base()}{source_path(object_uri, part)}",
             params={"version": version} if version else None,
             extra_headers=({"X-sap-adt-sessiontype": "stateful"}
                            if stateful else None),
@@ -1359,17 +1360,20 @@ def put_source(
     content: str,
     lock_handle: str,
     transport: Optional[str] = None,
+    *,
+    part: str = "main",
 ) -> AdtResult:
     # Verified 2026-09-16 on Basis 7.56: the lock handle travels as the
     # ?lockHandle= QUERY parameter (not the X-sap-adt-lock-handle header),
     # and a chosen transport is ?corrNr= (legacy name sap-cts-request is
     # ignored). The PUT is part of the stateful session that owns the lock.
     try:
+        from .source_parts import source_path
         params: dict = {"lockHandle": lock_handle}
         if transport:
             params["corrNr"] = transport
         make_adt_request(
-            f"{_base()}{object_uri}/source/main",
+            f"{_base()}{source_path(object_uri, part)}",
             method="PUT",
             data=content.encode("utf-8"),
             params=params,
