@@ -170,13 +170,27 @@ Windows TerminateProcess is abrupt death, not a catchable POSIX SIGTERM.
 Interactive Windows console Ctrl-C remains outside automated verification.
 
 `smoke_execution.py` checks Class/Report output, the complete temporary-Class
-lifecycle, independent consent and output truncation against a loopback-only
-fixture. It never uses SAP credentials or a live target.
+lifecycle with `allow_write=false`, continued refusal of generic source writes,
+independent consent and output truncation against a loopback-only fixture.
+It never uses SAP credentials or a live target.
 
 `smoke_npm.py` runs all three smokes after packing and isolated installation;
 the existing native macOS workflow therefore checks these primitives too.
 Redirected stdout/stderr must remain UTF-8 even when Windows Python starts
 with a legacy code page.
+
+The 1.6.4 release gate on 2026-11-21 passed 518 Python tests and 47 npm
+regressions on Linux, plus a clean wheel installation and all three installed
+runtime smokes. Windows-native ZIP/npm installation passed all three smokes;
+Windows-local npm regressions passed 42 tests with 5 platform-specific skips.
+Both native macOS targets passed 518 Python tests (3 skips), 46 npm tests
+(1 skip), builds and isolated npm runtime smokes in
+[Actions run 44904521434](https://github.com/shrek-abaper/sap-engineering-skill/actions/runs/44904521434),
+source `f2a61e3e99f8f8de2ddaa1e7b4a7af27fba49004`.
+Execution smokes on every target kept generic source writes disabled.
+The Windows installer compiler remains unavailable, so no 1.6.4 desktop
+installer is supplied. DEV development verification and remaining RAP/TR
+live-verification gaps are documented in the Skill development reference.
 
 The 1.6.2 release gate repeated the same matrix from the 1.6.2 source on
 2026-10-31: Linux passed the 467-test Python suite and 47 npm regressions;

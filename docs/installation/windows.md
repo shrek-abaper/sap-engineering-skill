@@ -1,10 +1,12 @@
 # Windows runtime and installer
 
-**Runtime / npm: CLI 1.6.3 verified locally** on 2026-11-21. The Windows x64 runtime
+**Runtime / npm: CLI 1.6.4 verified locally** on 2026-11-21. The Windows x64 runtime
 was built with Windows Python 3.12 through WSL interop, then installed from
 a locally packed npm package using Windows Node.js. SHA-256 verification,
 ZIP extraction, the npm command shim, `--version`, `--help`, and synthetic
 diagnostic/debugger/execution smokes passed.
+Snippet execution was verified with `allow_execute=true` and `allow_write=false`;
+generic creation, source writes and activation remained blocked.
 This does not verify SAP connectivity.
 
 Windows npm support starts with **CLI 1.5.3**. Older packages may list only
@@ -20,7 +22,7 @@ same-version upgrade, and uninstall passed. A synthetic configuration file
 was preserved. The PATH task and Start Menu shortcuts were disabled for
 this smoke test to avoid changing the host's environment.
 
-CLI 1.6.3 has no rebuilt desktop installer: the compiler was unavailable
+CLI 1.6.3 and 1.6.4 have no rebuilt desktop installer: the compiler was unavailable
 on the build host. Use its npm package or portable Windows ZIP instead.
 Earlier installer verification does not validate the new runtime version.
 
