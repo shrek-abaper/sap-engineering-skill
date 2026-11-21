@@ -2,6 +2,11 @@
 
 ## CLI 1.6.4 / plugin/docs 1.3.5 — 2026-11-21
 
+- Supplement the release with the Windows x64 desktop installer, built on the
+  Windows host using portable Inno Setup 6.7.4. Native PATH helper tests,
+  silent per-user install, same-version upgrade and uninstall passed without
+  changing user configuration or user/machine PATH. The installer remains
+  unsigned; graphical/elevated installation and real PATH mutation are unverified.
 - Let `run-abap` use independent `allow_execute` without `allow_write`, like
   Class/Report execution. Execution approval includes only its invocation-owned
   `$TMP` Class lifecycle; generic create/write/activate commands retain the

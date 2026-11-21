@@ -131,6 +131,14 @@ $env:PATH = 'C:\Path\To\Inno Setup 6;' + $env:PATH
 & $python tools/smoke_windows_installer.py
 ```
 
+Inno Setup 6.7.4 also supports `/PORTABLE=1 /CURRENTUSER /VERYSILENT /NOICONS`
+with `/DIR=<temporary-directory>`. Verify the official download's SHA-256
+and Authenticode signature before running it. Provision the portable compiler
+in a Windows-local temporary directory, not a WSL UNC share: its setup can
+fail while writing `.url` INI entries on that share. Only the child process
+PATH needs the compiler directory; no persistent PATH or execution-policy
+change is required.
+
 The smoke test compiles native PATH cleanup tests, then performs silent
 per-user installation, same-version upgrade, CLI launch and uninstall of
 the actual desktop installer. It refuses to run over an existing install,
@@ -188,9 +196,14 @@ Both native macOS targets passed 518 Python tests (3 skips), 46 npm tests
 [Actions run 44904521434](https://github.com/shrek-abaper/sap-engineering-skill/actions/runs/44904521434),
 source `f2a61e3e99f8f8de2ddaa1e7b4a7af27fba49004`.
 Execution smokes on every target kept generic source writes disabled.
-The Windows installer compiler remains unavailable, so no 1.6.4 desktop
-installer is supplied. DEV development verification and remaining RAP/TR
-live-verification gaps are documented in the Skill development reference.
+The Windows 1.6.4 desktop installer was subsequently built using official
+portable Inno Setup 6.7.4 on the Windows host through WSL interop. Native
+PATH cleanup tests, silent per-user install in a Unicode/space path,
+same-version upgrade and uninstall passed; synthetic configuration and
+user/machine PATH remained unchanged. GUI clicks, actual PATH mutation,
+elevation, signing and live SAP access remain unverified. DEV development
+verification and remaining RAP/TR live-verification gaps are documented
+in the Skill development reference.
 
 The 1.6.2 release gate repeated the same matrix from the 1.6.2 source on
 2026-10-31: Linux passed the 467-test Python suite and 47 npm regressions;

@@ -13,18 +13,19 @@ Windows npm support starts with **CLI 1.5.3**. Older packages may list only
 `linux-x86_64`; upgrade with `npm install -g "sap-adt-cli@^1.5.3"` and then
 run `sap-adt install` again. The Windows ZIP and desktop installer are
 available from the corresponding
-[GitHub Release](https://github.com/shrek-abaper/sap-engineering-skill/releases/tag/sap-adt-v1.5.3).
+[GitHub Release](https://github.com/shrek-abaper/sap-engineering-skill/releases/tag/sap-adt-v1.6.4).
 
-**Desktop installer: CLI 1.6.2 silent per-user lifecycle verified locally** on
+**Desktop installer: CLI 1.6.4 silent per-user lifecycle verified locally** on
 Windows 11 x64, using Inno Setup 6.7.4 through WSL interop. Installation into
 a path containing spaces and Chinese characters, runtime startup,
 same-version upgrade, and uninstall passed. A synthetic configuration file
 was preserved. The PATH task and Start Menu shortcuts were disabled for
 this smoke test to avoid changing the host's environment.
 
-CLI 1.6.3 and 1.6.4 have no rebuilt desktop installer: the compiler was unavailable
-on the build host. Use its npm package or portable Windows ZIP instead.
-Earlier installer verification does not validate the new runtime version.
+Download the unsigned
+[CLI 1.6.4 Windows x64 installer](https://github.com/shrek-abaper/sap-engineering-skill/releases/download/sap-adt-v1.6.4/sap-adt-1.6.4-windows-x86_64-setup.exe).
+The installer uses the same verified runtime as the portable ZIP and npm.
+CLI 1.6.3 did not have a rebuilt desktop installer.
 
 The PATH cleanup helper is separately tested with native Inno Setup code.
 Actual user PATH mutation, graphical wizard clicks, interactive credential

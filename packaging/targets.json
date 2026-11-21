@@ -7,7 +7,7 @@
       "status": "verified-local",
       "python_floor": "3.10",
       "installer": "packaging/windows/setup.iss (Inno Setup 6, per-user default)",
-      "notes": "CLI 1.6.4 Windows x64 runtime built with Windows Python 3.12 via WSL interop on 2026-11-21; ZIP and isolated npm install passed diagnostic/debugger/execution cross-process smokes, including execute-only snippets with generic source writes disabled. Windows-local npm regressions: 42 passed, 5 platform-specific skips. The desktop installer was last verified for CLI 1.6.2 with Inno Setup 6.7.4; no 1.6.4 installer is supplied because the compiler is unavailable on this host. Interactive wizard, actual PATH mutation, elevated installation, live Windows SAP access and live debugger attachment are unverified."
+      "notes": "CLI 1.6.4 Windows x64 runtime built with Windows Python 3.12 via WSL interop on 2026-11-21; ZIP and isolated npm install passed diagnostic/debugger/execution cross-process smokes, including execute-only snippets with generic source writes disabled. Windows-local npm regressions: 42 passed, 5 platform-specific skips. The 1.6.4 desktop installer was built with official portable Inno Setup 6.7.4 and passed native PATH cleanup tests, silent per-user install in a Unicode/space path, same-version upgrade and uninstall; synthetic configuration and user/machine PATH were preserved. Interactive wizard, actual PATH mutation, elevated installation, live Windows SAP access and live debugger attachment are unverified."
     },
     "linux-x86_64": {
       "status": "verified-local",
