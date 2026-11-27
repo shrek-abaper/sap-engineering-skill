@@ -16,6 +16,10 @@ def json_bytes(value):
 def read_json(path, limit=10 * 1024 * 1024):
     with open(path, "rb") as stream:
         raw = stream.read(limit + 1)
+    return parse_json(raw, limit)
+
+
+def parse_json(raw, limit=10 * 1024 * 1024):
     if len(raw) > limit:
         raise ValueError("JSON artifact exceeds the byte budget")
     def unique(pairs):
@@ -45,8 +49,8 @@ def write_package(path, kind, assets, *, context=None, gaps=None):
     total = 0
     for name, value in assets.items():
         member = PurePosixPath(name)
-        if (member.is_absolute() or any(p in (".", "..") for p in name.split("/"))
-                or "\\" in name or name == "manifest.json" or not name):
+        if (member.is_absolute() or any(p in ("", ".", "..") for p in name.split("/"))
+                or "\\" in name or ":" in name or name == "manifest.json" or not name):
             raise ValueError("Invalid package member name")
         raw = value if isinstance(value, bytes) else json_bytes(value)
         total += len(raw)

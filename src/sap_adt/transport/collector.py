@@ -102,3 +102,30 @@ def run_collect(
     click.echo(f"Review Package: {out_path.resolve()}")
     click.echo(f"Manifest:       {manifest_path.resolve()}")
     return manifest
+
+
+def bundle(path, output_dir, manifest, config):
+    """Wrap the unchanged legacy layout with target binding and asset hashes."""
+    from .. import artifacts, policy
+    root = Path(output_dir).resolve()
+    assets, gaps = {}, []
+    for obj in manifest["objects"]:
+        name = obj.get("source_file")
+        if not obj.get("source_fetched") or not name:
+            gaps.append({"code": "TRANSPORT_SOURCE_UNAVAILABLE", "object": obj})
+            continue
+        member = (root / name).resolve()
+        if not member.is_relative_to(root) or name in assets:
+            gaps.append({"code": "TRANSPORT_SOURCE_PATH_INVALID_OR_DUPLICATED", "object": obj})
+            continue
+        with member.open("rb") as stream:
+            raw = stream.read(20 * 1024 * 1024 + 1)
+        if len(raw) > 20 * 1024 * 1024:
+            raise ValueError("Transport source exceeds its package byte budget")
+        assets[name] = raw
+    data = {"target": policy.target(config), "transport": manifest["meta"]["tr_id"],
+            "objects": manifest["objects"], "collector": manifest, "evidence_gaps": gaps,
+            "scope": "collector-observed active representations; not a released transport snapshot"}
+    assets["transport.json"] = data
+    return artifacts.write_package(path, "transport", assets,
+        context={"target": data["target"], "transport": data["transport"]}, gaps=gaps)

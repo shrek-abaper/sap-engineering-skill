@@ -54,7 +54,7 @@ def operation(command, params=None):
         kind, risk = ("read", "low") if read else ("debug_control", "high")
         if not read:
             approval = "session_scoped_consent"
-    elif command in ("unit skeleton", "diagnose", "git export", "delivery pack") or (
+    elif command in ("unit skeleton", "diagnose", "git export", "delivery pack", "transport collect") or (
             command in ("config-data read", "quality-check") and params.get("output_file")):
         kind, risk = "local_write", "low"
     elif command.startswith(("profile ", "credentials ")) or command in ("configure", "update"):

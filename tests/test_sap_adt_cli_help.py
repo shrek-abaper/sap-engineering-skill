@@ -49,7 +49,7 @@ class HelpTests(unittest.TestCase):
                          ["get-versions", "get-version-source", "diff-versions", "compare-object", "git"])
         self.assertEqual(self.command_names(sections["Transport requests"]),
                          ["list-transports", "get-transport", "transport",
-                          "create-transport", "release-transport"])
+                          "create-transport", "release-transport", "delivery"])
         self.assertEqual(self.command_names(sections["Execute ABAP (explicit approval)"]),
                          ["run-class", "run-report", "run-abap", "run-function"])
 

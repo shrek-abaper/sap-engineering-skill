@@ -36,6 +36,9 @@ the compatible CLI range is declared in
 **references/runtime-compatibility.json** (never guess it, never resolve
 `@latest` per task).
 
+For target binding, bounded metadata/impact, evidence gates, configuration,
+Git and requirement delivery packages, load **references/executor.md**.
+
 ```bash
 sap-adt status
 sap-adt <command> [args]
@@ -326,6 +329,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `git status` | --repo ROOT: porcelain state, rename paths, branch and HEAD; no SAP credentials required | scalar |
 | `git map` | TR --repo ROOT --mapping-file FILE [--commit REF] [--verify-transport]; explicit object/file links, optional current SAP membership verification | scalar |
 | `git export` | Same arguments plus --output-file NEW.zip; changed mapped ABAP/XML/JSON files and existing .abapgit.xml; delta evidence, not a certified importable abapGit repository | scalar |
+| `delivery pack` | REQUIREMENT --transport TR (repeatable) --asset KIND=PATH (repeatable) --target-fingerprint SHA --output-file NEW.zip; verifies nested hashes/target/TR/age, explicit missing evidence, no SAP calls or test replay | scalar |
 | `get-transport <TRKORR>` | request/task metadata and deduplicated objects; read-only | records |
 | `diagnose --output-file NEW.zip` | exactly one --dump-id ID or --message TEXT; optional --feed-uri/--query, --max-entries/--max-dumps/--max-chars; bounded dump/feed/termination-source evidence, literal candidate correlation only, gaps exit 1 | scalar |
 | `get-object <TYPE> <N> [--max-nodes N]` | message-class, lock-object, enhancement-spot, badi (named BAdI spot and declared definitions), badi-implementation, enhancement-implementation, source-enhancement; enhancement-point lists lexical declarations in the named owner program | scalar |

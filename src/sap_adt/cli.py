@@ -2803,12 +2803,14 @@ def _transport_config(legacy: bool):
 @click.option("--output-dir", "-o", default=None,
               help="Output directory (default: ./review_package/<TR_ID>/)")
 @click.option("--verbose", "-v", is_flag=True, help="Show each object fetch result")
+@click.option("--bundle", type=click.Path(dir_okay=False), default=None,
+              help="Also wrap collected files in a NEW target-bound evidence ZIP.")
 @click.option("--legacy-config", is_flag=True, default=False,
               help="Explicitly read the legacy plaintext collector config "
                    "(~/.sap-transport-gate/config.json) instead of ADT "
                    "profiles; prints a migration warning. Never used "
                    "implicitly.")
-def transport_collect_cmd(tr_id, output_dir, verbose, legacy_config):
+def transport_collect_cmd(tr_id, output_dir, verbose, legacy_config, bundle):
     """Collect a TR's object list and source code into a review package (read-only).
 
     TR_ID is the transport request number, e.g. DEVK900001. The output
@@ -2818,17 +2820,66 @@ def transport_collect_cmd(tr_id, output_dir, verbose, legacy_config):
     """
     if not handlers._valid_trkorr(tr_id):
         _gate(errors.BAD_REQUEST, "Invalid transport number")
+    if bundle and os.path.lexists(bundle):
+        _gate(errors.BAD_REQUEST, "Transport bundle already exists")
     config = _transport_config(legacy_config)
     if output.get_format() == "json":
         with redirect_stdout(StringIO()):
             manifest = collector.run_collect(config, tr_id, output_dir, verbose,
                                              collector_version=get_version())
-        _local_output({"manifest": manifest, "output_dir": output_dir or f"review_package/{tr_id}"}, "")
+        data = {"manifest": manifest, "output_dir": output_dir or f"review_package/{tr_id}"}
+        if bundle:
+            try:
+                data["bundle"] = collector.bundle(bundle, data["output_dir"], manifest, config)
+            except Exception as exc:
+                _emit_error(errors.classify(exc))
+        _local_output(data, "")
         if manifest["summary"]["fetch_errors"]:
             sys.exit(1)
+        if bundle and data["bundle"]["manifest"]["partial"]:
+            sys.exit(1)
     else:
-        collector.run_collect(config, tr_id, output_dir, verbose,
-                              collector_version=get_version())
+        manifest = collector.run_collect(config, tr_id, output_dir, verbose,
+                                         collector_version=get_version())
+        if bundle:
+            try:
+                report = collector.bundle(bundle, output_dir or f"review_package/{tr_id}", manifest, config)
+            except Exception as exc:
+                _emit_error(errors.classify(exc))
+            click.echo("Evidence bundle: " + report["path"])
+            if report["manifest"]["partial"]:
+                sys.exit(1)
+
+
+@cli.group("delivery", help_group=_TRANSPORT_HELP, help_order=60,
+           short_help="Assemble explicit requirement delivery evidence.")
+def delivery_group():
+    """Local packaging only: no SAP calls, test replay or release authorization."""
+
+
+@delivery_group.command("pack")
+@click.argument("requirement")
+@click.option("--transport", "transports", multiple=True, required=True)
+@click.option("--asset", "assets", multiple=True, required=True, help="KIND=PATH; see executor reference.")
+@click.option("--target-fingerprint", required=True, callback=lambda _c, _p, v: _sha256_option(v))
+@click.option("--require-kind", "required", multiple=True,
+              type=click.Choice(["transport", "source", "diff", "unit", "quality", "configuration", "diagnosis", "git"]),
+              default=("transport", "source", "unit", "quality", "git"))
+@click.option("--max-age-hours", type=click.IntRange(1, 8760), default=168)
+@click.option("--output-file", required=True, type=click.Path(dir_okay=False))
+def delivery_pack(requirement, transports, assets, target_fingerprint, output_file, **options):
+    """Verify imported manifests/hashes and environment/TR binding; incomplete packages exit 1."""
+    from sap_adt import delivery
+    if os.path.lexists(output_file):
+        _gate(errors.BAD_REQUEST, "Delivery output already exists")
+    try:
+        data = delivery.pack(requirement, transports, assets, target_fingerprint, output_file, **options)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
 
 
 @transport_group.command("ping")
