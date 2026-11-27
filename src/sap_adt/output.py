@@ -158,6 +158,8 @@ def _text_fields(data: dict) -> str:
 
 
 def _text_objects(data: dict) -> str:
+    if "edges" in data:
+        return json.dumps(data, indent=2, ensure_ascii=False)
     lines = []
     for o in data.get("objects", []):
         lines.append("\t".join([
@@ -200,12 +202,25 @@ def _text_findings(data: dict) -> str:
         lines.append(line)
     if data.get("summary"):
         lines.insert(0, "ABAP Unit: " + json.dumps(data["summary"], ensure_ascii=False))
+    if data.get("gate"):
+        lines.insert(0, "Gate: " + json.dumps(data["gate"], ensure_ascii=False))
+    if data.get("coverage"):
+        coverage = data["coverage"]
+        lines.append("Coverage: " + json.dumps({
+            k: coverage[k] for k in ("status", "provider", "percent") if k in coverage},
+            ensure_ascii=False))
+    for engine in data.get("engines", []):
+        lines.append(f"{engine['engine']}: {engine['status']}")
+    if data.get("bundle"):
+        lines.append("Bundle: " + data["bundle"]["path"])
     for gap in data.get("evidence_gaps", []):
         lines.append("EVIDENCE_GAP: " + json.dumps(gap, ensure_ascii=False))
     return "\n".join(lines)
 
 
 def _text_scalar(data: dict) -> str:
+    if "evidence_gaps" in data:
+        return json.dumps(data, indent=2, ensure_ascii=False)
     lines = []
     for key, value in data.items():
         if isinstance(value, (list, dict)):

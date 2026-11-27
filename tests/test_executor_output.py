@@ -58,3 +58,21 @@ class ExecutorOutputTests(unittest.TestCase):
         item = json.loads(output.stdout)
         self.assertEqual(item["warnings"][0]["code"], "UNAVAILABLE")
         self.assertTrue(item["next_steps"])
+
+    def test_text_keeps_nested_executor_evidence_and_quality_gate_state(self):
+        cases = [
+            ("scalar", {"entity": {"name": "T002"}, "rows": [["EN"]],
+                        "evidence_gaps": []}, ("T002", "EN")),
+            ("objects", {"objects": [], "edges": [{"from": "A", "to": "B"}],
+                         "evidence_gaps": [{"code": "GRAPH_NODE_LIMIT_REACHED"}]},
+             ("GRAPH_NODE_LIMIT_REACHED", '"from": "A"')),
+            ("findings", {"findings": [], "gate": {"status": "incomplete"},
+                          "engines": [{"engine": "atc", "status": "unavailable"}]},
+             ("Gate:", "incomplete", "atc: unavailable")),
+        ]
+        for kind, data, expected in cases:
+            rendered = self.cli.output.render(self.cli.handlers.AdtResult(kind=kind, data=data), "text")
+            for value in expected:
+                self.assertIn(value, rendered)
+        legacy = self.cli.handlers.AdtResult(kind="scalar", data={"name": "LEGACY", "value": 2})
+        self.assertEqual(self.cli.output.render(legacy, "text"), "name: LEGACY\nvalue: 2")

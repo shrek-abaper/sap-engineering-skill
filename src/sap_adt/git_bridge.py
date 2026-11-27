@@ -75,6 +75,7 @@ def status(path):
     return {"repository": str(root), "branch": branch.stdout.decode().strip() or None,
             "head": head.stdout.decode().strip() if head.returncode == 0 else None,
             "changes": changes, "clean": not changes,
+            "evidence_gaps": [],
             "scope": "local working tree/index; no fetch, remote contact, commit or push"}
 
 
