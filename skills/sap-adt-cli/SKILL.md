@@ -322,10 +322,13 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `get-versions <TYPE> <N> [--group G] [--max-results N]` | per-include version history; limit per part; partial history exits 1 | versions |
 | `get-version-source <URI>` | opaque content_uri from get-versions; plain source default | source |
 | `diff-versions <FROM_URI> <TO_URI> [--context N]` | local unified diff of two version contents; `--format text` for patch output | diff |
+| `compare-object <TYPE> <N> --from-profile A --to-profile B [--part P] [--group G]` | strict named profiles, isolated sessions; active source/metadata hashes and diff; same origin/client refused, missing side is a gap, never an empty baseline | scalar |
 | `get-transport <TRKORR>` | request/task metadata and deduplicated objects; read-only | records |
 | `diagnose --output-file NEW.zip` | exactly one --dump-id ID or --message TEXT; optional --feed-uri/--query, --max-entries/--max-dumps/--max-chars; bounded dump/feed/termination-source evidence, literal candidate correlation only, gaps exit 1 | scalar |
 | `get-object <TYPE> <N> [--max-nodes N]` | message-class, lock-object, enhancement-spot, badi (named BAdI spot and declared definitions), badi-implementation, enhancement-implementation, source-enhancement; enhancement-point lists lexical declarations in the named owner program | scalar |
 | `transport diff` | request object diffs; missing baselines/unsupported objects/limits exit 1 with evidence gaps | diff |
+| `transport analyze` | TRKORR, --max-objects 1..100, --depth 1..5, --max-nodes 1..500; request/tasks, bounded static reverse references, versioned explainable technical risk indicators, no release approval | scalar |
+| `transport compare` | TRKORR --from-profile A --to-profile B [--max-objects N]; compare selected request object identities on two active systems, not exact released snapshots or import predictions | scalar |
 | `get-program / -class / -function-group / -function --group / -include / -interface / -cds-view / -type-group` | read source; get-class accepts --part main/definitions/implementations/testclasses | source |
 | `get-table / get-structure <N>` | DDIC fields (DDL on S/4) | fields |
 | `get-type-info <N>` | domain/data element with `resolved_as` | scalar |

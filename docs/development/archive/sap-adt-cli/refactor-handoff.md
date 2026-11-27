@@ -75,7 +75,7 @@ _LIST_KEY = {"fields":"fields","objects":"objects","rows":"rows",
 # environment inference (loose substring): prd/prod->prd, qas/qa->qas, else dev
 ```
 
-73 Click commands, 11 parser modules, 26 error codes. `check_contract.py`
+76 Click commands, 11 parser modules, 26 error codes. `check_contract.py`
 asserts all four tables stay aligned with SKILL.md and fails CI on drift.
 
 ## 3. Fourteen verified protocol facts (S/4HANA 2021 / Basis 7.56)

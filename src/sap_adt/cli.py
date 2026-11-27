@@ -1702,6 +1702,28 @@ def get_transport_cmd(trkorr):
     _output(handlers.get_transport(trkorr))
 
 
+@cli.command("compare-object", help_group=_HISTORY_HELP, help_order=40,
+             short_help="Compare active objects on two explicit profiles.")
+@click.argument("object_type")
+@click.argument("name")
+@click.option("--from-profile", required=True)
+@click.option("--to-profile", required=True)
+@click.option("--part", type=click.Choice(PARTS), default="main")
+@click.option("--group", default=None)
+def compare_object_cmd(object_type, name, from_profile, to_profile, part, group):
+    """Strict profile connections bypass SAP_* overrides and isolate sessions; gaps exit 1."""
+    from sap_adt.adt import comparison
+    try:
+        data = comparison.compare(comparison.profiles(from_profile, to_profile),
+                                  object_type, name, part=part, group=group)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
+
+
 @cli.command("get-class", help_group=_SOURCE_HELP,
              short_help="Read a class's ABAP source.")
 @click.argument("class_name")
@@ -2549,6 +2571,44 @@ def transport_diff_cmd(trkorr, max_objects, context):
     result = handlers.diff_transport(trkorr, max_objects, context)
     _output(result)
     if result.meta.get("partial"):
+        sys.exit(1)
+
+
+@transport_group.command("analyze")
+@click.argument("trkorr")
+@click.option("--max-objects", type=click.IntRange(1, 100), default=20)
+@click.option("--depth", type=click.IntRange(1, 5), default=1)
+@click.option("--max-nodes", type=click.IntRange(1, 500), default=30)
+def transport_analyze(trkorr, **options):
+    """Read request/tasks, bounded consumer references and explainable technical indicators."""
+    from sap_adt.transport import analysis
+    config = _load_config()
+    _require_config(config)
+    try:
+        data = analysis.analyze(config, trkorr, **options)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
+
+
+@transport_group.command("compare")
+@click.argument("trkorr")
+@click.option("--from-profile", required=True)
+@click.option("--to-profile", required=True)
+@click.option("--max-objects", type=click.IntRange(1, 100), default=20)
+def transport_compare(trkorr, from_profile, to_profile, max_objects):
+    """Compare request object identities against active versions on an explicit target profile."""
+    from sap_adt.transport import analysis
+    try:
+        data = analysis.compare_transport(trkorr, from_profile, to_profile, max_objects)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
         sys.exit(1)
 
 

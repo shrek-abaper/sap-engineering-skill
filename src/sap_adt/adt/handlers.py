@@ -815,7 +815,9 @@ def get_source(uri: str, start_line: int = 1,
         if start_line < 1 or (end_line is not None and end_line < start_line):
             raise ValueError("Expected 1 <= start-line <= end-line")
         target = source_uri(uri)
-        resp = _read_adt(target, extra_headers={"Accept": "text/plain"})
+        resp = _read_adt(target, extra_headers={"Accept": "text/plain"}, allow_redirects=False)
+        if getattr(resp, "status_code", 200) != 200:
+            raise ParseError("Source request did not return HTTP 200")
         data = parse_source.parse(resp.content)
         lines = data["source"].splitlines(keepends=True)
         if start_line > max(1, len(lines)):

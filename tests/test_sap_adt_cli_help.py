@@ -46,7 +46,7 @@ class HelpTests(unittest.TestCase):
                          ["check-source", "syntax-check", "run-atc", "run-unit-test", "unit", "list-feeds",
                           "query-feed", "get-dump", "diagnose", "debug"])
         self.assertEqual(self.command_names(sections["Compare source versions"]),
-                         ["get-versions", "get-version-source", "diff-versions"])
+                         ["get-versions", "get-version-source", "diff-versions", "compare-object"])
         self.assertEqual(self.command_names(sections["Transport requests"]),
                          ["list-transports", "get-transport", "transport",
                           "create-transport", "release-transport"])
