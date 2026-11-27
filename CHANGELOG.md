@@ -28,6 +28,12 @@
   comparisons and syntax/ATC. The standard-class Unit run executed zero tests;
   TR/dump success paths remain fixture-tested because the available lists were
   empty. These limitations are not promoted to live certification.
+- Rebuild Linux/Windows and both native macOS runtimes, isolated npm
+  installations and the Windows desktop installer. Linux ran 613 Python and
+  47 npm tests; Windows passed 40 targeted executor tests and 42 npm tests
+  (5 skips). Both macOS jobs passed their suites and installation smokes in
+  Actions run 46073493281. Silent Windows install/upgrade/uninstall and native
+  PATH cleanup tests preserved configuration and user/machine PATH.
 
 ## CLI 1.6.5 / plugin/docs 1.3.6 — 2026-11-22
 

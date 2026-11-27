@@ -43,9 +43,9 @@ cd dist/npm && npm pack && cd ../..
 .venv/bin/python tools/check_release.py --skip-marketplace
 ```
 
-## Executor candidate 1.6.6 verification
+## Executor 1.6.6 verification
 
-The local source candidate passed 613 Python tests, 47 Node installer/update
+The local source passed 613 Python tests, 47 Node installer/update
 tests, the command/documentation contract, generated-snapshot checks, wheel/sdist
 builds, self-contained Skill builds and a clean-venv wheel installation.
 Real SAP reads verified enhancement/message/lock metadata, bounded references,
@@ -55,9 +55,27 @@ remained `not_run`; it is not passing Unit evidence. The current user's TR list
 and selected dump feed were empty, so nonempty TR/dump success paths remain
 fixture-verified. abaplint uses supplied bound native JSON, and coverage uses
 supplied source-bound measurements; neither is attested native instrumentation.
-No SAP source/configuration writes, transport release, Git push, package
-publication or marketplace switch were performed. Existing native-target notes
-below describe their recorded older versions, not rebuilt 1.6.6 certification.
+This executor acceptance performed no SAP source/configuration writes or
+transport release. Distribution verification is separate from live SAP
+certification.
+
+On 2026-11-27 UTC, the 1.6.6 Linux/Windows native runtimes passed isolated npm
+installation and diagnostic/debugger/execution cross-process smokes. Windows
+passed 40 targeted executor Python tests with temporary official MinGit, and
+42 npm regressions with 5 platform-specific skips. Its desktop installer,
+built with verified official portable Inno Setup 6.7.4, passed native PATH
+cleanup tests, silent per-user installation in a Unicode/space path,
+same-version upgrade and uninstall, preserving synthetic configuration and
+user/machine PATH.
+
+Both macOS targets ran 613 Python tests (3 skips), 47 npm tests (46 passed,
+1 skip), native builds and isolated npm runtime smokes in
+[Actions run 46073493281](https://github.com/shrek-abaper/sap-engineering-skill/actions/runs/46073493281),
+source `cb7b743b5f497af398773618ddcdb2b014a68d3a`.
+No personal Mac, signing/notarization, live Windows/macOS SAP access,
+graphical/elevated Windows installation or actual PATH mutation is certified.
+See `packaging/targets.json` for the precise current platform claims; the
+older release notes below remain historical.
 
 ## Windows runtime from WSL
 
