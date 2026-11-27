@@ -1303,6 +1303,23 @@ def get_program(program_name):
     _output(handlers.get_program(program_name))
 
 
+@cli.command("get-object", help_group=_SOURCE_HELP,
+             short_help="Read enhancement, message or lock metadata.")
+@click.argument("object_type", type=click.Choice([
+    "message-class", "lock-object", "enhancement-spot", "badi",
+    "badi-implementation", "enhancement-implementation", "source-enhancement",
+    "enhancement-point"]))
+@click.argument("name")
+@click.option("--max-nodes", type=click.IntRange(1, 20000), default=5000)
+def get_object_cmd(object_type, name, max_nodes):
+    """Read metadata. badi names an enhancement spot; enhancement-point names its owner program."""
+    from sap_adt.adt import object_evidence
+    result = object_evidence.read(object_type, name, max_nodes)
+    _output(result)
+    if (result.meta or {}).get("partial"):
+        sys.exit(1)
+
+
 @cli.command("list-feeds", help_group=_DIAGNOSIS_HELP, help_order=40,
              short_help="Find diagnostic feeds and filters.")
 def list_feeds_cmd():
@@ -1562,6 +1579,8 @@ def query_feed_cmd(uri, query, max_results, page_uri):
 @click.argument("object_type", type=click.Choice([
     "program", "class", "interface", "include", "function", "function-group",
     "table", "structure", "cds-view", "domain", "data-element", "type-group",
+    "cds", "bdef", "srvd", "srvb", "message-class", "lock-object", "enhancement-spot",
+    "badi", "badi-implementation", "enhancement-implementation", "source-enhancement",
 ]))
 @click.argument("name")
 @click.option("--group", default=None, help="Required for function modules.")
@@ -2293,7 +2312,9 @@ def activate_cmd(object_type, object_name, group, yes):
 @click.argument("object_name")
 @click.option("--max-results", default=50, show_default=True, help="Maximum number of results to return")
 @click.option("--group",       default=None, help="Function group (required when OBJECT_TYPE is 'function')")
-def where_used_cmd(object_type, object_name, max_results, group):
+@click.option("--depth", type=click.IntRange(1, 5), default=1, show_default=True)
+@click.option("--max-nodes", type=click.IntRange(1, 500), default=100, show_default=True)
+def where_used_cmd(object_type, object_name, max_results, group, depth, max_nodes):
     """List all objects that use the given ABAP object — read-only.
 
     OBJECT_TYPE: program / class / interface / include / function
@@ -2302,7 +2323,19 @@ def where_used_cmd(object_type, object_name, max_results, group):
     Returns an 'objects' envelope; objects may carry usage_line/usage_uri.
     An empty result is ok:true with row_count:0 (exit 0).
     """
-    _output(handlers.where_used(object_type, object_name, max_results=max_results, group=group))
+    if depth == 1:
+        _output(handlers.where_used(object_type, object_name, max_results=max_results, group=group))
+        return
+    from sap_adt.adt import object_evidence
+    try:
+        data = object_evidence.references(object_type, object_name, group=group,
+                                           depth=depth, max_nodes=max_nodes, per_node=max_results)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="objects", data={
+        **data, "objects": data["nodes"]}, meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
 
 
 @cli.command("run-sql", help_group=_DATA_HELP, help_order=10,

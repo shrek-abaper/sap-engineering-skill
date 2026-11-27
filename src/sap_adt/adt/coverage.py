@@ -34,6 +34,8 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("get-interface", ["/sap/bc/adt/oo/interfaces"]),
     ("get-cds-view", _DDL),
     ("get-type-group", ["/sap/bc/adt/ddic/typegroups"]),
+    ("get-object", ["/sap/bc/adt/messageclass", "/sap/bc/adt/ddic/lockobjects/sources",
+                    "/sap/bc/adt/enhancements/enhsxsb", "/sap/bc/adt/enhancements/enhoxh"]),
     ("get-table", ["/sap/bc/adt/ddic/tables"]),
     ("get-structure", ["/sap/bc/adt/ddic/structures"]),
     ("get-type-info",

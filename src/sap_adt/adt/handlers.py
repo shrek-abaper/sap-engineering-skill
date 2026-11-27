@@ -614,6 +614,7 @@ def where_used(
     object_name: str,
     max_results: int = 50,
     group: Optional[str] = None,
+    *, object_uri: Optional[str] = None,
 ) -> AdtResult:
     # New POST-only usageReferences resource. Per the abap-adt-api reference
     # implementation the uri query parameter is the RELATIVE, lower-case
@@ -626,7 +627,8 @@ def where_used(
         '</usagereferences:usageReferenceRequest>'
     ).encode("utf-8")
     try:
-        uri = get_object_uri(object_type, object_name, group=group).lower()
+        uri = (_adt_uri(object_uri) if object_uri else
+               get_object_uri(object_type, object_name, group=group)).lower()
         try:
             resp = make_adt_request(
                 f"{_base()}/sap/bc/adt/repository/informationsystem/usageReferences",
@@ -650,8 +652,11 @@ def where_used(
                 },
             )
         data = parse_objects.parse(resp.content)
+        count = len(data["objects"])
         data["objects"] = data["objects"][:max_results]
-        return _structured("objects", data, _obj(object_type, object_name), raw=resp.text)
+        return _structured("objects", data, _obj(object_type, object_name), raw=resp.text,
+                           meta={"limit": max_results, "limit_reached": count >= max_results,
+                                 "truncated": count > max_results})
     except ValueError as e:
         return _err(e)
     except Exception as e:
@@ -990,6 +995,9 @@ def query_feed(uri: str, query: str = "", max_results: int = 20,
 
 
 def _history_object_uri(object_type: str, name: str, group: Optional[str]) -> str:
+    from .object_evidence import RESOURCES, object_uri
+    if object_type in RESOURCES:
+        return object_uri(object_type, name)
     roots = {
         "class": "oo/classes", "interface": "oo/interfaces",
         "program": "programs/programs", "include": "programs/includes",
@@ -997,6 +1005,8 @@ def _history_object_uri(object_type: str, name: str, group: Optional[str]) -> st
         "structure": "ddic/structures", "cds-view": "ddic/ddl/sources",
         "domain": "ddic/domains", "data-element": "ddic/dataelements",
         "type-group": "ddic/typegroups",
+        "cds": "ddic/ddl/sources", "bdef": "bo/behaviordefinitions",
+        "srvd": "ddic/srvd/sources", "srvb": "businessservices/bindings",
     }
     if object_type == "function":
         if not group:

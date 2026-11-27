@@ -323,6 +323,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `get-version-source <URI>` | opaque content_uri from get-versions; plain source default | source |
 | `diff-versions <FROM_URI> <TO_URI> [--context N]` | local unified diff of two version contents; `--format text` for patch output | diff |
 | `get-transport <TRKORR>` | request/task metadata and deduplicated objects; read-only | records |
+| `get-object <TYPE> <N> [--max-nodes N]` | message-class, lock-object, enhancement-spot, badi (named BAdI spot and declared definitions), badi-implementation, enhancement-implementation, source-enhancement; enhancement-point lists lexical declarations in the named owner program | scalar |
 | `transport diff` | request object diffs; missing baselines/unsupported objects/limits exit 1 with evidence gaps | diff |
 | `get-program / -class / -function-group / -function --group / -include / -interface / -cds-view / -type-group` | read source; get-class accepts --part main/definitions/implementations/testclasses | source |
 | `get-table / get-structure <N>` | DDIC fields (DDL on S/4) | fields |
@@ -330,7 +331,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `get-transaction <CODE>` | package/application/facets | scalar |
 | `search-object "<PATTERN>" [--max-results N]` | wildcard search (`*`) | objects |
 | `get-package <N>` | package contents | objects |
-| `where-used <TYPE> <N> [--group G] [--max-results N]` | referencing objects | objects |
+| `where-used <TYPE> <N> [--group G] [--max-results N] [--depth 1..5] [--max-nodes N]` | static references; depth greater than 1 adds a bounded deduplicated graph, gaps exit 1; never proves dynamic impact completeness | objects |
 | `syntax-check <TYPE> <N> [--group G]` | findings; hard errors exit 1, warnings exit 0 | findings |
 | `run-unit-test [N...] [--type T] [--package P] [--transport T] [--recursive] [--max-objects N] [--risk-level harmless\|dangerous\|critical\|all] [--duration short\|medium\|long\|all] [--junit F] [--dry-run] [--expect-plan-sha256 H] [--yes] [--fail-on error\|warning\|info\|never] [--require-tests]` | repeatable risk/duration sets in one request per object; explicit names OR package OR TR/tasks; aggregate real method evidence/JUnit; no-tests is not passed | findings |
 | `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
