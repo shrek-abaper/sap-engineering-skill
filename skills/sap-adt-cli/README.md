@@ -39,6 +39,20 @@ optional activation with active-version readback. Each stage reports
 exit non-zero and are never retried or rolled back by writing old source.
 `--yes` requires `--expect-baseline-sha256` and skips only the prompt.
 
+CLI **1.6.6** adds target/environment expectations, enhancement/BAdI/message/lock
+metadata, bounded impact graphs, Unit gates/coverage evidence and result bundles,
+diagnosis packages, transport analysis, single-table/view configuration diffs,
+syntax/ATC/abaplint evidence gates, local Git/TR mappings and requirement delivery
+packages. All commands support explicit JSON; human-readable output remains.
+See the [atomic executor guide](references/executor.md) and
+[complete command index](SKILL.md#command-index).
+
+Coverage and abaplint are explicitly bound supplied reports, not attested native
+measurements. Git exports existing repository files, not invented SAP abapGit
+serialization. Zero tests, unavailable engines and incomplete evidence never
+become a passing gate. Packaging does not replay checks or release transports;
+reasoning and multi-agent orchestration stay outside the CLI.
+
 ---
 
 ## Requirements
@@ -150,8 +164,10 @@ sap-adt profile remove qas
 ```
 
 Profile selection order: `--profile` > `SAP_PROFILE` > the active profile set by
-`profile use`. Note the write/transport capability switches are **global** — they
-apply to every profile, including production.
+`profile use`. Write/transport capability flags are **profile-first**, with
+legacy global fallback only when a profile does not declare them. Debugging and
+execution require independent capabilities; production refuses risky operations.
+Use `status` and explicit target expectations before an operation.
 
 > A complete set of `SAP_URL/USERNAME/PASSWORD/CLIENT` environment variables (or a
 > dotenv file declared by `SAP_ADT_DOTENV`) overrides all profiles. Run `status`

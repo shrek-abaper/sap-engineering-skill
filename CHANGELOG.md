@@ -1,5 +1,34 @@
 # Changelog
 
+## CLI 1.6.6 / plugin/docs 1.3.7 — 2026-11-28
+
+- Distribute the JCo properties reference as Markdown for skill-platform
+  compatibility; its original properties block and config generator are unchanged.
+- Add configured-target expectations (origin/client/environment), operation risk,
+  approval annotations and error categories. Normalize explicit JSON envelopes
+  for online/local commands and usage failures without replacing text output.
+- Read enhancement/BAdI, message-class and lock metadata; retain existing RAP
+  readers/history and add bounded static impact graphs and strict two-profile
+  active-object comparisons. Missing sides never become empty baselines.
+- Add Unit gates, intentionally failing local test skeletons, supplied
+  source/target-bound line coverage and hashed result/JUnit bundles. Zero tests
+  remain `not_run`; native coverage instrumentation/authenticity is not claimed.
+- Collect bounded dump/message diagnosis bundles; analyze TR/task objects,
+  observed technical risk and cross-profile versions. Read/export one DDIC
+  table/database view and compare matching selections by keys, not row positions.
+- Aggregate SAP syntax/ATC and bound native abaplint JSON reports. Incomplete
+  engines and unknown severities never pass; no automatic tool installation.
+- Bridge read-only local Git status, explicit TR/object/file mapping and changed
+  repository-file export. No fetch/commit/push or SAP abapGit serialization is
+  performed. Membership remains unverified unless explicitly checked online.
+- Assemble requirement/TR evidence packages with nested hash/size/member checks,
+  target/TR/age binding, explicit applicability and inherited gaps. No replay,
+  business-completeness inference, release approval, LLM or persistent index.
+- Real SAP verified metadata, bounded references, two-profile source/config
+  comparisons and syntax/ATC. The standard-class Unit run executed zero tests;
+  TR/dump success paths remain fixture-tested because the available lists were
+  empty. These limitations are not promoted to live certification.
+
 ## CLI 1.6.5 / plugin/docs 1.3.6 — 2026-11-22
 
 - Extend ABAP Unit to bounded explicit/Package/TR-task regression selection,

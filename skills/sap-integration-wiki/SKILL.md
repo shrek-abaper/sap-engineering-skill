@@ -148,7 +148,7 @@ Point users to these runnable artifacts when they need working code or templates
 | PO item quantity update (PATCH body) | `assets/payloads/po-update.json` |
 | IDoc ORDERS05 XML example | `assets/payloads/idoc-orders05.xml` |
 | OAuth2 config template for S/4HANA On-Premise | `assets/configs/oauth-template.json` |
-| JCo connection properties template (all properties) | `assets/configs/jco-props.properties` |
+| JCo connection properties reference (copy the properties block to a .jcoDestination file) | `assets/configs/jco-props.md` |
 
 ---
 

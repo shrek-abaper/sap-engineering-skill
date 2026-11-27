@@ -27,6 +27,16 @@ CLI 1.6.2 将 **`write-source` 升级为可核验写入**：绑定基线与上�
 返回非零退出码，不盲目重试，也不回写旧源码充当回滚。
 `--yes` 必须配合 `--expect-baseline-sha256`，只跳过交互确认。
 
+CLI **1.6.6** 新增目标/环境校验、增强/BAdI/消息类/锁对象元数据、限量影响图、
+Unit 门禁/覆盖率证据和结果包、诊断包、TR 分析、单表/单视图配置差异、
+语法/ATC/abaplint 质量聚合、本地 Git/TR 映射及需求交付包。
+全部命令支持显式 JSON，同时保留人类可读文本。详见
+[原子执行器指南](references/executor.md)和[完整命令索引](SKILL.md#command-index)。
+
+覆盖率与 abaplint 采用显式绑定的外部报告，不冒称已认证的 SAP 原生测量。
+Git 导出现有仓库文件，不伪造 SAP abapGit 序列化。零测试、不可用检查引擎和
+证据缺口不会变成通过结论；打包不重跑检查或释放 TR，推理与多智能体编排留给上层。
+
 ---
 
 ## 环境要求
@@ -133,7 +143,8 @@ sap-adt profile remove qas
 ```
 
 profile 选择优先级：`--profile` > `SAP_PROFILE` > `profile use` 设置的 active profile。
-请注意写入/传输能力开关是**全局**的，对所有环境（含 PRD）都生效。
+写入/传输能力开关**优先读取 profile**，只有 profile 未声明时才沿用旧版全局回退。
+调试和执行分别需要独立能力；生产环境拒绝风险操作。操作前用 `status` 及显式目标校验确认环境。
 
 > 当环境变量或由 `SAP_ADT_DOTENV` 声明的 dotenv 文件中同时存在完整的 `SAP_URL/USERNAME/PASSWORD/CLIENT`
 > 四个变量时，它们会整体覆盖所有 profile；可运行 `status` 查看实际生效的配置来源。

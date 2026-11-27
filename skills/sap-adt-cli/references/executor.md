@@ -1,6 +1,6 @@
 # Atomic executor and evidence packages
 
-Requires CLI **1.6.6+**. This source candidate is not a publication claim.
+Requires CLI **1.6.6+**; confirm the installed version before using these commands.
 
 These additive commands keep SAP interaction deterministic. They do not embed
 LLM reasoning, build a persistent repository index, orchestrate a squad, attest

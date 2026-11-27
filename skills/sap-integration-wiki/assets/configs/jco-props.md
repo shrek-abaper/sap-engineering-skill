@@ -1,3 +1,12 @@
+# JCo destination properties reference
+
+This Markdown wrapper keeps the reference readable on skill-distribution
+platforms. Copy only the `properties` code block into `NAME.jcoDestination`;
+do not use the Markdown file itself as a JCo destination file.
+Replace placeholders and select direct or load-balanced connection settings.
+Supply real passwords at runtime; never commit them.
+
+```properties
 # JCo Destination Properties Template
 # File extension: .jcoDestination
 # Location: place in the directory passed to JCoDestinationManager or in the working directory.
@@ -179,3 +188,4 @@ jco.client.trace=0
 # Repository cache snapshot file path.
 # JCo can persist the repository to disk so it survives JVM restarts.
 # jco.destination.repository.serialized_file=/var/cache/sap-jco/repo_cache.ser
+```

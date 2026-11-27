@@ -3,14 +3,14 @@
 **Nothing in this document is executed by an agent without explicit
 authorization.** Remote publishing is a separate, human-approved step.
 
-Source candidate CLI **1.6.6** / plugin/docs **1.3.7** adds atomic-executor
+CLI **1.6.6** / plugin/docs **1.3.7** adds atomic-executor
 target expectations, explicit JSON normalization, enhancement metadata and
 bounded impact, Unit gates/evidence, diagnosis packages, transport analysis,
 single-entity configuration comparisons, quality bridges, local Git/TR mappings
 and verified requirement evidence assembly. It neither embeds LLM orchestration
 nor invokes a SAP abapGit serializer. Native coverage is not claimed; supplied
 coverage/lint execution is not attested. See the Skill's `references/executor.md`.
-No tag, package publication or live marketplace switch is implied.
+The release procedure below gates tagging, publication and marketplace switching.
 
 CLI **1.6.5** / plugin/docs **1.3.6** adds Unit regression/JUnit, typed local
 functions, Report selections/variants, expanded DDIC/RAP lifecycle and reviewed
