@@ -137,6 +137,12 @@ class SapAdtGroup(click.Group):
 def _profile_name():
     """Best-effort active profile name for the envelope; never blocks output."""
     try:
+        command = _command_path()
+        if (command.startswith("git ") or command in ("unit skeleton", "update", "delivery pack")):
+            return None
+    except RuntimeError:
+        pass
+    try:
         return load_config().profile_name
     except Exception:  # noqa: BLE001 - unconfigured/error results still print
         return None
@@ -2643,6 +2649,69 @@ def release_transport_cmd(trkorr, yes, dry_run):
     if result.is_error:
         _abort_on_error(result)
     _output(result)
+
+
+@cli.group("git", help_group=_HISTORY_HELP, help_order=50,
+           short_help="Inspect local Git and explicit TR/file mappings.")
+def git_group():
+    """Optional read-only local bridge; no remote Git calls or SAP serialization claims."""
+
+
+@git_group.command("status")
+@click.option("--repo", required=True, type=click.Path(exists=True, file_okay=False))
+def git_status(repo):
+    """Read local Git state without refreshing the index or running filesystem monitors."""
+    from sap_adt import git_bridge
+    try:
+        _output(handlers.AdtResult(kind="scalar", data=git_bridge.status(repo)))
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+
+
+def _git_mapping_options(command):
+    for option in (
+        click.argument("trkorr"),
+        click.option("--repo", required=True, type=click.Path(exists=True, file_okay=False)),
+        click.option("--mapping-file", required=True, type=click.Path(exists=True, dir_okay=False)),
+        click.option("--commit", default=None, help="One explicit commit; otherwise use working-tree/index changes."),
+        click.option("--verify-transport", is_flag=True, help="Read current SAP transport/task membership."),
+    ):
+        command = option(command)
+    return command
+
+
+def _git_evidence(output_file=None, **options):
+    from sap_adt import git_bridge
+    if output_file and os.path.lexists(output_file):
+        _gate(errors.BAD_REQUEST, "Git export already exists")
+    config = None
+    if options["verify_transport"]:
+        config = _load_config()
+        _require_config(config)
+    try:
+        data = (git_bridge.export(output_file=output_file, config=config, **options)
+                if output_file else git_bridge.mapping(config=config, **options))
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
+
+
+@git_group.command("map")
+@_git_mapping_options
+def git_map(repo, **options):
+    """Map explicit repository files to transport object identities; optional live membership check."""
+    _git_evidence(path=repo, **options)
+
+
+@git_group.command("export")
+@_git_mapping_options
+@click.option("--output-file", required=True, type=click.Path(dir_okay=False))
+def git_export(repo, **options):
+    """Export changed mapped files and existing abapGit config; no invented serializer output."""
+    _git_evidence(path=repo, **options)
 
 
 @cli.group("transport", help_group=_TRANSPORT_HELP, help_order=30,

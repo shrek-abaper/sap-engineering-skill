@@ -323,6 +323,9 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `get-version-source <URI>` | opaque content_uri from get-versions; plain source default | source |
 | `diff-versions <FROM_URI> <TO_URI> [--context N]` | local unified diff of two version contents; `--format text` for patch output | diff |
 | `compare-object <TYPE> <N> --from-profile A --to-profile B [--part P] [--group G]` | strict named profiles, isolated sessions; active source/metadata hashes and diff; same origin/client refused, missing side is a gap, never an empty baseline | scalar |
+| `git status` | --repo ROOT: porcelain state, rename paths, branch and HEAD; no SAP credentials required | scalar |
+| `git map` | TR --repo ROOT --mapping-file FILE [--commit REF] [--verify-transport]; explicit object/file links, optional current SAP membership verification | scalar |
+| `git export` | Same arguments plus --output-file NEW.zip; changed mapped ABAP/XML/JSON files and existing .abapgit.xml; delta evidence, not a certified importable abapGit repository | scalar |
 | `get-transport <TRKORR>` | request/task metadata and deduplicated objects; read-only | records |
 | `diagnose --output-file NEW.zip` | exactly one --dump-id ID or --message TEXT; optional --feed-uri/--query, --max-entries/--max-dumps/--max-chars; bounded dump/feed/termination-source evidence, literal candidate correlation only, gaps exit 1 | scalar |
 | `get-object <TYPE> <N> [--max-nodes N]` | message-class, lock-object, enhancement-spot, badi (named BAdI spot and declared definitions), badi-implementation, enhancement-implementation, source-enhancement; enhancement-point lists lexical declarations in the named owner program | scalar |
@@ -384,6 +387,14 @@ and `report_sha256` of UTF-8 `json.dumps(report, ensure_ascii=False, indent=2)`
 plus LF. Issues must belong to that one source file. Bindings are verified,
 but external measurement execution/authenticity is caller-supplied, not attested.
 No abaplint download, install or arbitrary subprocess is performed.
+
+Git mapping JSON: `{"schema_version":1,"transport":"DEVK900001","objects":[{"pgmid":"R3TR","type":"CLAS","name":"ZCL_A","files":["src/zcl_a.clas.abap"]}]}`.
+The map is caller-supplied, not inferred from names/history. Offline membership
+is explicitly unverified (partial/exit 1). `--verify-transport` checks current
+request/task membership using the selected SAP connection. Commit exports use
+that commit's blobs/config; otherwise exports use working-tree bytes, not staged
+blobs. Missing/deleted file content is a gap, never an empty source. No remote
+abapGit endpoint is guessed or ordinary ADT source relabelled as its serialization.
 
 ## Safety gates (do not weaken)
 
