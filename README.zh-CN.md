@@ -63,6 +63,7 @@ ABAP 工具正在快速演进：SAP 推出了内置 MCP Server 的 ADT for VS Co
 | 诊断 ABAP Unit 失败与运行时 Dump | [`sap-adt-cli`](skills/sap-adt-cli/) | 已有证据可离线分析；采集新证据需要 CLI 1.6.1+ 与 SAP 连接 |
 | 显式调试已批准的非生产目标 | [`sap-adt-cli`](skills/sap-adt-cli/references/debugging.md) | CLI 1.6.1+ 实验性能力；有时限的前台会话进程、独立 `allow_debug` 与逐次控制确认；诊断不会自动升级为调试 |
 | 编辑 Class 分区、检查候选源码、创建基础对象并只读查看 RAP/OData | [`sap-adt-cli`](skills/sap-adt-cli/references/development.md) | CLI 1.6.4+；受控创建与写入、缺失 include 显式授权、同源限量预览；不含 RAP 发布 |
+| 绑定环境、查询增强与 TR 影响、比对配置、聚合质量并打包需求交付证据 | [`sap-adt-cli`](skills/sap-adt-cli/references/executor.md) | 源码候选 CLI 1.6.6+；覆盖率/lint 报告显式绑定、Git/TR 映射、缺口不冒充通过；已有证据可离线打包，不内嵌大模型、全量索引、复杂编排或自动发布 |
 
 `abap-code-review` 覆盖 9 个审查维度，`sap-transport-gate` 覆盖 10 个。各维度的检查项、支持的对象类型和报告契约写在对应 Skill 的 README 与 `references/` 中，本页不重复。
 

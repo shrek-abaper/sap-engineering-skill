@@ -43,6 +43,22 @@ cd dist/npm && npm pack && cd ../..
 .venv/bin/python tools/check_release.py --skip-marketplace
 ```
 
+## Executor candidate 1.6.6 verification
+
+The local source candidate passed 613 Python tests, 47 Node installer/update
+tests, the command/documentation contract, generated-snapshot checks, wheel/sdist
+builds, self-contained Skill builds and a clean-venv wheel installation.
+Real SAP reads verified enhancement/message/lock metadata, bounded references,
+two-profile source/configuration comparisons and single-object syntax/ATC.
+The harmless standard-class Unit run executed **zero tests** and correctly
+remained `not_run`; it is not passing Unit evidence. The current user's TR list
+and selected dump feed were empty, so nonempty TR/dump success paths remain
+fixture-verified. abaplint uses supplied bound native JSON, and coverage uses
+supplied source-bound measurements; neither is attested native instrumentation.
+No SAP source/configuration writes, transport release, Git push, package
+publication or marketplace switch were performed. Existing native-target notes
+below describe their recorded older versions, not rebuilt 1.6.6 certification.
+
 ## Windows runtime from WSL
 
 WSL can drive a native Windows build when Windows Python, Node.js/npm and

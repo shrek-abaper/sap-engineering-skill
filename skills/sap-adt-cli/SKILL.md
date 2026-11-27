@@ -15,15 +15,15 @@ description: "Read/write live SAP ABAP source and class parts, review multi-obje
 license: MIT
 allowed-tools: [Read, Bash]
 metadata:
-  version: "1.3.5"
+  version: "1.3.6"
   type: hybrid
   output_schema:
     format: mixed
     diagnosis_report: references/diagnosis-report.schema.json
     debug_data: references/debug-session.schema.json
   permissions:
-    read_paths: ["references/", "~/.sap-adt-cli/"]
-    write_paths: ["~/.sap-adt-cli/"]
+    read_paths: ["references/", "~/.sap-adt-cli/", "explicitly selected local repository/evidence paths"]
+    write_paths: ["~/.sap-adt-cli/", "explicitly selected new local evidence/skeleton paths"]
     network_endpoints: ["SAP profile base_url /sap/bc/adt/", "Same SAP origin /sap/opu/odata/ and /sap/opu/odata4/ (read-only)"]
     requires_elevation: false
 ---
