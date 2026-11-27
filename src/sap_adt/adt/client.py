@@ -67,6 +67,18 @@ def isolated_session():
         _session, _csrf_token, _session_cookies = previous
 
 
+@contextmanager
+def connection_scope(config: SapConfig):
+    """Sequential multi-target reads with isolated cookies and restored config."""
+    previous = config_override()
+    with isolated_session():
+        set_config(config)
+        try:
+            yield
+        finally:
+            set_config(previous)
+
+
 def _safe_url(url: str) -> str:
     """Strip sensitive query parameters before including a URL in any message."""
     try:

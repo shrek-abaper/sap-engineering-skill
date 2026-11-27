@@ -347,6 +347,11 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 
 ## Safety gates (do not weaken)
 
+- Optional global `--expect-environment`, `--expect-client` and `--expect-target`
+  refuse a target mismatch before any SAP request. Target fingerprints bind the
+  configured origin/client/environment, not server-attested identity. Structured
+  results annotate operation risk and approval requirements; these annotations
+  never grant permissions or attest an external approver.
 - Capabilities are **profile-scoped** (`configure --allow-write/--allow-transport`
   write the profile section). The top-level `--global-allow-*` switches are a
   legacy fallback used only when the profile declares neither. Agents should

@@ -534,6 +534,15 @@ def load_config(profile: Optional[str] = None) -> Optional[SapConfig]:
     return config
 
 
+def load_profile_connection(name: str) -> SapConfig:
+    """Resolve an explicitly named comparison target, never SAP_* overrides."""
+    validate_profile_name(name)
+    raw = _read_raw()
+    if raw is None or name not in (raw.get("profiles") or {}):
+        raise ProfileNotFoundError(f"Profile '{name}' does not exist")
+    return _config_from_section(name, raw["profiles"][name], raw)
+
+
 def get_config(profile: Optional[str] = None) -> SapConfig:
     config = load_config(profile)
     if config is None:

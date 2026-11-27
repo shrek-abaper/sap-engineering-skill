@@ -6,7 +6,7 @@ import sys
 import click
 
 from sap_adt import config as config_module
-from sap_adt import credentials, credentials_reports, errors, log_redaction, output, updater
+from sap_adt import credentials, credentials_reports, errors, log_redaction, output, updater, policy
 from sap_adt.adt import client as adt_client
 from sap_adt.adt import handlers
 from sap_adt.adt import source_write
@@ -42,13 +42,29 @@ _EXECUTION_HELP = (7, "Execute ABAP (explicit approval)")
 
 
 class _HelpCommand(click.Command):
-    def __init__(self, *args, help_group, help_order=0, **kwargs):
+    def __init__(self, *args, help_group=None, help_order=0, **kwargs):
         self.help_group = help_group
         self.help_order = help_order
         super().__init__(*args, **kwargs)
 
+    def invoke(self, ctx):
+        expected = ctx.find_root().params
+        if any(expected.get(k) for k in ("expect_target", "expect_client", "expect_environment")):
+            config = _load_config()
+            _require_config(config)
+            try:
+                policy.validate_target(
+                    config, environment=expected.get("expect_environment"),
+                    client=expected.get("expect_client"),
+                    fingerprint=expected.get("expect_target"))
+            except ValueError as exc:
+                _gate(errors.BASELINE_CHANGED, str(exc))
+        return super().invoke(ctx)
+
 
 class _HelpGroup(click.Group):
+    command_class = _HelpCommand
+
     def __init__(self, *args, help_group, help_order=0, **kwargs):
         self.help_group = help_group
         self.help_order = help_order
@@ -159,6 +175,9 @@ def _output(result) -> None:
             http_status=result.http_status, hint=result.hint,
         ))
     command = click.get_current_context().info_name
+    if result.kind != "raw":
+        result.meta = {**(result.meta or {}), "operation": policy.operation(
+            _command_path(), click.get_current_context().params)}
     try:
         rendered = output.render(
             result, output.get_format(),
@@ -167,6 +186,15 @@ def _output(result) -> None:
     except output.FormatUnsupported as exc:
         _gate(errors.BAD_REQUEST, str(exc))
     click.echo(rendered)
+
+
+def _command_path():
+    ctx = click.get_current_context()
+    names = []
+    while ctx.parent is not None:
+        names.append(ctx.info_name)
+        ctx = ctx.parent
+    return " ".join(reversed(names))
 
 
 def _production_refusal_hint(config) -> str:
@@ -451,7 +479,12 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
 )
 @click.option("-v", "--verbose", is_flag=True, default=False,
               help="Verbose logging (secrets stay redacted)")
-def cli(profile, keystore, fmt, verbose):
+@click.option("--expect-target", default=None,
+              help="Refuse unless the configured target fingerprint matches (see JSON status).")
+@click.option("--expect-client", default=None, help="Refuse a different SAP client before any request.")
+@click.option("--expect-environment", default=None, type=click.Choice(["dev", "qas", "prd"]),
+              help="Refuse a different effective environment before any request.")
+def cli(profile, keystore, fmt, verbose, expect_target, expect_client, expect_environment):
     """Read, check and change ABAP objects in SAP.
 
     SAP source and transport writes require capabilities and confirmation.

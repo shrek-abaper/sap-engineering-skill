@@ -206,6 +206,7 @@ class ErrorDecision:
         return EXIT_CODE_MAP[self.code]
 
     def to_envelope(self, command: str, profile: Optional[str] = None) -> dict:
+        from .policy import error_category
         return {
             "ok": False,
             "format_version": 1,
@@ -216,6 +217,7 @@ class ErrorDecision:
                 "message": self.message,
                 "http_status": self.http_status,
                 "hint": self.hint,
+                "category": error_category(self.code),
             },
             **({"data": self.data} if self.data is not None else {}),
         }
