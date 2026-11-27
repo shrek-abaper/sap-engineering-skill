@@ -54,6 +54,8 @@ def operation(command, params=None):
         kind, risk = ("read", "low") if read else ("debug_control", "high")
         if not read:
             approval = "session_scoped_consent"
+    elif command == "unit skeleton":
+        kind, risk = "local_write", "low"
     elif command.startswith(("profile ", "credentials ")) or command in ("configure", "update"):
         kind, risk = "local_maintenance", "medium"
     else:

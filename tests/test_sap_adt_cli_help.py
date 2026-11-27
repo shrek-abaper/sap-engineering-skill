@@ -43,7 +43,7 @@ class HelpTests(unittest.TestCase):
                          ["configure", "profile", "credentials", "status",
                           "discovery", "update"])
         self.assertEqual(self.command_names(sections["Test and diagnose"]),
-                         ["check-source", "syntax-check", "run-atc", "run-unit-test", "list-feeds",
+                         ["check-source", "syntax-check", "run-atc", "run-unit-test", "unit", "list-feeds",
                           "query-feed", "get-dump", "debug"])
         self.assertEqual(self.command_names(sections["Compare source versions"]),
                          ["get-versions", "get-version-source", "diff-versions"])

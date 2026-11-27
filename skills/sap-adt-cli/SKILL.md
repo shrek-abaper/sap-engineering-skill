@@ -334,6 +334,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `where-used <TYPE> <N> [--group G] [--max-results N] [--depth 1..5] [--max-nodes N]` | static references; depth greater than 1 adds a bounded deduplicated graph, gaps exit 1; never proves dynamic impact completeness | objects |
 | `syntax-check <TYPE> <N> [--group G]` | findings; hard errors exit 1, warnings exit 0 | findings |
 | `run-unit-test [N...] [--type T] [--package P] [--transport T] [--recursive] [--max-objects N] [--risk-level harmless\|dangerous\|critical\|all] [--duration short\|medium\|long\|all] [--junit F] [--dry-run] [--expect-plan-sha256 H] [--yes] [--fail-on error\|warning\|info\|never] [--require-tests]` | repeatable risk/duration sets in one request per object; explicit names OR package OR TR/tasks; aggregate real method evidence/JUnit; no-tests is not passed | findings |
+| `unit skeleton` | NAME --output-file F; local intentionally failing ABAP Unit template; no SAP writes or invented business assertions | scalar |
 | `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `list-transports [--user U] [--status D\|R]` | transport tree (read-only) | records |
@@ -353,6 +354,20 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 > `data.summary.status`; class setup failures can occur with zero methods.
 > Partial evidence exits 1 even with `--fail-on never`. Default empty-run
 > exit 0 remains compatible; `--require-tests` opts into exit 1.
+
+Unit adds `--coverage-file F`, `--min-coverage 0..100` and `--bundle NEW.zip`.
+The result includes `data.gate` and `data.coverage`; missing required coverage
+fails closed. Coverage is NOT inferred from passing tests or ADT API coverage.
+Supplied line coverage must contain `schema_version:1`, `target_fingerprint`
+(from JSON status) and `files` entries with same-target source `uri`,
+canonical `source_sha256`, `executable_lines` and `covered_lines` arrays.
+Each file must belong to a selected Unit container and match current source.
+Percentages and thresholds apply only to supplied files; the CLI does not
+attest measurement authenticity or full-scope/native SAP instrumentation.
+Bundle paths, supplied report hashes and thresholds bind the reviewed Unit plan.
+Bundles contain a hash manifest, results, JUnit, coverage and gate; existing
+files are never overwritten. Missing native coverage is explicit evidence,
+not zero percent or a passing threshold.
 
 ## Safety gates (do not weaken)
 

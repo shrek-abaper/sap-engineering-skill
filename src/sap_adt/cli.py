@@ -1168,9 +1168,14 @@ def credentials_doctor(coverage):
               type=click.Choice(["error", "warning", "info", "never"]))
 @click.option("--require-tests", is_flag=True, default=False,
               help="Exit 1 if no test method executed; an empty run is not a pass.")
+@click.option("--coverage-file", type=click.Path(exists=True, dir_okay=False), default=None,
+              help="Import explicit target/source-bound line coverage; never infer coverage from test counts.")
+@click.option("--min-coverage", type=click.FloatRange(0, 100), default=None)
+@click.option("--bundle", type=click.Path(dir_okay=False), default=None,
+              help="Write a new private ZIP with results, coverage, gate and JUnit.")
 def run_unit_test_cmd(object_names, object_type, group, risk_level, duration, package,
                       transport, recursive, max_objects, dry_run, expect_plan_sha256,
-                      junit, yes, fail_on, require_tests):
+                      junit, yes, fail_on, require_tests, coverage_file, min_coverage, bundle):
     """Run selected ABAP Unit containers through POST /abapunit/testruns.
 
     JSON findings include each run and aggregate methods, alerts and evidence
@@ -1190,12 +1195,21 @@ def run_unit_test_cmd(object_names, object_type, group, risk_level, duration, pa
             _gate(errors.CONFIRM_REQUIRED, "High-risk Unit execution requires fresh confirmation.")
     if junit and os.path.exists(junit):
         _gate(errors.BAD_REQUEST, "--junit requires a new report path.")
+    if bundle and os.path.lexists(bundle):
+        _gate(errors.BAD_REQUEST, "--bundle requires a new archive path.")
+    from sap_adt.adt import test_artifacts
+    from sap_adt import artifacts
     try:
         prepared = unit_regression.plan(
             object_names, object_type, group, package, transport, recursive,
             max_objects, risks, durations, _write_target(config), junit=junit)
     except unit_regression.SelectionError as exc:
         _abort_on_error(exc.result, "Unit selection")
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    try:
+        coverage_report = test_artifacts.coverage(coverage_file, prepared, config)
+        test_artifacts.bind_options(prepared, coverage_report, bundle, min_coverage)
     except Exception as exc:
         _emit_error(errors.classify(exc))
     if expect_plan_sha256 and prepared["plan_sha256"] != expect_plan_sha256:
@@ -1216,6 +1230,8 @@ def run_unit_test_cmd(object_names, object_type, group, risk_level, duration, pa
             "No automatic COMMIT, rollback, cancellation or execution retry.",
         ], yes=yes)
     result = unit_regression.run(prepared)
+    result.data["coverage"] = coverage_report
+    result.data["gate"] = test_artifacts.gate(result.data, result.meta, coverage_report, min_coverage)
     if junit:
         try:
             with open(junit, "xb") as stream:
@@ -1225,10 +1241,44 @@ def run_unit_test_cmd(object_names, object_type, group, risk_level, duration, pa
             result.data["evidence_gaps"].append({
                 "code": "JUNIT_WRITE_FAILED",
                 "message": f"Tests may have executed; do not replay to recover the report: {exc}"})
+    result.data["gate"] = test_artifacts.gate(result.data, result.meta, coverage_report, min_coverage)
+    if bundle:
+        try:
+            result.data["bundle"] = artifacts.write_package(bundle, "unit", {
+                "results.json": result.data, "junit.xml": unit_regression.junit(result.data),
+                "coverage.json": coverage_report, "gate.json": result.data["gate"],
+            }, context={"target": policy.target(config)},
+                gaps=result.data["evidence_gaps"] + coverage_report["evidence_gaps"])
+        except Exception as exc:
+            result.meta["partial"] = True
+            result.data["evidence_gaps"].append({
+                "code": "UNIT_BUNDLE_WRITE_FAILED",
+                "message": f"Tests may have executed; do not replay to recover artifacts: {exc}"})
+    result.data["gate"] = test_artifacts.gate(result.data, result.meta, coverage_report, min_coverage)
     _development_output(result)
     if result.meta.get("partial") or (require_tests and result.meta.get("no_tests_found")):
         sys.exit(1)
+    if min_coverage is not None and result.data["gate"]["status"] != "passed":
+        sys.exit(1)
     _fail_on_findings(result, fail_on)
+
+
+@cli.group("unit", help_group=_DIAGNOSIS_HELP, help_order=35,
+           short_help="Generate local Unit scaffolding.")
+def unit_group():
+    """Local Unit engineering utilities; never uploads or executes a skeleton."""
+
+
+@unit_group.command("skeleton")
+@click.argument("name")
+@click.option("--output-file", required=True, type=click.Path(dir_okay=False))
+def unit_skeleton(name, output_file):
+    """Generate an intentionally failing test template; business assertions are user-owned."""
+    from sap_adt.adt import test_artifacts
+    try:
+        _output(handlers.AdtResult(kind="scalar", data=test_artifacts.skeleton(name, output_file)))
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
 
 
 def _fail_on_findings(result, threshold: str) -> None:
