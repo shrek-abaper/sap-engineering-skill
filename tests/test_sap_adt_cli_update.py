@@ -32,6 +32,7 @@ class UpdateTests(unittest.TestCase):
         self.proxy.start()
         self.addCleanup(self.proxy.stop)
         self.dist = Mock()
+        self.dist.metadata = {"Name": "sap-adt-cli"}
         self.dist.read_text.side_effect = {"INSTALLER": "pip\n"}.get
         self.dist.locate_file.return_value = str(self.root / "lib")
         for name, value in (("prefix", str(self.root)), ("base_prefix", "/base-python")):
@@ -226,6 +227,55 @@ class UpdateTests(unittest.TestCase):
             self.assertEqual(self.u.available_versions(installation), ["1.5.3", "1.6.0"])
         self.assertEqual(run.call_args.args[0], [
             "/node", "/npm-cli.js", "view", "sap-adt-cli", "versions", "--json"])
+
+    def test_watt_updates_entry_and_exact_core_dependency_together(self):
+        facade = Mock()
+        facade.metadata = {"Name": "sap-watt"}
+        facade.version = "1.5.3"
+        facade.read_text.side_effect = {"INSTALLER": "pip\n"}.get
+        facade.locate_file.return_value = str(self.root / "lib")
+        with patch.object(self.u.importlib.metadata, "distribution",
+                          side_effect=lambda name: facade if name == "sap-watt" else self.dist):
+            installation = self.u.detect_installation()
+        self.assertEqual(installation.package, "sap-watt")
+        report = self.report()
+        report["installation"] = installation
+        commands = self.u.update_commands(report)
+        self.assertEqual(commands[0][-1], "sap-watt==1.6.0")
+        with patch.object(self.u, "_capture", side_effect=["", "sap-watt, version 1.6.0"]) as run:
+            self.u.apply_python_update(report, commands)
+        self.assertEqual(run.call_args.args[0], [sys.executable, "-m", "sap_watt", "--version"])
+        facade.version = "1.4.0"
+        with patch.object(self.u.importlib.metadata, "distribution",
+                          side_effect=lambda name: facade if name == "sap-watt" else self.dist):
+            self.assertEqual(self.u.detect_installation().channel, "unknown")
+
+    def test_watt_npm_metadata_queries_do_not_switch_to_legacy_package(self):
+        installation = self.u.Installation(
+            "npm-global", manager=("/node", "/npm-cli.js"), package="sap-watt")
+        with patch.object(self.u, "_capture", return_value='["1.6.7"]') as run:
+            self.u.available_versions(installation)
+        self.assertIn("sap-watt", run.call_args.args[0])
+        self.assertNotIn("sap-adt-cli", run.call_args.args[0])
+
+    def test_watt_pipx_uses_actual_environment_owner(self):
+        facade = Mock(metadata={"Name": "sap-watt"}, version="1.5.3")
+        facade.read_text.side_effect = {"INSTALLER": "pip"}.get
+        prefix = self.root / "pipx-home" / "venvs" / "sap-watt-suffix"
+        prefix.mkdir(parents=True)
+        facade.locate_file.return_value = self.dist.locate_file.return_value = str(prefix / "lib")
+        (prefix / "pipx_metadata.json").write_text(json.dumps({
+            "main_package": {"package": "sap-watt"}}))
+        with patch.object(self.u.importlib.metadata, "distribution",
+                          side_effect=lambda name: facade if name == "sap-watt" else self.dist), \
+                patch.object(self.u.sys, "prefix", str(prefix)), \
+                patch.object(self.u.shutil, "which", return_value="/tools/pipx"):
+            installation = self.u.detect_installation()
+        self.assertEqual((installation.channel, installation.package), ("pipx", "sap-watt"))
+        report = self.report()
+        report["installation"] = installation
+        self.assertEqual(self.u.update_commands(report)[0][-3:], [
+            "sap-watt-suffix", "--pip-args", "sap-watt==1.6.0"])
 
     def test_detects_pip_and_refuses_editable_or_foreign_installer(self):
         with patch.object(self.u.importlib.metadata, "distribution", return_value=self.dist):

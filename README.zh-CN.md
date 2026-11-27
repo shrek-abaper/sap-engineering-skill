@@ -1,10 +1,14 @@
 <div align="center">
 
-<h3>让 AI Agent 在你真实运行的 SAP 系统上，可控、可验证、可追溯地交付 ABAP</h3>
+<h1>Watt｜瓦特</h1>
 
-<h4><i>ADT 能力 CLI 化，确定可依赖 · 交付场景 Skill 化，跨 Agent 复用 · 每一次变更都可绑定、可核验、可追溯</i></h4>
+<h3>Power your SAP Engineering.</h3>
 
-> AI 早已能写 ABAP；难的是把它安全地交付进真实的 SAP 系统——锁与有状态会话、传输请求、上线门控、审计证据，以及仍以 ECC 和本地部署 S/4HANA 为主的系统格局。本项目把 ADT REST API 收敛为一套受治理的命令行契约，并在其上以 `SKILL.md` 编排代码审查、传输门控、故障诊断与集成知识等场景，让 Claude Code、Codex、WorkBuddy 及任何支持 Skill 的 Agent，都能在企业级管控下参与 SAP 项目交付。
+<h4><i>面向 SAP 全生命周期工作的工程 CLI · 证据优先 · 授权明确 · 结果可追溯</i></h4>
+
+> Watt 为 SAP 实施、顾问、开发、测试、交付与运维中的工程工作提供可验证、可控、可追溯的能力，可由人直接使用，也可供 AI Agent 调用。名称取自功率单位瓦特，寄托稳定、持续、可控的工程动力这一设计追求。当前以 ADT 与 ABAP 能力为起点，配套 Skill 支持代码评审、传输风险研判和集成指导；全生命周期是拓展方向，不代表已经覆盖全部 SAP 工作。
+
+**独立社区项目 · 非 SAP 官方产品 · CLI 不内嵌大模型**
 
 **ADT REST API · 代码审查 · 传输门控 · 集成知识 · 证据优先**
 
@@ -28,17 +32,10 @@
 
 ## 为什么做这个项目
 
-ABAP 工具正在快速演进：SAP 推出了内置 MCP Server 的 ADT for VS Code，社区也有多个基于 ADT 的 MCP Server。它们大多在比拼**Agent 能调用多少工具**；本项目选择另一条赛道：**Agent 做过的事能否被信任、被证明、被签字放行**。
-
-| | SAP ADT MCP（VS Code / Eclipse） | 社区 ADT MCP Server | **sap-engineering-skill** |
-|---|---|---|---|
-| 核心定位 | ABAP Cloud、RAP 生成、Clean Core | 面向 Agent 的广泛工具覆盖 | **面向存量系统的受治理交付** |
-| 本地部署覆盖 | VS Code：S/4HANA 2025 及以上 ¹ | 各异，多数未按版本实测 | **ECC 6.0 与 S/4HANA；按版本记录真机协议事实** |
-| 运行形态 | 依附运行中的 IDE，实验特性 ¹ | 常驻 MCP 服务 | **无状态 CLI：任意 Agent、任意 Shell、任意 CI** |
-| 写入安全 | 由 IDE 承担 | 通常为 加锁 → 写入 → 解锁 | **绑定基线、写后回读核验、分阶段结果、不盲目重试** |
-| 交付工作流 | 工具 | 工具 | **工具 + Skill：代码审查、传输门控、故障诊断、集成知识** |
-
-<sub>¹ 依据 SAP 对 ADT for VS Code 及其 MCP Server 的公开文档（截至 2026 年），请以 SAP 当前文档为准。</sub>
+SAP 工作横跨角色与系统边界。读取源码只是其中一环，还需要有出处的诊断、
+经过评审的变更、传输证据以及清晰的审批边界。Watt 把当前的 ADT 能力收敛为
+确定的命令行契约，以可移植的 `SKILL.md` 承载工作流程。关注的不只是操作能否
+执行，更是**意图、证据与结果能否被检查和信任**。
 
 ### 设计原则
 
@@ -48,7 +45,9 @@ ABAP 工具正在快速演进：SAP 推出了内置 MCP Server 的 ADT for VS Co
 4. **确定的契约，可移植的编排。** CLI 为 Agent 提供稳定的 JSON 信封、封闭的错误码集合与分级退出码；场景编排放在普通 `SKILL.md` 目录中——不绑定厂商、Token 开销低、可直接进入 CI。
 5. **实测，而非假设。** SAP 未公开的 ADT 行为——锁归属、静默无效的解锁、激活回包格式——均在真实系统上测得，以脱敏样本固化，并标注验证所用版本；未验证的，就明确写未验证。
 
-**定位互补，而非替代。** 在 S/4HANA 2025+ 与 SAP BTP 上，SAP 官方 ADT 是天然的编辑器；本项目专注于大多数企业仍在运行的系统格局，以及位于任何编辑器或工具服务之上的治理层——门控、证据与签字放行。
+**以 ADT 为起点，不以 ADT 为边界。** CLI 提供受控操作与证据，Skill 和 Agent
+负责理解与编排。不替代人工审批，也不包装成无所不能的通用助手。
+详见[命名、定位与设计理念](docs/design-principles.md#中文定位)。
 
 ---
 
@@ -95,35 +94,40 @@ ABAP 工具正在快速演进：SAP 推出了内置 MCP Server 的 ADT for VS Co
 已安装 Node.js ≥ 18 时（该渠道不需要 Python）：
 
 ```bash
-npm install -g "sap-adt-cli@^1.5.0"
-sap-adt install
-sap-adt --version
+npm install -g "sap-watt@^1.6.7"
+sap-watt install
+sap-watt --version
 ```
 
-npm 包安装的是启动器，`sap-adt install` 负责下载、校验并安装对应平台的运行时。之后普通的 `sap-adt` 调用不会再下载或升级任何内容。自包含运行时支持 Linux x86_64 和 Windows x86_64；Windows 需要 CLI 1.5.3 或更新版本。CLI 1.6.0 新增 macOS 15+ 的 Intel 和 Apple Silicon 实验性运行时。
+npm 包安装的是启动器，`sap-watt install` 负责下载、校验并安装对应平台的运行时。普通的 `sap-watt` 调用不会下载或升级任何内容。自包含运行时支持 Linux x86_64、Windows x86_64，以及 macOS 15+ 的 Intel 和 Apple Silicon 实验性运行时。
 
 Windows 上没有 Node.js 或 Python 时，可以从 [Releases](https://github.com/shrek-abaper/sap-engineering-skill/releases) 下载未签名的 `sap-adt-<ver>-windows-x86_64-setup.exe`。已验证范围和限制见 [Windows 安装指南](docs/installation/windows.md)。
 
-不想全局安装时，npx 不会在 `PATH` 上留下命令：先执行 `npx "sap-adt-cli@^1.5.0" install`，之后每次调用都要保留这个包前缀。
+不想全局安装时，npx 不会在 `PATH` 上留下命令：先执行 `npx "sap-watt@^1.6.7" install`，之后每次调用都要保留这个包前缀。
 
 已有 Python ≥ 3.10、没有 Node.js 时：
 
 ```bash
-pip install "sap-adt-cli>=1.5.0,<2.0.0"
-sap-adt --version
+python -m pip install "sap-watt>=1.6.7,<2.0.0"
+sap-watt --version
 ```
 
 随后配置连接：
 
 ```bash
-sap-adt configure            # 交互式向导；密码在本地输入
-sap-adt status               # 只显示本地配置状态，不会连接 SAP
-sap-adt credentials doctor   # 显示当前使用的密钥库后端，不输出任何密钥
+sap-watt configure            # 交互式向导；密码在本地输入
+sap-watt status               # 只显示本地配置状态，不会连接 SAP
+sap-watt credentials doctor   # 显示当前使用的密钥库后端，不输出任何密钥
 ```
 
 不要在命令行传入密码，也不要把密码粘贴给 Agent。需要多个环境时使用 `--profile dev|qas|prd`；CI/CD 可用环境变量，或由 `SAP_ADT_DOTENV` 声明的 dotenv 文件覆盖 Profile。
 
 完整渠道列表、Linux 便携包、凭据优先级与诊断矩阵见 [docs/installation/runtime-setup.md](docs/installation/runtime-setup.md)。
+
+**已在使用 `sap-adt`？** 无需迁移配置或修改旧脚本。Skill ID、`SAP_*` 环境变量、
+`~/.sap-adt-cli` 目录和凭据标识保持不变。从 1.6.7 起安装新包可获得 `sap-watt`，
+新包只拥有新命令；Python 精确依赖同版本核心，npm 则使用各自独立的运行时目录。
+原生便携包与 Windows 安装器继续沿用 `sap-adt` 名称，不默认安装裸命令 `watt`。
 
 ---
 
@@ -182,7 +186,7 @@ ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升�
 | 组件 | 说明 |
 |---|---|
 | **Skill** | 一个包含 `SKILL.md`（工作流步骤、硬性约束）、检查规则与参考资料的目录。由你的 Agent 加载，本身不含可执行代码。 |
-| **CLI** | `sap-adt` 命令，一个独立程序，通过 SAP ADT REST API 执行在线读取、写入与传输请求采集。通过 npm 与 PyPI 分发，源码在本仓库。 |
+| **CLI** | Watt（`sap-watt`，兼容 `sap-adt`），提供受控 SAP 操作与证据的独立程序。通过 npm 与 PyPI 分发，复用同一实现，不内嵌大模型。 |
 | **Plugin** | Claude Code 从本仓库安装和更新四个 Skill 目录的方式。只包含文档，CLI 始终需要单独安装。 |
 
 本仓库是四个 Skill 与 CLI 源码的统一分发点，但使用其中任何一项都不需要了解仓库的构建布局。同一套 Skill 目录可被其他支持 `SKILL.md` 的 Agent 加载；发现路径各不相同。
@@ -250,6 +254,7 @@ ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升�
 
 | 文档 | 内容 |
 |---|---|
+| [docs/design-principles.md](docs/design-principles.md#中文定位) | Watt 独立命名、全生命周期方向、证据与授权原则、兼容承诺 |
 | [docs/installation/](docs/installation/) | CLI 安装渠道（npm、npx、PyPI、便携包、源码）、凭据优先级、就绪检查与诊断矩阵 |
 | [docs/agents/](docs/agents/) | Claude Code 插件细节与通用 `SKILL.md` Agent 说明 |
 | [docs/authentication/](docs/authentication/) | SAP↔AI 认证手册：Basic、SPNEGO、X.509、OIDC/OAuth2、网关与客户端模式（同步副本，权威版本在 `sap-functional-skill`） |

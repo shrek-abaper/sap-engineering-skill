@@ -1,5 +1,12 @@
 # Python source / wheel install
 
+**Preferred registry entry: Watt (1.6.7+).**
+`python -m pip install "sap-watt>=1.6.7,<2"` provides `sap-watt` and pins the
+same-version `sap-adt-cli` core. Existing `sap-adt` calls/configuration remain
+valid. In an environment containing both, update `sap-watt` rather than the
+pinned core independently. Optional `keystore`, `file` and `all` extras remain
+available. New branding does not change write/execution/debugging consent.
+
 For developers and contributors. The general guide (channels, diagnostics
 matrix, version compatibility) is [runtime-setup.md](runtime-setup.md).
 
@@ -18,7 +25,9 @@ works from an installed (also editable) package.
 
 ```bash
 python -m build                      # dist/sap_adt_cli-<ver>-py3-none-any.whl + .tar.gz
+python tools/build_watt.py           # dist/sap_watt-<ver> wheel + sdist
 python -m pip install dist/sap_adt_cli-<ver>-py3-none-any.whl
+python -m pip install dist/sap_watt-<ver>-py3-none-any.whl  # optional new entry
 ```
 
 The wheel carries the same implementation as the frozen runtime; both read

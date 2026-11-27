@@ -63,7 +63,8 @@ def git(*args: str) -> str:
                           text=True, check=True).stdout.strip()
 
 
-def add_artifact(entries: list, path: Path, kind: str, target: str | None = None) -> dict:
+def add_artifact(entries: list, path: Path, kind: str, target: str | None = None,
+                 package: str | None = None) -> dict:
     entry = {
         "file": path.name,
         "kind": kind,
@@ -72,6 +73,8 @@ def add_artifact(entries: list, path: Path, kind: str, target: str | None = None
     }
     if target:
         entry["target"] = target
+    if package:
+        entry["package"] = package
     entries.append(entry)
     return entry
 
@@ -96,16 +99,16 @@ def main() -> int:
     artifacts: list[dict] = []
 
     # --- Python package + runtime archives ---------------------------------
-    wheels = sorted((ROOT / "dist").glob("sap_adt_cli-*.whl"))
-    sdists = sorted((ROOT / "dist").glob("sap_adt_cli-*.tar.gz"))
-    if not wheels or not sdists:
-        print("[build_manifest] run `python -m build` first (wheel/sdist missing)",
-              file=sys.stderr)
-        return 1
-    for src in [wheels[-1], sdists[-1]]:
-        shutil.copy2(src, rel / src.name)
-        add_artifact(artifacts, rel / src.name,
-                     "wheel" if src.suffix == ".whl" else "sdist")
+    for package in ("sap-adt-cli", "sap-watt"):
+        stem = package.replace("-", "_")
+        for suffix, kind in (("-py3-none-any.whl", "wheel"), (".tar.gz", "sdist")):
+            src = ROOT / "dist" / f"{stem}-{cli_version}{suffix}"
+            if not src.is_file():
+                print(f"[build_manifest] missing {src.name}; build core and Watt Python packages",
+                      file=sys.stderr)
+                return 1
+            shutil.copy2(src, rel / src.name)
+            add_artifact(artifacts, rel / src.name, kind, package=package)
 
     runtime_archives = sorted((ROOT / "dist" / "runtime").glob(f"sap-adt-{cli_version}-*"))
     if not runtime_archives:
@@ -127,20 +130,19 @@ def main() -> int:
     subprocess.run([sys.executable, str(ROOT / "tools" / "build_npm.py"),
                     "--release-state", args.release_state],
                    cwd=ROOT, check=True)
-    if not args.skip_npm_pack:
-        packed = subprocess.run(
-            ["npm", "pack", "--pack-destination", str(rel)],
-            cwd=ROOT / "dist" / "npm", capture_output=True, text=True, check=True,
-        ).stdout.strip().splitlines()[-1]
-        npm_tarball = rel / Path(packed).name
-    else:
-        # Bind to THIS CLI version — never pick an older tarball left in the dir.
-        candidate = rel / f"sap-adt-cli-{cli_version}.tgz"
-        npm_tarball = candidate if candidate.is_file() else None
-    if npm_tarball is None or not npm_tarball.is_file():
-        print("[build_manifest] npm tarball missing", file=sys.stderr)
-        return 1
-    add_artifact(artifacts, npm_tarball, "npm")
+    for package, staging in (("sap-adt-cli", "npm"), ("sap-watt", "npm-watt")):
+        if not args.skip_npm_pack:
+            packed = subprocess.run(
+                ["npm", "pack", "--pack-destination", str(rel)],
+                cwd=ROOT / "dist" / staging, capture_output=True, text=True, check=True,
+            ).stdout.strip().splitlines()[-1]
+            npm_tarball = rel / Path(packed).name
+        else:
+            npm_tarball = rel / f"{package}-{cli_version}.tgz"
+        if not npm_tarball.is_file():
+            print(f"[build_manifest] {package} npm tarball missing", file=sys.stderr)
+            return 1
+        add_artifact(artifacts, npm_tarball, "npm", package=package)
 
     # --- plugin + skill zips ----------------------------------------------
     plugin_dir = ROOT / "dist" / "plugin"

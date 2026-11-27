@@ -21,6 +21,8 @@ for the Windows installer (on Windows).
 ```bash
 # 1. Python artifacts
 .venv/bin/python -m build                     # -> dist/*.whl, dist/*.tar.gz
+.venv/bin/python tools/build_watt.py          # -> same-version sap_watt wheel/sdist
+.venv/bin/python tools/smoke_python.py        # -> offline, isolated entry/core ownership checks
 
 # 2. Self-contained runtime (current platform only)
 .venv/bin/python tools/build_runtime.py       # -> dist/runtime/<os>-<arch>/
@@ -31,7 +33,8 @@ for the Windows installer (on Windows).
 
 # 4. npm staging + tarball
 .venv/bin/python tools/build_npm.py
-cd dist/npm && npm pack && cd ../..
+# Stages dist/npm (sap-adt-cli) and dist/npm-watt (sap-watt).
+# build_manifest.py packs both; do not hand-edit staged package identities.
 
 # 5. Skill snapshots + plugin payload
 .venv/bin/python tools/sync_skill_runtime_docs.py

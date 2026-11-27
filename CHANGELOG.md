@@ -1,5 +1,23 @@
 # Changelog
 
+## CLI 1.6.7 / plugin/docs 1.3.8 — 2026-11-28
+
+- Introduce **Watt — Power your SAP Engineering**, an independent engineering
+  CLI for SAP lifecycle work. ADT/ABAP remains the current foundation, not a
+  claim of complete lifecycle coverage or an embedded LLM/agent.
+- Add functional `sap-watt` Python/npm packages. Python pins the same-version
+  `sap-adt-cli` core; npm reuses its native assets with an independent runtime
+  slot. Each package owns only its own command; bare `watt` is not installed.
+- Make help/version, npm installation guidance and updates entry-aware.
+  Python environments containing Watt update the facade and pinned core
+  together; npm updates the actual owning package, never the other entry.
+- Preserve `sap-adt`, module/Skill/plugin IDs, configuration, credential
+  identifiers, environment variables, native asset names and Windows identity.
+  Existing operation, JSON, consent and non-production gates are unchanged.
+- Publish bilingual positioning, design principles and migration guidance;
+  generated Skill snapshots distinguish Watt's 1.6.7+ minimum from legacy
+  compatibility. Review and transport decisions remain advisory.
+
 ## CLI 1.6.6 / plugin/docs 1.3.7 — 2026-11-28
 
 - Distribute the JCo properties reference as Markdown for skill-platform

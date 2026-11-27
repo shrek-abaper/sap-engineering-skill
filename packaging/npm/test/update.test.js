@@ -10,28 +10,30 @@ const { spawnSync } = require("node:child_process");
 const { pathToFileURL } = require("node:url");
 const { isUpdate, childEnv, applyUpdate, findNpm, runUpdate } = require("../scripts/update.js");
 
-function fixture(t) {
+function fixture(t, packageName = "sap-adt-cli") {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "sap-adt-update-test-"));
   t.after(() => fs.rmSync(work, { recursive: true, force: true }));
-  const root = path.join(work, "global", "sap-adt-cli");
+  const root = path.join(work, "global", packageName);
   fs.mkdirSync(path.join(root, "runtime"), { recursive: true });
   fs.writeFileSync(path.join(root, "runtime", "old"), "old runtime");
   fs.writeFileSync(path.join(root, "package.json"),
-    JSON.stringify({ name: "sap-adt-cli", version: "1.5.3" }));
+    JSON.stringify({ name: packageName, version: "1.5.3" }));
   return { work, root, plan: { root, current: "1.5.3", target: "1.6.0" } };
 }
 
 function fakeManager(root, calls, failAt = "") {
+  const packageName = JSON.parse(fs.readFileSync(path.join(root, "package.json"))).name;
+  const command = packageName === "sap-watt" ? "sap-watt" : "sap-adt";
   return (node, args, options) => {
     calls.push({ node, args, options });
     assert.equal(node, process.execPath, "never execute a .cmd shim through a shell");
     if (args.includes("--prefix")) {
       const stage = args[args.indexOf("--prefix") + 1];
-      const pkg = path.join(stage, "node_modules", "sap-adt-cli");
+      const pkg = path.join(stage, "node_modules", packageName);
       fs.mkdirSync(path.join(pkg, "runtime"), { recursive: true });
       fs.writeFileSync(path.join(pkg, "runtime", "new"), "verified runtime");
       fs.writeFileSync(path.join(pkg, "package.json"),
-        JSON.stringify({ name: "sap-adt-cli", version: "1.6.0" }));
+        JSON.stringify({ name: packageName, version: "1.6.0" }));
       assert.ok(fs.existsSync(path.join(root, "runtime", "old")));
     }
     if (args[0].endsWith("install.js")) {
@@ -45,10 +47,10 @@ function fakeManager(root, calls, failAt = "") {
       if (failAt === "commit") return { status: 1 };
       fs.rmSync(path.join(root, "runtime"), { recursive: true });
       fs.writeFileSync(path.join(root, "package.json"),
-        JSON.stringify({ name: "sap-adt-cli", version: "1.6.0" }));
+        JSON.stringify({ name: packageName, version: "1.6.0" }));
     }
     return { status: 0, stdout: args.includes("--version")
-      ? `sap-adt, version ${failAt === "version" ? "1.5.3" : "1.6.0"}\n` : "" };
+      ? `${command}, version ${failAt === "version" ? "1.5.3" : "1.6.0"}\n` : "" };
   };
 }
 
@@ -85,6 +87,18 @@ test("stage, verify, then replace only the selected global installation", (t) =>
   }
   const staging = calls[0].args[calls[0].args.indexOf("--prefix") + 1];
   assert.ok(!fs.existsSync(staging), "temporary staging is cleaned up");
+});
+
+test("Watt update stages and replaces Watt only, preserving a neighboring legacy install", (t) => {
+  const { root, plan } = fixture(t, "sap-watt");
+  const legacy = path.join(path.dirname(root), "sap-adt-cli");
+  fs.mkdirSync(legacy);
+  fs.writeFileSync(path.join(legacy, "keep"), "legacy install");
+  const calls = [];
+  applyUpdate(root, "/tools/npm-cli.js", plan, fakeManager(root, calls));
+  assert.equal(fs.readFileSync(path.join(legacy, "keep"), "utf8"), "legacy install");
+  assert.ok(calls.some(({ args }) => args.includes("sap-watt@1.6.0")));
+  assert.ok(!calls.some(({ args }) => args.includes("sap-adt-cli@1.6.0")));
 });
 
 test("registry proxy environment is retained across every staged and commit step", (t) => {
@@ -182,22 +196,24 @@ test("launcher consumes a read-only runtime response and propagates refusal", (t
   assert.equal(runUpdate(root, process.execPath, [script]), 3);
 });
 
-test("real npm upgrade with isolated prefix/cache and a local verified artifact", {
+for (const packageName of ["sap-adt-cli", "sap-watt"]) {
+test(`real ${packageName} npm upgrade with isolated prefix/cache and a local verified artifact`, {
   skip: process.platform === "win32" ? "POSIX fake runtime; Windows orchestration is covered above" : false,
 }, (t) => {
   const { work } = fixture(t);
   const npm = findNpm();
   assert.ok(npm, "npm-cli.js is required for this offline packaging test");
   const prefix = path.join(work, "prefix");
-  const root = path.join(prefix, "lib", "node_modules", "sap-adt-cli");
+  const command = packageName === "sap-watt" ? "sap-watt" : "sap-adt";
+  const root = path.join(prefix, "lib", "node_modules", packageName);
   fs.mkdirSync(path.join(root, "runtime"), { recursive: true });
   fs.writeFileSync(path.join(root, "runtime", "old"), "old runtime");
   fs.writeFileSync(path.join(root, "package.json"),
-    JSON.stringify({ name: "sap-adt-cli", version: "1.5.3" }));
+    JSON.stringify({ name: packageName, version: "1.5.3" }));
   const tree = path.join(work, "tree", "sap-adt");
   fs.mkdirSync(tree, { recursive: true });
   fs.writeFileSync(path.join(tree, "sap-adt"),
-    "#!/bin/sh\nprintf 'sap-adt, version 1.6.0\\n'\n", { mode: 0o755 });
+    "#!/bin/sh\nprintf '%s, version 1.6.0\\n' \"${_SAP_ADT_COMMAND:-sap-adt}\"\n", { mode: 0o755 });
   const archive = path.join(work, "runtime.tar.gz");
   const tar = spawnSync("tar", ["-czf", archive, "-C", path.dirname(tree), "sap-adt"],
     { encoding: "utf8" });
@@ -206,7 +222,7 @@ test("real npm upgrade with isolated prefix/cache and a local verified artifact"
   fs.mkdirSync(source);
   fs.cpSync(path.resolve(__dirname, "..", "scripts"), path.join(source, "scripts"), { recursive: true });
   fs.writeFileSync(path.join(source, "package.json"), JSON.stringify({
-    name: "sap-adt-cli", version: "1.6.0", bin: { "sap-adt": "scripts/run.js" },
+    name: packageName, version: "1.6.0", bin: { [command]: "scripts/run.js" },
     files: ["scripts/", "runtime-manifest.json"],
   }));
   fs.writeFileSync(path.join(source, "runtime-manifest.json"), JSON.stringify({
@@ -228,7 +244,7 @@ test("real npm upgrade with isolated prefix/cache and a local verified artifact"
   applyUpdate(root, npm, plan, (node, args, options) => {
     // Replace only the registry target with our packed fixture. The real npm,
     // installer, atomic runtime handoff and version readbacks all still run.
-    const localArgs = args.map((arg) => arg === "sap-adt-cli@1.6.0" ? tarball : arg);
+    const localArgs = args.map((arg) => arg === `${packageName}@1.6.0` ? tarball : arg);
     const result = spawnSync(node, localArgs,
       { ...options, env, stdio: "pipe", encoding: "utf8" });
     assert.equal(result.status, 0, result.stderr);
@@ -236,8 +252,9 @@ test("real npm upgrade with isolated prefix/cache and a local verified artifact"
   });
   assert.equal(JSON.parse(fs.readFileSync(path.join(root, "package.json"))).version, "1.6.0");
   assert.ok(!fs.existsSync(path.join(root, "runtime", "old")));
-  const actual = spawnSync(path.join(prefix, "bin", "sap-adt"), ["--version"],
+  const actual = spawnSync(path.join(prefix, "bin", command), ["--version"],
     { env, encoding: "utf8" });
   assert.equal(actual.status, 0, actual.stderr);
-  assert.equal(actual.stdout.trim(), "sap-adt, version 1.6.0");
+  assert.equal(actual.stdout.trim(), `${command}, version 1.6.0`);
 });
+}

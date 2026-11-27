@@ -1,5 +1,10 @@
 # Portable runtime
 
+This is Watt's native runtime. During the compatible brand transition its
+archive, directory and executable retain the `sap-adt` name. These standalone
+archives do not add `sap-watt`; use the [npm/Python entry](runtime-setup.md)
+for that command. Existing configuration and authorization rules are shared.
+
 The portable archive and the desktop installer use the **same** PyInstaller
 onedir runtime — built by `tools/build_runtime.py` on the target OS.
 

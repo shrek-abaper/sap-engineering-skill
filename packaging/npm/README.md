@@ -1,5 +1,16 @@
 # sap-adt-cli
 
+The compatible **sap-adt** entry of **Watt — Power your SAP Engineering.**
+Watt is an independent community SAP engineering CLI, not an official SAP
+product or an embedded AI agent. ADT/ABAP is the current foundation, not its
+long-term lifecycle boundary. Evidence first, explicit authorization and
+traceable outcomes guide both entries.
+
+New users can install `sap-watt` (`npm install -g "sap-watt@^1.6.7"` followed by
+`sap-watt install`). This package continues to own only `sap-adt`; existing
+scripts, configuration and credentials remain compatible. The npm packages
+have separate runtime slots and do not overwrite each other's command.
+
 npm/npx channel for the self-contained **sap-adt** CLI (SAP ADT REST API:
 read/write ABAP source and metadata, transport request collection).
 

@@ -2,4 +2,4 @@
 from sap_adt.cli import main
 
 if __name__ == "__main__":
-    main(prog_name="sap-adt")
+    main()

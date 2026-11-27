@@ -56,9 +56,22 @@ def main() -> int:
     cli_versions = {manifest.get("cli_version")}
     for info in (ROOT / "dist" / "runtime").glob("*/build-info.json"):
         cli_versions.add(json.loads(info.read_text(encoding="utf-8")).get("version"))
-    npm_pkg = ROOT / "dist" / "npm" / "package.json"
-    if npm_pkg.is_file():
-        cli_versions.add(json.loads(npm_pkg.read_text(encoding="utf-8")).get("version"))
+    from build_manifest import version_from_pyproject
+    cli_versions.add(version_from_pyproject())
+    for package, staging in (("sap-adt-cli", "npm"), ("sap-watt", "npm-watt")):
+        npm_pkg = ROOT / "dist" / staging / "package.json"
+        if not npm_pkg.is_file():
+            problems.append(f"{package} npm staging missing")
+            continue
+        metadata = json.loads(npm_pkg.read_text(encoding="utf-8"))
+        cli_versions.add(metadata.get("version"))
+        command = "sap-watt" if package == "sap-watt" else "sap-adt"
+        if metadata.get("name") != package or set(metadata.get("bin", {})) != {command}:
+            problems.append(f"{package} package/command ownership mismatch")
+        for kind in ("wheel", "sdist", "npm"):
+            if not any(a.get("package") == package and a.get("kind") == kind
+                       for a in manifest.get("artifacts", [])):
+                problems.append(f"{package} {kind} missing from manifest")
     if len(cli_versions) != 1:
         problems.append(f"CLI version drift across sources: {sorted(map(str, cli_versions))}")
 

@@ -1,13 +1,65 @@
-# sap-adt CLI — installation & readiness guide
+# Watt CLI — installation & readiness guide
 
 This document is the single source of truth for installing the CLI. Each
 skill that can use the CLI carries a generated copy of this guide in its
 `references/` directory (regenerate/check with
 `tools/sync_skill_runtime_docs.py`).
 
-The CLI command is `sap-adt`. Configuration lives in `~/.sap-adt-cli/config.json`
+The preferred Python/npm entry is **Watt**, command `sap-watt`, from CLI
+**1.6.7**. The compatible `sap-adt` command remains supported, including older
+CLI releases in its declared range. Subcommands and JSON contracts are the same:
+use the entry actually installed, consistently throughout a task.
+
+Configuration lives in `~/.sap-adt-cli/config.json`
 (non-secret fields) and the OS keystore (passwords) — identical across all
 channels and shared by all skills.
+
+Watt is an independent community SAP engineering CLI, not an official SAP
+product or an embedded LLM/agent. Its lifecycle scope is a direction; current
+capabilities start with ADT/ABAP. Companion Skills and agents provide reasoning.
+Read-only is the default, not a promise that authorized execution is harmless.
+
+## Watt installation and migration (1.6.7+)
+
+With Node.js >=18:
+
+```bash
+npm install -g "sap-watt@^1.6.7"
+sap-watt install
+sap-watt --version
+```
+
+Or with Python >=3.10 in a virtual environment:
+
+```bash
+python -m pip install "sap-watt>=1.6.7,<2.0.0"
+sap-watt --version
+```
+
+For npx use `npx "sap-watt@^1.6.7" install`, keeping that selector on every call.
+Python optional extras `sap-watt[keystore]`, `[file]` and `[all]` match the core.
+Then run `sap-watt configure`, `sap-watt status`, or
+`sap-watt credentials doctor` as needed; existing configuration needs no migration.
+Never install or change an installation without the user's approval.
+
+The new package owns only `sap-watt`; `sap-adt-cli` owns `sap-adt`. There is
+no default bare `watt` executable and upgrading only the old package does not
+add the new entry. Python Watt depends on the exact same core version: use the
+current updater or upgrade `sap-watt`, not its pinned core independently.
+Uninstalling Watt leaves the core; removing a core still required by Watt
+breaks the dependency. In pipx the main exposed application is `sap-watt`;
+dependency apps are not necessarily exposed.
+
+npm installations have independent runtime slots and can coexist. Updating or
+uninstalling either npm package does not alter the other or shared configuration.
+Native portable/Windows executables, installer identity and release asset names
+remain `sap-adt`; installing those alone does not provide `sap-watt`.
+For manual runtime repair of Watt use
+`<npm root -g>/sap-watt/runtime/<platform>/sap-adt/`.
+
+The legacy channel table and `sap-adt` examples below remain valid. When using
+Watt substitute the installed `sap-watt` command, except in physical native
+paths and asset names; never claim an older `sap-adt` release provides Watt.
 
 ## Credentials & precedence
 

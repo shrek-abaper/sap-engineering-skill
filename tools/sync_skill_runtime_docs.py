@@ -42,17 +42,20 @@ def load_sources(root: Path):
     return body, compat
 
 
-def requirement_preamble(name: str, spec: dict) -> str:
+def requirement_preamble(name: str, spec: dict, compat: dict) -> str:
     req = spec["cli_requirement"]
     lines = [f"# {name}: CLI runtime requirement", ""]
+    preferred = compat["cli"]["preferred_entry"]
+    cli_label = (f"Watt (`{preferred['command']}`, {preferred['compatible_versions']}) "
+                 f"or compatible `{compat['cli']['command']}`")
     if req == "required":
-        lines.append("**This skill needs the `sap-adt` CLI for online "
-                     "operations.** If it is missing or incompatible, guide "
+        lines.append(f"**This skill needs {cli_label} for online "
+                     "operations.** If neither is available and compatible, guide "
                      "installation per below — never fake an online result.")
     elif req == "conditional":
         need = ", ".join(spec.get("cli_required_for", []))
         skip = ", ".join(spec.get("cli_not_required_for", []))
-        lines.append("**This skill needs the `sap-adt` CLI only for: "
+        lines.append(f"**This skill needs {cli_label} only for: "
                      f"{need}.** It works without the CLI for: {skip}. "
                      "A missing CLI degrades the task to the offline mode "
                      "with an explicit declaration — it is never a blocker "
@@ -64,8 +67,8 @@ def requirement_preamble(name: str, spec: dict) -> str:
     return "\n".join(lines)
 
 
-def render_setup_md(name: str, spec: dict, body: str) -> str:
-    return (GEN_NOTE + "\n\n" + requirement_preamble(name, spec)
+def render_setup_md(name: str, spec: dict, body: str, compat: dict) -> str:
+    return (GEN_NOTE + "\n\n" + requirement_preamble(name, spec, compat)
             + "\n\n---\n\n" + body)
 
 
@@ -84,6 +87,7 @@ def render_compat_json(name: str, spec: dict, compat: dict) -> str:
 def render_readme_block(name: str, spec: dict, compat: dict) -> str:
     req = spec["cli_requirement"]
     rng = compat["cli"]["compatible_versions"]
+    preferred = compat["cli"]["preferred_entry"]
     if req == "not-required":
         status = "This skill needs **no CLI** — it works fully offline."
     elif req == "conditional":
@@ -93,7 +97,10 @@ def render_readme_block(name: str, spec: dict, compat: dict) -> str:
         status = "Online operations need the `sap-adt` CLI."
     return (
         f"{BEGIN}\n{GEN_NOTE}\n\n"
-        f"{status} Compatible CLI range: `{rng}`.\n"
+        f"{status} Compatible legacy CLI range: `{rng}`.\n"
+        f"Preferred new entry: **Watt** (`{preferred['command']}`), "
+        f"range `{preferred['compatible_versions']}`. "
+        "Existing `sap-adt` examples remain valid; use the installed entry consistently.\n"
         "Install/readiness guide: [`references/setup.md`](references/setup.md).\n"
         f"{END}"
     )
@@ -141,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         spec = compat["skills"][name]
         skill_dir = root / "skills" / name
         refs = skill_dir / "references"
-        apply_or_check(refs / "setup.md", render_setup_md(name, spec, body),
+        apply_or_check(refs / "setup.md", render_setup_md(name, spec, body, compat),
                        args.check, drift)
         apply_or_check(refs / "runtime-compatibility.json",
                        render_compat_json(name, spec, compat), args.check, drift)

@@ -3,6 +3,12 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+function packageIdentity(root = path.resolve(__dirname, "..")) {
+  const { name } = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  if (!["sap-adt-cli", "sap-watt"].includes(name)) throw new Error("Unknown CLI package identity.");
+  return { name, command: name === "sap-watt" ? "sap-watt" : "sap-adt" };
+}
+
 function findNpm(env = process.env) {
   const candidates = [
     env.npm_execpath,
@@ -32,7 +38,8 @@ function pythonFallback(platform = process.platform) {
   const python = platform === "win32" ? "py -3" : "python3";
   const venv = platform === "win32" ? ".venv-sap-adt\\Scripts\\python.exe" : ".venv-sap-adt/bin/python";
   return "Use Python >=3.10 in a separate virtual environment instead:\n" +
-    `${python} -m venv .venv-sap-adt\n${venv} -m pip install "sap-adt-cli>=1.5.0,<2"`;
+    `${python} -m venv .venv-sap-adt\n${venv} -m pip install "` +
+    (packageIdentity().name === "sap-watt" ? "sap-watt>=1.6.7,<2" : "sap-adt-cli>=1.5.0,<2") + '"';
 }
 
 function safeMessage(value) {
@@ -92,4 +99,4 @@ function installationHint(error, platform = process.platform) {
     "SAP configuration is unchanged.";
 }
 
-module.exports = { findNpm, childEnv, pythonFallback, safeMessage, installationHint };
+module.exports = { findNpm, childEnv, pythonFallback, safeMessage, installationHint, packageIdentity };

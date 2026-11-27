@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, Tuple, List, Dict, Any
 
 from . import credentials
+from .identity import command_name
 from .keystore.base import KeyStoreError
 
 # Optional dotenv layer. The file location must be declared explicitly via
@@ -288,7 +289,7 @@ def _migrate_old_dir_if_needed() -> None:
     except Exception as e:
         print(
             f"WARNING: Could not migrate config from {_OLD_CONFIG_FILE}: {e}\n"
-            f"Run `sap-adt configure` to set up credentials.",
+            f"Run `{command_name()} configure` to set up credentials.",
             file=sys.stderr,
         )
 
@@ -546,7 +547,7 @@ def load_profile_connection(name: str) -> SapConfig:
 def get_config(profile: Optional[str] = None) -> SapConfig:
     config = load_config(profile)
     if config is None:
-        raise ConfigError("Not configured. Run: sap-adt configure")
+        raise ConfigError(f"Not configured. Run: {command_name()} configure")
     return config
 
 

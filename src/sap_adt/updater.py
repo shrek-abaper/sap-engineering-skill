@@ -21,6 +21,7 @@ from sap_adt import errors
 from sap_adt.version import get_version
 
 PACKAGE = "sap-adt-cli"
+WATT_PACKAGE = "sap-watt"
 _STABLE = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", re.ASCII)
 _RELEASES = "https://github.com/shrek-abaper/sap-engineering-skill/releases"
 
@@ -38,6 +39,7 @@ class Installation:
     guidance: str = ""
     manager: tuple[str, ...] = ()
     root: str = ""
+    package: str = PACKAGE
 
 
 def child_environment() -> dict[str, str]:
@@ -141,10 +143,12 @@ def _npm_installation() -> Installation | None:
     root = Path(root_value).resolve()
     package = _read_json(root / "package.json")
     executable = Path(sys.executable).resolve()
-    if (package.get("name") != PACKAGE or package.get("version") != get_version()
+    name = package.get("name")
+    command = "sap-watt" if name == WATT_PACKAGE else "sap-adt"
+    if (name not in (PACKAGE, WATT_PACKAGE) or package.get("version") != get_version()
             or not executable.is_relative_to(root / "runtime")
             or not (root / "scripts" / "run.js").is_file()):
-        return Installation("unknown", "Launcher/runtime mismatch; run sap-adt install first.")
+        return Installation("unknown", f"Launcher/runtime mismatch; run {command} install first.")
     node = os.environ.get("_SAP_ADT_NPM_NODE", "")
     npm = os.environ.get("_SAP_ADT_NPM_CLI", "")
     if not (Path(node).is_file() and Path(npm).is_file()
@@ -153,20 +157,20 @@ def _npm_installation() -> Installation | None:
                           "Cannot locate npm-cli.js; repair the Node.js/npm installation.")
     manager = (node, npm)
     global_root = Path(_capture([*manager, "root", "--global"])).resolve()
-    if root == global_root / PACKAGE and root.parent == global_root:
-        return Installation("npm-global", manager=manager, root=str(root))
+    if root == global_root / name and root.parent == global_root:
+        return Installation("npm-global", manager=manager, root=str(root), package=name)
     cache = Path(_capture([*manager, "config", "get", "cache"])).resolve()
     if root.is_relative_to(cache / "_npx"):
         return Installation(
-            "npx", 'Use npx "sap-adt-cli@^MAJOR" install, then keep the same '
+            "npx", f'Use npx "{name}@^MAJOR" install, then keep the same '
             'package selector on subsequent npx calls; the npx cache is not self-updated.',
-            manager, str(root),
+            manager, str(root), name,
         )
     return Installation(
-        "npm-local", "Update sap-adt-cli through the owning project's package manager "
-        "and lockfile, then run that project's sap-adt install. "
+        "npm-local", f"Update {name} through the owning project's package manager "
+        f"and lockfile, then run that project's {command} install. "
         "Local, workspace and linked packages are not replaced automatically.",
-        manager, str(root),
+        manager, str(root), name,
     )
 
 
@@ -188,17 +192,35 @@ def detect_installation() -> Installation:
             "source", "This is an editable or direct-URL install; update it from its "
             "original source, not a package registry.",
         )
+    package = PACKAGE
+    try:
+        facade = importlib.metadata.distribution(WATT_PACKAGE)
+    except importlib.metadata.PackageNotFoundError:
+        facade = None
+    if facade is not None and facade.metadata["Name"] == WATT_PACKAGE:
+        if (facade.version != get_version()
+                or Path(facade.locate_file("")).resolve()
+                != Path(dist.locate_file("")).resolve()):
+            return Installation("unknown", "Watt/core metadata mismatch; repair sap-watt "
+                                "with the package manager that owns this environment.")
+        dist = facade
+        package = WATT_PACKAGE
+    if dist.read_text("direct_url.json"):
+        return Installation(
+            "source", "This is an editable or direct-URL install; update it from its "
+            "original source, not a package registry.",
+        )
     prefix = Path(sys.prefix).resolve()
     location = Path(dist.locate_file("")).resolve()
     pipx_meta = _read_json(prefix / "pipx_metadata.json")
     if pipx_meta:
         main_package = pipx_meta.get("main_package", {})
         if (isinstance(main_package, dict)
-                and main_package.get("package") == PACKAGE
+                and main_package.get("package") == package
                 and location.is_relative_to(prefix) and prefix.parent.name == "venvs"):
             pipx = shutil.which("pipx")
             if pipx:
-                return Installation("pipx", manager=(pipx,), root=str(prefix))
+                return Installation("pipx", manager=(pipx,), root=str(prefix), package=package)
         return Installation("unknown", "Use the owning pipx environment to update this package.")
     if (dist.read_text("INSTALLER") or "").strip() != "pip":
         return Installation("unknown", "Use the package manager that installed this CLI.")
@@ -209,10 +231,10 @@ def detect_installation() -> Installation:
             "manager or install in pipx/a virtual environment; no --break-system-packages.",
         )
     if location.is_relative_to(prefix):
-        return Installation("pip", manager=(sys.executable, "-m", "pip"))
+        return Installation("pip", manager=(sys.executable, "-m", "pip"), package=package)
     user_site = Path(site.getusersitepackages()).resolve()
     if site.ENABLE_USER_SITE and location.is_relative_to(user_site):
-        return Installation("pip-user", manager=(sys.executable, "-m", "pip"))
+        return Installation("pip-user", manager=(sys.executable, "-m", "pip"), package=package)
     return Installation("unknown", "Package metadata is outside this interpreter's install "
                         "locations. Use the original installation environment.")
 
@@ -263,7 +285,7 @@ print(json.dumps(proxy))
 
 def available_versions(installation: Installation) -> list[str]:
     if installation.manager and installation.channel.startswith(("npm-", "npx")):
-        raw = _capture([*installation.manager, "view", PACKAGE, "versions", "--json"])
+        raw = _capture([*installation.manager, "view", installation.package, "versions", "--json"])
         try:
             versions = json.loads(raw)
         except ValueError as exc:
@@ -276,7 +298,7 @@ def available_versions(installation: Installation) -> list[str]:
     proxy = _pip_proxy()
     try:
         response = requests.get(
-            f"https://pypi.org/pypi/{PACKAGE}/json",
+            f"https://pypi.org/pypi/{installation.package}/json",
             timeout=(5, 20), allow_redirects=False,
             **({"proxies": {"http": proxy, "https": proxy}} if proxy else {}),
         )
@@ -330,11 +352,11 @@ def update_commands(report: dict) -> list[list[str]]:
     if installation.channel in ("pip", "pip-user"):
         return [[*installation.manager, "install", "--upgrade",
                  *(["--user"] if installation.channel == "pip-user" else []),
-                 f"{PACKAGE}=={target}"]]
+                 f"{installation.package}=={target}"]]
     if installation.channel == "pipx":
         # Pin the candidate while letting pipx maintain its environment metadata.
         return [[*installation.manager, "upgrade", Path(installation.root).name,
-                 "--pip-args", f"{PACKAGE}=={target}"]]
+                 "--pip-args", f"{installation.package}=={target}"]]
     if installation.channel == "npm-global":
         return []
     raise UpdateError(errors.CONFIRM_REQUIRED, installation.guidance)
@@ -366,7 +388,12 @@ def _repair_hint(report: dict) -> str:
     shell = " in PowerShell" if os.name == "nt" else ""
     return ("Inspect the installation before running a repair. "
             f"If repair is needed, run{shell}:\n{repair}\nThen verify:\n"
-            + display([sys.executable, "-m", "sap_adt.cli", "--version"]))
+            + display(_verification_command(installation)))
+
+
+def _verification_command(installation: Installation) -> list[str]:
+    module = "sap_watt" if installation.package == WATT_PACKAGE else "sap_adt.cli"
+    return [sys.executable, "-m", module, "--version"]
 
 
 def apply_python_update(report: dict, commands: list[list[str]]) -> None:
@@ -376,7 +403,7 @@ def apply_python_update(report: dict, commands: list[list[str]]) -> None:
     try:
         for command in commands:
             _capture(command, timeout=600, env=environment)
-        actual = _capture([sys.executable, "-m", "sap_adt.cli", "--version"])
+        actual = _capture(_verification_command(installation))
     except UpdateError as exc:
         raise UpdateError(
             errors.CONFIRM_REQUIRED,
@@ -384,7 +411,8 @@ def apply_python_update(report: dict, commands: list[list[str]]) -> None:
             f"Inspect it before retrying. {exc}",
             f"{exc.hint} {_repair_hint(report)}".strip(),
         ) from exc
-    if actual != f"sap-adt, version {report['target']}":
+    command = "sap-watt" if installation.package == WATT_PACKAGE else "sap-adt"
+    if actual != f"{command}, version {report['target']}":
         raise UpdateError(errors.CONFIRM_REQUIRED, "Package manager finished, but version "
                           "verification failed. Inspect this installation before retrying.",
                           _repair_hint(report))

@@ -14,9 +14,10 @@
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
-const { pythonFallback, safeMessage, installationHint } = require("./npm.js");
+const { pythonFallback, safeMessage, installationHint, packageIdentity } = require("./npm.js");
 
 const PKG_DIR = path.resolve(__dirname, "..");
+const { name: PACKAGE, command: COMMAND } = packageIdentity(PKG_DIR);
 
 function platformKey() {
   const osMap = { linux: "linux", darwin: "darwin", win32: "windows" };
@@ -55,8 +56,8 @@ function main(argv) {
       }
     } catch { /* The install wizard diagnoses a missing or invalid manifest. */ }
     fail(
-      `sap-adt runtime is not installed for ${platformKey()}.\n` +
-      `Run the install wizard once:  npx sap-adt-cli install\n` +
+      `${COMMAND} runtime is not installed for ${platformKey()}.\n` +
+      `Run the install wizard once:  npx ${PACKAGE} install\n` +
       `(or: <this-bin> install). Nothing was downloaded or modified.`,
       2,
     );
@@ -78,7 +79,9 @@ function main(argv) {
   }
 
   // Argument array, no shell: exit code and both streams pass through.
-  const result = spawnSync(bin, argv, { stdio: "inherit" });
+  const result = spawnSync(bin, argv, {
+    stdio: "inherit", env: { ...process.env, _SAP_ADT_COMMAND: COMMAND },
+  });
   if (result.error) {
     fail(`Failed to launch runtime at ${bin}: ${safeMessage(result.error)}\n` +
       installationHint({ code: result.error.code, message: "runtime self-test startup" }), 2);

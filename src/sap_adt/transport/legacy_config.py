@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from sap_adt.config import SapConfig
+from sap_adt.identity import command_name
 
 LEGACY_CONFIG_DIR = Path.home() / ".sap-transport-gate"
 LEGACY_CONFIG_FILE = LEGACY_CONFIG_DIR / "config.json"
@@ -27,7 +28,7 @@ def load_legacy_config() -> SapConfig:
     if not LEGACY_CONFIG_FILE.exists():
         raise LegacyConfigError(
             f"Legacy collector config not found at {LEGACY_CONFIG_FILE}. "
-            "Run `sap-adt configure` to create an ADT profile instead."
+            f"Run `{command_name()} configure` to create an ADT profile instead."
         )
     try:
         with open(LEGACY_CONFIG_FILE) as f:
@@ -43,13 +44,13 @@ def load_legacy_config() -> SapConfig:
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         raise LegacyConfigError(
             f"Legacy collector config at {LEGACY_CONFIG_FILE} is invalid: "
-            f"{e}. Run `sap-adt configure` to create an ADT profile instead."
+            f"{e}. Run `{command_name()} configure` to create an ADT profile instead."
         ) from e
 
     print(
         f"WARNING: reading legacy plaintext config {LEGACY_CONFIG_FILE}.\n"
         "The old standalone collector stored the SAP password unencrypted. "
-        "Run `sap-adt configure` to migrate to a profile with the password in "
+        f"Run `{command_name()} configure` to migrate to a profile with the password in "
         "the OS keystore, then drop --legacy-config. After migrating, remove "
         "the old file or keep it private (permissions 600).",
         file=sys.stderr,

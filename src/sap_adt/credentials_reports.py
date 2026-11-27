@@ -14,6 +14,7 @@ from . import config as config_module
 from . import credentials
 from .keystore import REGISTRY, select
 from .keystore.base import BackendUnavailableError, KeyStore
+from .identity import command_name
 
 
 def platform_line() -> str:
@@ -193,5 +194,5 @@ def status_text() -> str:
             state = "not configured"
         lines.append(f"{marker} {name:<16} {p.get('username', ''):<16} {state}")
     if len(lines) == 3:
-        lines.append("No profiles configured. Run: sap-adt configure")
+        lines.append(f"No profiles configured. Run: {command_name()} configure")
     return "\n".join(lines)

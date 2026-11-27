@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { installTree, npmEnvironment } = require("./install.js");
-const { findNpm, childEnv, installationHint } = require("./npm.js");
+const { findNpm, childEnv, installationHint, packageIdentity } = require("./npm.js");
 
 function isUpdate(argv) {
   for (let i = 0; i < argv.length; i++) {
@@ -32,6 +32,7 @@ function checked(run, command, args, options) {
 
 function applyUpdate(root, npm, plan, run = spawnSync, environment = process.env) {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const { name: packageName, command } = packageIdentity(root);
   if (!plan || plan.root !== root || pkg.version !== plan.current ||
       !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(plan.target)) {
     throw new Error("Invalid update plan; nothing was changed.");
@@ -47,17 +48,17 @@ function applyUpdate(root, npm, plan, run = spawnSync, environment = process.env
     checked(run, process.execPath, [npm, "install", "--prefix", staging,
       "--global=false",
       "--ignore-scripts", "--no-audit", "--no-fund", "--no-package-lock",
-      "--save-exact", `sap-adt-cli@${plan.target}`], options);
-    const stagedPackage = path.join(staging, "node_modules", "sap-adt-cli");
+      "--save-exact", `${packageName}@${plan.target}`], options);
+    const stagedPackage = path.join(staging, "node_modules", packageName);
     const stagedMetadata = JSON.parse(fs.readFileSync(path.join(stagedPackage, "package.json"), "utf8"));
-    if (stagedMetadata.name !== "sap-adt-cli" || stagedMetadata.version !== plan.target) {
+    if (stagedMetadata.name !== packageName || stagedMetadata.version !== plan.target) {
       throw new Error("Staged npm package version mismatch; the installed package was not changed.");
     }
     checked(run, process.execPath, [path.join(stagedPackage, "scripts", "install.js")], options);
     const stagedVersion = checked(run, process.execPath,
       [path.join(stagedPackage, "scripts", "run.js"), "--version"],
       { env, encoding: "utf8", timeout: 60_000 }).stdout.trim();
-    if (stagedVersion !== `sap-adt, version ${plan.target}`) {
+    if (stagedVersion !== `${command}, version ${plan.target}`) {
       throw new Error("Staged runtime version mismatch; the installed package was not changed.");
     }
     // Check scope again immediately before the first change to the live install.
@@ -70,30 +71,30 @@ function applyUpdate(root, npm, plan, run = spawnSync, environment = process.env
       throw new Error("npm global root could not be verified; no update was committed.");
     }
     // Resolve prefix aliases, but do not authorize a symlinked package.
-    if (path.join(canonicalGlobalRoot, "sap-adt-cli") !== fs.realpathSync(root)) {
+    if (path.join(canonicalGlobalRoot, packageName) !== fs.realpathSync(root)) {
       throw new Error("npm global root changed; the installed package was not changed.");
     }
     const live = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-    if (live.name !== "sap-adt-cli" || live.version !== plan.current) {
+    if (live.name !== packageName || live.version !== plan.current) {
       throw new Error("The installed npm package changed during staging; no update was committed.");
     }
     committing = true;
     checked(run, process.execPath, [npm, "install", "--global", "--ignore-scripts",
-      "--no-audit", "--no-fund", `sap-adt-cli@${plan.target}`], options);
+      "--no-audit", "--no-fund", `${packageName}@${plan.target}`], options);
     const updated = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-    if (updated.name !== "sap-adt-cli" || updated.version !== plan.target) {
+    if (updated.name !== packageName || updated.version !== plan.target) {
       throw new Error("npm did not update the expected package directory.");
     }
     installTree(path.join(stagedPackage, "runtime"), path.join(root, "runtime"));
     const actual = checked(run, process.execPath, [path.join(root, "scripts", "run.js"), "--version"],
       { env, encoding: "utf8", timeout: 60_000 }).stdout.trim();
-    if (actual !== `sap-adt, version ${plan.target}`) throw new Error("Final runtime version mismatch.");
-    process.stdout.write(`Updated and verified sap-adt ${plan.target}.\n`);
+    if (actual !== `${command}, version ${plan.target}`) throw new Error("Final runtime version mismatch.");
+    process.stdout.write(`Updated and verified ${command} ${plan.target}.\n`);
   } catch (error) {
     if (committing) {
       error.needsInspection = true;
       error.message += " The npm package may already have changed; repair with npm install -g " +
-        `"sap-adt-cli@${plan.target}" followed by sap-adt install. No full npm rollback is guaranteed.`;
+        `"${packageName}@${plan.target}" followed by ${command} install. No full npm rollback is guaranteed.`;
     }
     throw error;
   } finally {
@@ -109,6 +110,7 @@ function runUpdate(root, bin, argv) {
     stdio: ["inherit", "pipe", "inherit"], encoding: "utf8", maxBuffer: 1024 * 1024,
     timeout: 120_000, killSignal: "SIGKILL", windowsHide: true,
     env: { ...env, _SAP_ADT_UPDATE_LAUNCHER: "1",
+      _SAP_ADT_COMMAND: packageIdentity(root).command,
       _SAP_ADT_NPM_ROOT: root, _SAP_ADT_NPM_NODE: process.execPath, _SAP_ADT_NPM_CLI: npm },
   });
   if (result.error) throw new Error("Could not complete the runtime update check. " +

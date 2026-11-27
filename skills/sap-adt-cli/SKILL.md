@@ -4,7 +4,7 @@ description: "Read/write live SAP ABAP source and class parts, review multi-obje
   create DDIC/RAP objects, run Unit regression with JUnit, inspect RAP/OData,
   execute typed local functions/BAPIs, Reports with selections and ABAP snippets,
   inspect DDIC and transport requests
-  via the sap-adt CLI. Use for repository search, where-used, syntax checks, ABAP
+  via Watt (sap-watt) or the compatible sap-adt CLI. Use for repository search, where-used, syntax checks, ABAP
   Unit failure evidence, test include source, ATC, SQL preview, short dump
   details and stacks, explicitly authorized debugging, Gateway errors, ADT Feeds, object version
   history, source differences, transport object diffs and CLI updates. Trigger when asked why
@@ -15,7 +15,7 @@ description: "Read/write live SAP ABAP source and class parts, review multi-obje
 license: MIT
 allowed-tools: [Read, Bash]
 metadata:
-  version: "1.3.6"
+  version: "1.3.7"
   type: hybrid
   output_schema:
     format: mixed
@@ -28,9 +28,13 @@ metadata:
     requires_elevation: false
 ---
 
-# SAP ADT CLI
+# Watt — SAP ADT engineering skill
 
-CLI: the `sap-adt` command — a self-contained binary (no Python needed) or
+CLI: prefer `sap-watt` (Watt, CLI 1.6.7+) when installed; the compatible
+`sap-adt` entry remains supported. Both use the same subcommands and
+configuration. Use one available compatible entry consistently; the legacy
+`sap-adt` examples in these references also apply to Watt. This skill retains
+its `sap-adt-cli` identifier. The runtime is a self-contained binary (no Python needed) or
 the Python package. Install and readiness guide: **references/setup.md**;
 the compatible CLI range is declared in
 **references/runtime-compatibility.json** (never guess it, never resolve
@@ -57,19 +61,25 @@ Decide the task mode first:
      on the user's machine. No shell, no install permission, or no network
      → give the manual steps from references/setup.md and stop; never
      fabricate an online result.
-  2. Probe `sap-adt --version`.
+  2. Probe `sap-watt --version`; if absent, probe `sap-adt --version`.
+     Check the chosen entry against its own range in
+     references/runtime-compatibility.json (`cli.preferred_entry` for Watt,
+     top-level `cli` for the legacy entry). A compatible old entry does not
+     require migration merely to run an existing task.
      - Not found: it may be installed with a PATH not refreshed in this
        session — ask the user to restart the terminal/agent or try the
        absolute install path from references/setup.md. Do not blindly
        reinstall. Only after confirming absence, guide the install and ASK
        before running anything:
-       * Node.js ≥ 18 available → preferred: `npx "sap-adt-cli@^1.5.0" install`
+       * Node.js ≥ 18 available → preferred: `npx "sap-watt@^1.6.7" install`
          (the caret range is the compatible range from
          references/runtime-compatibility.json and resolves to the newest
          compatible release; never use an unbounded `@latest`).
-       * No Node.js → `pip install "sap-adt-cli>=1.5.0,<2.0.0"` (Python ≥ 3.10) or the
+       * No Node.js → `pip install "sap-watt>=1.6.7,<2.0.0"` (Python ≥ 3.10) or the
          newest 1.x portable archive from the release page.
-       Never install silently. After installing, re-run `sap-adt --version`
+       npx requires its package selector on every call; it does not put an
+       entry on PATH. Native portable archives still expose `sap-adt`.
+       Never install silently. After installing, re-run the installed entry's `--version`
        via the absolute install path (PATH may not have refreshed yet).
      - Found: compare against the compatible range; on mismatch show the
        upgrade command and ask before changing anything.

@@ -91,19 +91,6 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     version = cli_version()
-    if STAGING.exists():
-        shutil.rmtree(STAGING)
-    (STAGING / "scripts").mkdir(parents=True)
-    shutil.copy2(SRC_PKG / "README.md", STAGING / "README.md")
-    shutil.copy2(ROOT / "LICENSE", STAGING / "LICENSE")
-    for js in (SRC_PKG / "scripts").glob("*.js"):
-        shutil.copy2(js, STAGING / "scripts" / js.name)
-
-    pkg = json.loads((SRC_PKG / "package.json").read_text(encoding="utf-8"))
-    pkg["version"] = version
-    (STAGING / "package.json").write_text(
-        json.dumps(pkg, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
     artifacts = collect_artifacts(version, args.local_file_urls)
     if not artifacts:
         print("[build_npm] WARNING: no runtime archives found under "
@@ -116,8 +103,27 @@ def main(argv: list[str] | None = None) -> int:
         else args.release_state,
         "artifacts": artifacts,
     }
-    (STAGING / "runtime-manifest.json").write_text(
-        json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    for package, destination, readme in (
+        ("sap-adt-cli", STAGING, SRC_PKG / "README.md"),
+        ("sap-watt", ROOT / "dist" / "npm-watt", ROOT / "packaging" / "watt" / "README.md"),
+    ):
+        if destination.exists():
+            shutil.rmtree(destination)
+        (destination / "scripts").mkdir(parents=True)
+        shutil.copy2(readme, destination / "README.md")
+        shutil.copy2(ROOT / "LICENSE", destination / "LICENSE")
+        for js in (SRC_PKG / "scripts").glob("*.js"):
+            shutil.copy2(js, destination / "scripts" / js.name)
+        pkg = json.loads((SRC_PKG / "package.json").read_text(encoding="utf-8"))
+        pkg["name"] = package
+        pkg["version"] = version
+        if package == "sap-watt":
+            pkg["bin"] = {"sap-watt": "scripts/run.js"}
+            pkg["description"] = "Watt: an engineering CLI for SAP lifecycle work. Power your SAP Engineering."
+        (destination / "package.json").write_text(
+            json.dumps(pkg, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        (destination / "runtime-manifest.json").write_text(
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
     print(f"[build_npm] staged dist/npm/ for CLI {version}; "
           f"artifacts: {sorted(artifacts) or '(none)'}")

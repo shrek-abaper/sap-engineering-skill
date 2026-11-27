@@ -20,10 +20,12 @@ class DesktopInstallerManifestTests(unittest.TestCase):
         dist = root / "dist"
         for directory in ("runtime", "installers", "release", "skills", "plugin/.claude-plugin"):
             (dist / directory).mkdir(parents=True)
-        for name in ("sap_adt_cli-1.5.3-py3-none-any.whl", "sap_adt_cli-1.5.3.tar.gz"):
+        for name in ("sap_adt_cli-1.5.3-py3-none-any.whl", "sap_adt_cli-1.5.3.tar.gz",
+                     "sap_watt-1.5.3-py3-none-any.whl", "sap_watt-1.5.3.tar.gz"):
             (dist / name).write_bytes(b"python package")
         (dist / "runtime" / "sap-adt-1.5.3-windows-x86_64.zip").write_bytes(b"runtime")
         (dist / "release" / "sap-adt-cli-1.5.3.tgz").write_bytes(b"npm")
+        (dist / "release" / "sap-watt-1.5.3.tgz").write_bytes(b"watt npm")
         (dist / "plugin" / ".claude-plugin" / "plugin.json").write_text('{"version": "1.2.7"}')
         (dist / "installers" / "sap-adt-1.5.2-windows-x86_64-setup.exe").write_bytes(b"old")
         if with_installer:
@@ -59,6 +61,16 @@ class DesktopInstallerManifestTests(unittest.TestCase):
             self.build_fixture(root, with_installer=False)
             manifest = self.run_manifest(root)
             self.assertFalse(any(a["kind"] == "installer" for a in manifest["artifacts"]))
+
+    def test_both_entry_packages_ship_at_the_current_version(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.build_fixture(root, with_installer=False)
+            manifest = self.run_manifest(root)
+            for package in ("sap-adt-cli", "sap-watt"):
+                self.assertEqual(
+                    {a["kind"] for a in manifest["artifacts"] if a.get("package") == package},
+                    {"wheel", "sdist", "npm"})
 
     def test_native_ci_verification_is_distinct_from_unverified_targets(self):
         with tempfile.TemporaryDirectory() as tmp:

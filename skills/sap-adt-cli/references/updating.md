@@ -1,5 +1,14 @@
 # Updating the CLI
 
+**Watt (1.6.7+):** the same options work through `sap-watt update`.
+Installation metadata, not the displayed command name, selects the package.
+npm updates its actual owning package (`sap-watt` or `sap-adt-cli`), preserving
+the other entry/runtime slot. In a shared Python environment containing Watt,
+both current entries update `sap-watt` and its exact-version core together.
+Do not upgrade the pinned core independently. Python checks Watt's PyPI
+project in that case; legacy-only and standalone checks retain `sap-adt-cli`.
+Keep the corresponding package selector on every npx call.
+
 The `update` command requires CLI 1.6.0 or newer.
 Check `sap-adt update --help` first. Older versions require one manual
 package-manager upgrade to obtain it; repeatedly running their `install`

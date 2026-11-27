@@ -1,10 +1,14 @@
 <div align="center">
 
-<h3>Governed AI delivery for the SAP ABAP landscape you actually run</h3>
+<h1>Watt</h1>
 
-<h4><i>ADT capabilities as a deterministic CLI · delivery scenarios as portable Skills · every change bound, verified and traceable</i></h4>
+<h3>Power your SAP Engineering.</h3>
 
-> AI agents can already write ABAP. Delivering it safely into a real SAP system is a different problem: locks and stateful sessions, transports, release gates, audit evidence, and a landscape that is still mostly ECC and on-premise S/4HANA. This project turns the ADT REST API into a governed command-line contract and layers `SKILL.md` workflows on top — code review, transport gate, diagnosis, integration know-how — so that Claude Code, Codex, WorkBuddy and any skill-aware agent can take part in SAP delivery under the controls an enterprise expects.
+<h4><i>An engineering CLI for SAP lifecycle work · evidence first · explicit authority · traceable outcomes</i></h4>
+
+> Watt supports dependable engineering work across SAP implementation, consulting, development, testing, delivery and operations. People can use it directly; AI agents can call the same contract. Named after the unit of power, Watt aims for steady, sustained and controllable work. Today its foundation is ADT and ABAP, with companion Skills for review, transport risk and integration guidance — broader lifecycle coverage is a direction, not a claim that every SAP task is already supported.
+
+**Independent community project · not an official SAP product · no embedded LLM**
 
 **ADT REST API · Code Review · Transport Gate · Integration Knowledge · Evidence-First**
 
@@ -28,17 +32,12 @@
 
 ## Why this project
 
-The ABAP tooling market is moving fast. SAP now ships ADT for VS Code with a built-in MCP server, and the community offers several ADT-based MCP servers. They mostly compete on **how many tools an agent can call**. This project competes on a different axis: **whether what the agent did can be trusted, proven and signed off**.
-
-| | SAP ADT MCP (VS Code / Eclipse) | Community ADT MCP servers | **sap-engineering-skill** |
-|---|---|---|---|
-| Primary focus | ABAP Cloud, RAP generation, clean core | Broad tool coverage for agents | **Governed delivery on existing landscapes** |
-| On-premise reach | VS Code: S/4HANA 2025+ ¹ | Varies, mostly unverified per release | **ECC 6.0 and S/4HANA; real-system protocol facts recorded per release** |
-| Runtime | Inside a running IDE; experimental ¹ | Long-running MCP server | **Stateless CLI: any agent, any shell, any CI** |
-| Write safety | IDE-mediated | Typically lock → write → unlock | **Baseline-bound, read-back verified, staged outcome, no blind retry** |
-| Delivery workflow | Tools | Tools | **Tools + Skills: review, transport gate, diagnosis, integration** |
-
-<sub>¹ As documented by SAP for ADT for VS Code and its MCP server (as of 2026). Check SAP's current documentation for your release.</sub>
+SAP work crosses roles and system boundaries. Reading source is only one part:
+teams also need attributable diagnostics, reviewed changes, transport evidence
+and clear approval boundaries. Watt turns current ADT capabilities into a
+deterministic CLI and layers portable `SKILL.md` workflows on top. Its question
+is not just whether an operation can run, but **whether its intent, evidence
+and outcome can be inspected and trusted**.
 
 ### Design principles
 
@@ -48,7 +47,10 @@ The ABAP tooling market is moving fast. SAP now ships ADT for VS Code with a bui
 4. **Deterministic contract, portable orchestration.** The CLI gives agents a stable JSON envelope, a closed error-code set and tiered exit codes. Scenarios live in plain `SKILL.md` folders — no vendor lock-in, low token overhead, scriptable in CI.
 5. **Measured, not assumed.** ADT behavior that SAP does not document — lock ownership, silent unlock no-ops, activation reply formats — is measured on real systems, recorded with sanitized fixtures, and labeled with the release it was verified on. What has not been verified is stated as such.
 
-**Complementary by design.** On S/4HANA 2025+ and SAP BTP, SAP's own ADT tooling is the natural editor. This project focuses on the landscapes most enterprises still run, and on the governance layer — gates, evidence, sign-off — that sits above any editor or tool server.
+**ADT is the starting point, not the product boundary.** The CLI supplies
+verified operations; Skills and agents supply interpretation and orchestration.
+Watt does not replace human approval or claim to be a universal assistant.
+Read the [name, scope and design principles](docs/design-principles.md).
 
 ---
 
@@ -97,35 +99,42 @@ The four skills then appear under the `sap-engineering-skills` namespace (for ex
 With Node.js ≥ 18 (no Python required for this channel):
 
 ```bash
-npm install -g "sap-adt-cli@^1.5.0"
-sap-adt install
-sap-adt --version
+npm install -g "sap-watt@^1.6.7"
+sap-watt install
+sap-watt --version
 ```
 
-The npm package installs a launcher; `sap-adt install` fetches, verifies and installs the platform runtime. A normal `sap-adt` call never downloads or upgrades anything. Linux x86_64 and Windows x86_64 runtimes are available; Windows requires CLI 1.5.3 or newer. CLI 1.6.0 adds experimental macOS 15+ runtimes for Intel and Apple Silicon.
+The npm package installs a launcher; `sap-watt install` fetches, verifies and installs the platform runtime. A normal `sap-watt` call never downloads or upgrades anything. Linux x86_64 and Windows x86_64 runtimes are available, plus experimental macOS 15+ runtimes for Intel and Apple Silicon.
 
 On Windows without Node.js or Python, download the unsigned `sap-adt-<ver>-windows-x86_64-setup.exe` from the [releases](https://github.com/shrek-abaper/sap-engineering-skill/releases). See the [Windows guide](docs/installation/windows.md) for verified scope and limitations.
 
-Without a global install, npx keeps nothing on `PATH`: run `npx "sap-adt-cli@^1.5.0" install` and keep that package prefix on every later call.
+Without a global install, npx keeps nothing on `PATH`: run `npx "sap-watt@^1.6.7" install` and keep that package prefix on every later call.
 
 With Python ≥ 3.10, no Node.js needed:
 
 ```bash
-pip install "sap-adt-cli>=1.5.0,<2.0.0"
-sap-adt --version
+python -m pip install "sap-watt>=1.6.7,<2.0.0"
+sap-watt --version
 ```
 
 Then point it at a system:
 
 ```bash
-sap-adt configure            # interactive wizard; the password is entered locally
-sap-adt status               # local configuration state only — it does not contact SAP
-sap-adt credentials doctor   # which keystore backend is active, without showing secrets
+sap-watt configure            # interactive wizard; the password is entered locally
+sap-watt status               # local configuration state only — it does not contact SAP
+sap-watt credentials doctor   # which keystore backend is active, without showing secrets
 ```
 
 Do not pass a password on the command line or paste one into the chat. For multiple environments use `--profile dev|qas|prd`; environment variables or a dotenv file declared by `SAP_ADT_DOTENV` override profiles for CI/CD.
 
 Full channel list, the portable Linux archive, credential precedence and the diagnostics matrix: [docs/installation/runtime-setup.md](docs/installation/runtime-setup.md).
+
+**Already using `sap-adt`?** Keep it: existing scripts, Skill IDs, `SAP_*`
+variables, `~/.sap-adt-cli` configuration and credential identifiers are
+unchanged. Watt starts at 1.6.7; install the new package to obtain `sap-watt`.
+It owns only the new command. Python shares an exact-version core dependency;
+npm packages have independent runtime slots. Native assets/installers retain
+the `sap-adt` name. See the [migration guide](docs/installation/runtime-setup.md#watt-installation-and-migration-167).
 
 ---
 
@@ -187,7 +196,7 @@ Review output is an input to your release process, not the approval itself. A de
 | Component | What it is |
 |---|---|
 | **Skill** | A folder containing `SKILL.md` (workflow steps, hard constraints), check rules and reference files. Your agent loads it; no executable code is involved. |
-| **CLI** | The `sap-adt` command, a separate program that talks to the SAP ADT REST API for live reads, writes and transport collection. Packaged for npm and PyPI; source lives in this repository. |
+| **CLI** | Watt (`sap-watt`, compatible `sap-adt`), a separate deterministic program for SAP operations and evidence. Packaged for npm and PyPI; one implementation lives in this repository. No embedded LLM. |
 | **Plugin** | How Claude Code installs and updates the four skill folders from this repository. Documentation only — the CLI is always installed separately. |
 
 The repository is a single distribution point for the four skills and the CLI source, but you do not need its build layout to use either. The same skill folders can be loaded by other agents that support `SKILL.md`; discovery paths vary.
@@ -256,6 +265,7 @@ Direction, not commitments; each item ships only with offline regression and rea
 
 | Document | Contents |
 |---|---|
+| [docs/design-principles.md](docs/design-principles.md) | Watt's independent name, lifecycle direction, evidence and authorization principles, compatibility |
 | [docs/installation/](docs/installation/) | CLI channels (npm, npx, PyPI, portable, source), credential precedence, readiness checks, diagnostics matrix |
 | [docs/agents/](docs/agents/) | Claude Code plugin details and generic `SKILL.md` agent guidance |
 | [docs/authentication/](docs/authentication/) | SAP↔AI authentication playbook: Basic, SPNEGO, X.509, OIDC/OAuth2, gateway and client patterns (synced copy; authoritative version in `sap-functional-skill`) |

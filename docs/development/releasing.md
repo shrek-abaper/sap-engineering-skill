@@ -3,6 +3,22 @@
 **Nothing in this document is executed by an agent without explicit
 authorization.** Remote publishing is a separate, human-approved step.
 
+CLI **1.6.7** / plugin/docs **1.3.8** adds the Watt brand and compatible
+`sap-watt` Python/npm entry packages, not new SAP authorization. Core and
+entry versions share `pyproject.toml`; build Python core with `python -m build`,
+then the entry with `tools/build_watt.py`. `tools/build_npm.py` stages both npm
+packages and `tools/build_manifest.py` lists both wheels, sdists and npm tarballs.
+Use only current-version artifacts listed in that manifest.
+
+Publishing order for this transition: first publish and verify the GitHub
+native assets; then publish the Python `sap-adt-cli` core before its exact-version
+`sap-watt` dependent entry. Publish each npm package from its own staging tree
+(`dist/npm`, `dist/npm-watt`) after runtime URLs are live, and verify both public
+installs. Do not publish an empty package merely to reserve a name. The new
+package owns only `sap-watt`; no default bare `watt` executable is installed.
+Keep native filenames, tag prefix, Windows AppId and existing configuration.
+Only switch marketplace after its new archive is live and checksum-verified.
+
 CLI **1.6.6** / plugin/docs **1.3.7** adds atomic-executor
 target expectations, explicit JSON normalization, enhancement metadata and
 bounded impact, Unit gates/evidence, diagnosis packages, transport analysis,
@@ -118,9 +134,9 @@ Guidance:
 
 ## Versioning
 
-- CLI: `1.6.6` (single source: `pyproject.toml`; runtime/npm/installers
+- CLI: `1.6.7` (single source: `pyproject.toml`; runtime/npm/installers/entry
   inherit it).
-- Plugin/docs: `1.3.7` (`.claude-plugin/plugin.json`; must equal
+- Plugin/docs: `1.3.8` (`.claude-plugin/plugin.json`; must equal
   `compatibility.json.plugin_version`).
 - The compatibility shims were removed in the 1.4.0 source tree; no released
   artifact ever contained them, so no CLI version bump was required.

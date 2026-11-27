@@ -33,9 +33,10 @@ const tls = require("node:tls");
 const { Transform } = require("node:stream");
 const { pipeline } = require("node:stream/promises");
 const { fileURLToPath } = require("node:url");
-const { findNpm, childEnv, installationHint, safeMessage } = require("./npm.js");
+const { findNpm, childEnv, installationHint, safeMessage, packageIdentity } = require("./npm.js");
 
 const PKG_DIR = path.resolve(__dirname, "..");
+const { command: COMMAND } = packageIdentity(PKG_DIR);
 const MAX_REDIRECTS = 3;
 // Node's core https client ignores HTTPS_PROXY before v24, so a blocked
 // direct route hung this wizard forever. Connection setup has a hard deadline;
@@ -64,13 +65,13 @@ function intEnv(name, fallback) {
 }
 
 function fail(message, code = 1) {
-  process.stderr.write(`[sap-adt install] ERROR: ${safeMessage(message)}\n` +
+  process.stderr.write(`[${COMMAND} install] ERROR: ${safeMessage(message)}\n` +
     `Hint: ${message?.hint || installationHint(message)}\n`);
   process.exit(code);
 }
 
 function info(message) {
-  process.stdout.write(`[sap-adt install] ${message}\n`);
+  process.stdout.write(`[${COMMAND} install] ${message}\n`);
 }
 
 function platformKey() {
@@ -564,7 +565,7 @@ function installTree(staging, runtimeDir, validate = () => {}) {
     try {
       fs.rmSync(backup, { recursive: true, force: true });
     } catch {
-      process.stderr.write(`[sap-adt install] WARNING: verified runtime installed, but backup cleanup ` +
+      process.stderr.write(`[${COMMAND} install] WARNING: verified runtime installed, but backup cleanup ` +
         `failed at ${backup}. Close file handles and remove that backup after verification.\n`);
     }
   }
@@ -629,12 +630,12 @@ async function main() {
       version = verifyRuntime(path.join(installed, exeName));
     });
     info(`installed ${version || path.join(runtimeDir, exeName)}`);
-    info("next: sap-adt configure   (interactive; password goes to the OS keystore)");
+    info(`next: ${COMMAND} configure   (interactive; password goes to the OS keystore)`);
   } finally {
     try {
       fs.rmSync(tmp, { recursive: true, force: true });
     } catch {
-      process.stderr.write(`[sap-adt install] WARNING: temporary files remain at ${tmp}; ` +
+      process.stderr.write(`[${COMMAND} install] WARNING: temporary files remain at ${tmp}; ` +
         "close file handles and clean up that directory.\n");
     }
   }

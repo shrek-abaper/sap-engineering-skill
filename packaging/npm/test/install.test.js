@@ -70,6 +70,8 @@ function stagePackage(manifest) {
   for (const f of fs.readdirSync(SCRIPTS)) {
     fs.copyFileSync(path.join(SCRIPTS, f), path.join(pkgDir, "scripts", f));
   }
+  fs.writeFileSync(path.join(pkgDir, "package.json"),
+    JSON.stringify({ name: "sap-adt-cli", version: "0.0.0-test" }));
   fs.writeFileSync(path.join(pkgDir, "runtime-manifest.json"), JSON.stringify(manifest));
 }
 

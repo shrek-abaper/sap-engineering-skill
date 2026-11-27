@@ -1,9 +1,16 @@
 # sap-adt-cli
 
+**Watt — Power your SAP Engineering.** This Skill keeps its existing ID.
+Prefer the `sap-watt` entry from CLI 1.6.7+ for new Python/npm installations;
+compatible `sap-adt` examples and existing configurations remain valid.
+The deterministic CLI supplies operations; this Skill and its agent supply
+workflow and interpretation, not a second embedded AI runtime.
+
 <!-- BEGIN GENERATED cli-setup -->
 <!-- GENERATED from docs/installation/runtime-setup.md + compatibility.json by tools/sync_skill_runtime_docs.py — do not edit; run the tool to refresh -->
 
-Online operations need the `sap-adt` CLI. Compatible CLI range: `>=1.5.0,<2.0.0`.
+Online operations need the `sap-adt` CLI. Compatible legacy CLI range: `>=1.5.0,<2.0.0`.
+Preferred new entry: **Watt** (`sap-watt`), range `>=1.6.7,<2.0.0`. Existing `sap-adt` examples remain valid; use the installed entry consistently.
 Install/readiness guide: [`references/setup.md`](references/setup.md).
 <!-- END GENERATED cli-setup -->
 

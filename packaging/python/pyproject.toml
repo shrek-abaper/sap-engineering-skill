@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sap-watt"
+version = "0.0.0"
+description = "Watt: an engineering CLI for SAP lifecycle work. Power your SAP Engineering."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "shrek-abaper" }]
+requires-python = ">=3.10"
+keywords = ["sap", "watt", "abap", "adt", "engineering", "cli"]
+dependencies = ["sap-adt-cli==0.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/shrek-abaper/sap-engineering-skill"
+Documentation = "https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/runtime-setup.md"
+
+[project.optional-dependencies]
+keystore = ["sap-adt-cli[keystore]==0.0.0"]
+file = ["sap-adt-cli[file]==0.0.0"]
+all = ["sap-adt-cli[keystore,file]==0.0.0"]
+
+[project.scripts]
+sap-watt = "sap_watt:main"
+
+[tool.setuptools]
+py-modules = ["sap_watt"]

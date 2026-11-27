@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+from .identity import command_name
 
 
 # ------------------------------- error codes -------------------------------
@@ -238,11 +239,15 @@ def decision(
     hint: Optional[str] = None,
     data: Optional[dict] = None,
 ) -> ErrorDecision:
+    if hint is None:
+        hint = DEFAULT_HINTS.get(code)
+        if code == CONFIG_MISSING and hint:
+            hint = hint.replace("sap-adt configure", f"{command_name()} configure")
     return ErrorDecision(
         code=code,
         message=message,
         http_status=http_status,
-        hint=hint if hint is not None else DEFAULT_HINTS.get(code),
+        hint=hint,
         data=data,
     )
 

@@ -1,5 +1,12 @@
 # npm / npx install
 
+**Preferred new entry: Watt (1.6.7+).** Install with
+`npm install -g "sap-watt@^1.6.7"`, then `sap-watt install`.
+For npx keep `npx "sap-watt@^1.6.7"` on every call.
+The existing `sap-adt-cli` / `sap-adt` instructions below remain compatible.
+Each npm package owns its own command/runtime slot and updates itself; neither
+installs bare `watt`. Shared SAP configuration and credentials do not move.
+
 **Node.js ≥ 18 is required for this channel only.** The installed runtime is
 a native executable — no Python. General guide:
 [runtime-setup.md](runtime-setup.md).

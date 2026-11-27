@@ -1,5 +1,13 @@
 # Windows runtime and installer
 
+**Watt entry (1.6.7+):** with Node.js >=18 use
+`npm install -g "sap-watt@^1.6.7"`, then `sap-watt install`.
+Python >=3.10 can use `python -m pip install "sap-watt>=1.6.7,<2"`.
+The native executable, portable ZIP, Windows installer AppId and install
+directory retain `sap-adt` during this transition; the standalone installer
+does not add `sap-watt`. Existing configuration/credentials remain shared.
+The versioned verification records below describe their stated releases.
+
 **Runtime / npm: CLI 1.6.5 verified locally** on 2026-11-22. The Windows x64 runtime
 was built with Windows Python 3.12 through WSL interop, then installed from
 a locally packed npm package using Windows Node.js. SHA-256 verification,

@@ -1,5 +1,9 @@
 # sap-adt-cli
 
+**Watt — Power your SAP Engineering.** 本 Skill 保留原 ID。
+新安装优先使用 CLI 1.6.7+ 的 `sap-watt`；现有 `sap-adt` 示例、配置和凭据继续兼容。
+CLI 提供受控操作，Skill 与 Agent 负责流程和理解，不内嵌另一套智能体运行时。
+
 [English](README.md) | [中文](README.zh-CN.md)
 
 通过 [ADT（ABAP 开发工具）REST API](https://help.sap.com/docs/abap-cloud/abap-development-tools-user-guide/about-abap-development-tools) 从 SAP 系统**读取与写入** ABAP 源代码、元数据及传输请求的命令行工具，同时也是一个 AI 智能体技能包（Agent Skill）。

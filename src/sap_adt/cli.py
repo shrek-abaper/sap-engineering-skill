@@ -30,6 +30,7 @@ from sap_adt.keystore.base import KeyStoreError
 from sap_adt.transport import collector, legacy_config
 from sap_adt.transport import handlers as collector_handlers
 from sap_adt.version import get_version
+from sap_adt.identity import command_name
 
 _KEYSTORE_CHOICES = ("env", "keyring", "dpapi", "pass", "file")
 
@@ -181,7 +182,7 @@ def _require_config(config):
     """Emit the CONFIG_MISSING envelope for commands that pre-check config."""
     if config is None:
         _gate(errors.CONFIG_MISSING,
-              "Not configured. Run: sap-adt configure")
+              f"Not configured. Run: {command_name()} configure")
 
 
 def _load_config():
@@ -505,7 +506,7 @@ def _confirm_change(preview_lines: list, yes: bool = False) -> None:
 
 
 @click.group(name="sap-adt", cls=SapAdtGroup)
-@click.version_option(version=get_version(), prog_name="sap-adt")
+@click.version_option(version=get_version())
 @click.option(
     "--profile",
     default=None,
@@ -765,7 +766,7 @@ def update_cmd(check_only, major, yes):
         commands = updater.update_commands(report)
         if report["channel"] == "npm-global" and not launcher:
             raise updater.UpdateError(
-                errors.CONFIRM_REQUIRED, "Run update through the npm sap-adt launcher, "
+                errors.CONFIRM_REQUIRED, f"Run update through the npm {command_name()} launcher, "
                 "not the inner runtime; it must exit before files can be replaced.",
             )
         if commands:
@@ -790,7 +791,8 @@ def update_cmd(check_only, major, yes):
             return
         updater.apply_python_update(report, commands)
         _local_output({"target": report["target"], "updated": True},
-                      f"Updated and verified sap-adt {report['target']}.")
+                      f"Updated and verified {click.get_current_context().find_root().info_name} "
+                      f"{report['target']}.")
     except updater.UpdateError as exc:
         # In particular, do not call _profile_name(): maintenance must not read
         # or migrate SAP configuration just to render an error.
@@ -927,7 +929,7 @@ def status():
     config, source = _load_config_with_source()
     if config is None:
         _gate(errors.CONFIG_MISSING,
-              "Not configured. Run: sap-adt configure "
+              f"Not configured. Run: {command_name()} configure "
               "(manage environments with 'profile list').")
     if output.get_format() == "json":
         _local_output({
@@ -993,7 +995,7 @@ def profile_list():
         _local_output({"profiles": profiles}, "")
         return
     if not profiles:
-        click.echo("No profiles configured. Run: sap-adt configure")
+        click.echo(f"No profiles configured. Run: {command_name()} configure")
         return
     allow_write, allow_transport = config_module.get_global_capabilities()
     click.echo(f"{'':1} {'NAME':<16} {'ENV':<5} {'CLIENT':<7} {'USERNAME':<16} URL")
@@ -2901,7 +2903,7 @@ def transport_ping_cmd(legacy_config):
     _local_output({"connected": True}, result.text)
 
 
-def main(prog_name: str = "sap-adt", args=None) -> None:
+def main(prog_name: str | None = None, args=None) -> None:
     """Console-script entry (pyproject [project.scripts]).
 
     ``args`` optionally overrides argv for embedding/tests; None means Click
@@ -2911,6 +2913,8 @@ def main(prog_name: str = "sap-adt", args=None) -> None:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure") and not stream.isatty():
             stream.reconfigure(encoding="utf-8")
+    if prog_name is None:
+        prog_name = command_name()
     cli(args=args, prog_name=prog_name)
 
 
