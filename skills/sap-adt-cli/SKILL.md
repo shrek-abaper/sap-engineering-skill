@@ -340,6 +340,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `run-unit-test [N...] [--type T] [--package P] [--transport T] [--recursive] [--max-objects N] [--risk-level harmless\|dangerous\|critical\|all] [--duration short\|medium\|long\|all] [--junit F] [--dry-run] [--expect-plan-sha256 H] [--yes] [--fail-on error\|warning\|info\|never] [--require-tests]` | repeatable risk/duration sets in one request per object; explicit names OR package OR TR/tasks; aggregate real method evidence/JUnit; no-tests is not passed | findings |
 | `unit skeleton` | NAME --output-file F; local intentionally failing ABAP Unit template; no SAP writes or invented business assertions | scalar |
 | `run-atc <N> [--type T] [--variant V] [--fail-on …]` | Static ATC checks (no gate); stable `check_id`/`message_id`, priority 1/2/3→error/warning/info; exempted findings auditable but never fail | findings |
+| `quality-check <N>` | --type/--group/--variant, repeated --engine syntax\|atc\|abaplint, --fail-on error\|warning\|info, optional --output-file NEW.zip; SAP checks by default, supplied abaplint report/manifest opt in; incomplete engines never pass | findings |
 | `run-sql "<SELECT>" [--max-rows N]` | Open SQL preview; SELECT only; `--max-rows` (rowNumber) is the hard cap and overrides SQL `UP TO N ROWS` — conflicts flagged in `meta.row_limit_conflict` | rows |
 | `config-data read` | NAME [--kind table\|view] [--filter FIELD=VALUE] [--column FIELD] [--max-rows 1..1000] [--output-file NEW.json]; one active table or database/projection view, private snapshot; maintenance/help views refused | rows |
 | `config-data compare` | NAME --from-profile A --to-profile B, same selection options plus repeated --key FIELD and --include-client; key-based schema/data comparison, DDIC CLNT normalized by default, partial/non-unique evidence never proves equality or absence | scalar |
@@ -374,6 +375,15 @@ Bundle paths, supplied report hashes and thresholds bind the reviewed Unit plan.
 Bundles contain a hash manifest, results, JUnit, coverage and gate; existing
 files are never overwritten. Missing native coverage is explicit evidence,
 not zero percent or a passing threshold.
+
+Quality abaplint import requires both `--abaplint-report` (native CLI JSON
+issue array) and `--abaplint-manifest`. The manifest declares `schema_version:1`,
+`completed:true`, positive `files_checked`, `engine_version`, `source_file`,
+`target_fingerprint`, the current canonical `source_sha256` and `object_uri`,
+and `report_sha256` of UTF-8 `json.dumps(report, ensure_ascii=False, indent=2)`
+plus LF. Issues must belong to that one source file. Bindings are verified,
+but external measurement execution/authenticity is caller-supplied, not attested.
+No abaplint download, install or arbitrary subprocess is performed.
 
 ## Safety gates (do not weaken)
 

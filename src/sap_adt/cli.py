@@ -1316,6 +1316,40 @@ def run_atc_cmd(object_name, object_type, group, variant, max_results, fail_on):
     _fail_on_findings(result, fail_on)
 
 
+@cli.command("quality-check", help_group=_DIAGNOSIS_HELP, help_order=25,
+             short_help="Aggregate SAP checks and bound abaplint evidence.")
+@click.argument("name")
+@click.option("--type", "object_type", default="class",
+              type=click.Choice(["class", "program", "interface", "include", "function"]))
+@click.option("--group", default=None)
+@click.option("--variant", default="STANDARD")
+@click.option("--engine", "engines", multiple=True, default=("syntax", "atc"),
+              type=click.Choice(["syntax", "atc", "abaplint"]))
+@click.option("--fail-on", type=click.Choice(["error", "warning", "info"]), default="error")
+@click.option("--abaplint-report", type=click.Path(exists=True, dir_okay=False), default=None)
+@click.option("--abaplint-manifest", type=click.Path(exists=True, dir_okay=False), default=None)
+@click.option("--output-file", type=click.Path(dir_okay=False), default=None)
+def quality_check(name, object_type, output_file, **options):
+    """Run selected static checks; incomplete/unavailable engines never pass. No automatic installs."""
+    from sap_adt.adt import quality
+    from sap_adt import artifacts
+    if output_file and os.path.lexists(output_file):
+        _gate(errors.BAD_REQUEST, "Quality output already exists")
+    config = _load_config()
+    _require_config(config)
+    try:
+        data = quality.collect(config, object_type, name, **options)
+        if output_file:
+            data["bundle"] = artifacts.write_package(output_file, "quality", {"quality.json": data},
+                context={"target": data["target"]}, gaps=data["evidence_gaps"])
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="findings", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["gate"]["status"] != "passed":
+        sys.exit(1)
+
+
 @cli.command("discovery", help_group=_SETUP_HELP, help_order=50,
              short_help="List advertised SAP capabilities.")
 @click.option("--emit-markdown", "emit_markdown", default=None,
