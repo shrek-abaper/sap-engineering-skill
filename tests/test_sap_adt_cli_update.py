@@ -242,13 +242,26 @@ class UpdateTests(unittest.TestCase):
         report["installation"] = installation
         commands = self.u.update_commands(report)
         self.assertEqual(commands[0][-1], "sap-watt==1.6.0")
-        with patch.object(self.u, "_capture", side_effect=["", "sap-watt, version 1.6.0"]) as run:
+        with patch.object(self.u, "_capture",
+                          side_effect=["", "sap-watt, version 1.6.0", "1.6.0:1.6.0"]) as run:
             self.u.apply_python_update(report, commands)
-        self.assertEqual(run.call_args.args[0], [sys.executable, "-m", "sap_watt", "--version"])
+        self.assertEqual(run.call_args_list[1].args[0],
+                         [sys.executable, "-m", "sap_watt", "--version"])
         facade.version = "1.4.0"
         with patch.object(self.u.importlib.metadata, "distribution",
                           side_effect=lambda name: facade if name == "sap-watt" else self.dist):
             self.assertEqual(self.u.detect_installation().channel, "unknown")
+
+    def test_watt_update_rejects_stale_entry_despite_new_core_version_output(self):
+        report = self.report()
+        report["installation"].package = "sap-watt"
+        with patch.object(self.u, "_capture",
+                          side_effect=["", "sap-watt, version 1.6.0", "1.5.3:1.6.0"]):
+            with self.assertRaises(self.u.UpdateError) as raised:
+                self.u.apply_python_update(report, self.u.update_commands(report))
+        self.assertEqual(raised.exception.code, "CONFIRM_REQUIRED")
+        self.assertIn("entry/core", str(raised.exception))
+        self.assertIn("sap-watt==1.6.0", raised.exception.hint)
 
     def test_watt_npm_metadata_queries_do_not_switch_to_legacy_package(self):
         installation = self.u.Installation(

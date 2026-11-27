@@ -404,6 +404,15 @@ def apply_python_update(report: dict, commands: list[list[str]]) -> None:
         for command in commands:
             _capture(command, timeout=600, env=environment)
         actual = _capture(_verification_command(installation))
+        if installation.package == WATT_PACKAGE:
+            versions = _capture([
+                sys.executable, "-c",
+                "from importlib.metadata import version; "
+                "print(version('sap-watt') + ':' + version('sap-adt-cli'))",
+            ])
+            if versions != f"{report['target']}:{report['target']}":
+                raise UpdateError(errors.CONFIRM_REQUIRED,
+                                  "Watt entry/core metadata do not both match the target.")
     except UpdateError as exc:
         raise UpdateError(
             errors.CONFIRM_REQUIRED,
