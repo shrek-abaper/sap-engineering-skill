@@ -132,7 +132,8 @@ cli_src = (SRC / "sap_adt" / "cli.py").read_text(encoding="utf-8")
 cli_tree = ast.parse(cli_src)
 module_trees = {"cli": cli_tree}
 for module in ("handlers", "development", "rap", "lifecycle", "unit_regression",
-               "function_call", "report_execution", "change_set", "object_evidence", "test_artifacts"):
+               "function_call", "report_execution", "change_set", "object_evidence", "test_artifacts",
+               "diagnosis"):
     module_trees[module] = ast.parse(
         (SRC / "sap_adt" / "adt" / f"{module}.py").read_text(encoding="utf-8"))
 functions = {(module, node.name): node

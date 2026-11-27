@@ -74,6 +74,7 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("list-feeds", ["/sap/bc/adt/feeds"]),
     ("query-feed", ["/sap/bc/adt/feeds"]),
     ("get-dump", ["/sap/bc/adt/runtime/dumps"]),
+    ("diagnose", ["/sap/bc/adt/runtime/dumps", "/sap/bc/adt/feeds"]),
     ("debug breakpoint", ["/sap/bc/adt/debugger/breakpoints"]),
     ("debug listen", ["/sap/bc/adt/debugger/listeners"]),
     ("debug attach", ["/sap/bc/adt/debugger"]),

@@ -323,6 +323,7 @@ suitable resource" is `BAD_REQUEST`); non-CSRF 403 is `AUTH_FAILED`.
 | `get-version-source <URI>` | opaque content_uri from get-versions; plain source default | source |
 | `diff-versions <FROM_URI> <TO_URI> [--context N]` | local unified diff of two version contents; `--format text` for patch output | diff |
 | `get-transport <TRKORR>` | request/task metadata and deduplicated objects; read-only | records |
+| `diagnose --output-file NEW.zip` | exactly one --dump-id ID or --message TEXT; optional --feed-uri/--query, --max-entries/--max-dumps/--max-chars; bounded dump/feed/termination-source evidence, literal candidate correlation only, gaps exit 1 | scalar |
 | `get-object <TYPE> <N> [--max-nodes N]` | message-class, lock-object, enhancement-spot, badi (named BAdI spot and declared definitions), badi-implementation, enhancement-implementation, source-enhancement; enhancement-point lists lexical declarations in the named owner program | scalar |
 | `transport diff` | request object diffs; missing baselines/unsupported objects/limits exit 1 with evidence gaps | diff |
 | `get-program / -class / -function-group / -function --group / -include / -interface / -cds-view / -type-group` | read source; get-class accepts --part main/definitions/implementations/testclasses | source |

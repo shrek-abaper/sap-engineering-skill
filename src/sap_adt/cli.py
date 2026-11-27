@@ -1408,6 +1408,34 @@ def get_source_cmd(uri, start_line, end_line):
     _output(handlers.get_source(uri, start_line=start_line, end_line=end_line))
 
 
+@cli.command("diagnose", help_group=_DIAGNOSIS_HELP, help_order=65,
+             short_help="Collect a bounded diagnostic evidence ZIP.")
+@click.option("--dump-id", default=None)
+@click.option("--message", default=None, help="Literal text to correlate within one feed page.")
+@click.option("--feed-uri", default=None)
+@click.option("--query", default="", help="Explicit advertised-schema FQL; no query is inferred from message text.")
+@click.option("--max-entries", type=click.IntRange(1, 100), default=20)
+@click.option("--max-dumps", type=click.IntRange(1, 10), default=3)
+@click.option("--max-chars", type=click.IntRange(1, 200000), default=20000)
+@click.option("--output-file", required=True, type=click.Path(dir_okay=False))
+def diagnose_cmd(output_file, **options):
+    """Capture dump/feed/source evidence only. Sensitive package stays local; gaps exit 1."""
+    from sap_adt.adt import diagnosis
+    if os.path.lexists(output_file):
+        _gate(errors.BAD_REQUEST, "Output archive already exists")
+    config = _load_config()
+    _require_config(config)
+    try:
+        data, assets = diagnosis.collect(config, **options)
+        data["bundle"] = diagnosis.bundle(output_file, data, assets)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
+
+
 def _debug_config(action=None, yes=False):
     config = _load_config()
     _require_config(config)
