@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import sysconfig
 import tempfile
 
 from build_manifest import version_from_pyproject
@@ -37,14 +38,20 @@ def main() -> int:
         env.update({"HOME": str(work), "USERPROFILE": str(work), "PYTHONUTF8": "1"})
 
         def run(*args):
-            return subprocess.run(list(map(str, args)), env=env, cwd=work, check=True,
-                                  capture_output=True, encoding="utf-8").stdout.strip()
+            try:
+                return subprocess.run(list(map(str, args)), env=env, cwd=work, check=True,
+                                      capture_output=True, encoding="utf-8").stdout.strip()
+            except subprocess.CalledProcessError as exc:
+                raise RuntimeError(exc.stderr or exc.stdout or str(exc)) from exc
 
         def install(*paths):
             run(python, "-m", "pip", "install", "--no-index", "--no-deps",
                 "--ignore-installed", "--find-links", ROOT / "dist", *paths)
 
         install(f"sap-adt-cli=={version}", f"sap-watt=={version}")
+        purelib = Path(run(python, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"))
+        (purelib / "watt_smoke_dependencies.pth").write_text(
+            sysconfig.get_path("purelib") + "\n", encoding="utf-8")
         for command in ("sap-adt", "sap-watt"):
             executable = scripts / (command + (".exe" if os.name == "nt" else ""))
             if run(executable, "--version") != f"{command}, version {version}":
