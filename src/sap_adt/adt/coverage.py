@@ -64,6 +64,8 @@ COMMAND_CAPABILITIES: "OrderedDict[str, list[str]]" = OrderedDict([
     ("run-unit-test", ["/sap/bc/adt/abapunit/testruns"]),
     ("run-atc", ["/sap/bc/adt/atc/runs", "/sap/bc/adt/atc/worklists"]),
     ("run-sql", ["/sap/bc/adt/datapreview/freestyle"]),
+    ("config-data read", ["/sap/bc/adt/datapreview/freestyle"]),
+    ("config-data compare", ["/sap/bc/adt/datapreview/freestyle"]),
     ("run-class", ["/sap/bc/adt/oo/classrun"]),
     ("run-report", ["/sap/bc/adt/programs/programrun"]),
     ("run-abap", ["/sap/bc/adt/oo/classrun", "/sap/bc/adt/oo/classes",

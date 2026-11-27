@@ -29,6 +29,15 @@ def read_json(path, limit=10 * 1024 * 1024):
                       parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
 
 
+def write_json(path, value):
+    raw = json_bytes(value)
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(fd, "wb") as stream:
+        stream.write(raw)
+    return {"path": str(Path(path).resolve()), "sha256": hashlib.sha256(raw).hexdigest(),
+            "bytes": len(raw)}
+
+
 def write_package(path, kind, assets, *, context=None, gaps=None):
     if len(assets) > 500:
         raise ValueError("Package exceeds 500 assets")

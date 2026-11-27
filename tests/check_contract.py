@@ -84,7 +84,7 @@ def cells_of(line: str) -> list[str]:
 
 def expand_command_cell(cell: str) -> list[str]:
     cell = re.sub(r"\s*\[.*?\]\s*", "", cell.replace("`", ""))
-    m_multi = re.match(r"(\w+)\s+([a-z|]+)$", cell.strip())
+    m_multi = re.match(r"([\w-]+)\s+([a-z|]+)$", cell.strip())
     if m_multi:
         group, alts = m_multi.groups()
         return [f"{group} {a}" for a in alts.split("|")]
@@ -181,6 +181,7 @@ for node in ast.walk(cli_tree):
                 else:
                     grp = (target.value.id.removesuffix("_group")
                            if isinstance(target.value, ast.Name) else None)
+                    grp = {"config_data": "config-data"}.get(grp, grp)
                     command_name = f"{grp} {dec.args[0].value}" if grp else dec.args[0].value
     if not command_name:
         continue

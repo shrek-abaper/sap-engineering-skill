@@ -2438,6 +2438,67 @@ def where_used_cmd(object_type, object_name, max_results, group, depth, max_node
         sys.exit(1)
 
 
+@cli.group("config-data", help_group=_DATA_HELP,
+           short_help="Read or compare one configuration table/view.")
+def config_data_group():
+    """Bounded single-entity configuration evidence; never a system-wide scan."""
+
+
+def _configuration_options(command):
+    for option in (
+        click.argument("name"),
+        click.option("--kind", type=click.Choice(["table", "view"]), default="table"),
+        click.option("--filter", "filters", multiple=True, help="Repeat FIELD=VALUE equality filters."),
+        click.option("--column", "columns", multiple=True),
+        click.option("--max-rows", type=click.IntRange(1, 1000), default=100),
+    ):
+        command = option(command)
+    return command
+
+
+@config_data_group.command("read")
+@_configuration_options
+@click.option("--output-file", type=click.Path(dir_okay=False), default=None,
+              help="Export a new private JSON snapshot; never overwrite.")
+def config_data_read(output_file, **options):
+    """Read one table or database/projection view; maintenance views fail explicitly."""
+    from sap_adt.adt import configuration
+    from sap_adt import artifacts
+    if output_file and os.path.lexists(output_file):
+        _gate(errors.BAD_REQUEST, "Snapshot output already exists")
+    config = _load_config()
+    _require_config(config)
+    try:
+        data = configuration.read(config, **options)
+        if output_file:
+            data["artifact"] = artifacts.write_json(output_file, data)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="rows", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
+
+
+@config_data_group.command("compare")
+@_configuration_options
+@click.option("--from-profile", required=True)
+@click.option("--to-profile", required=True)
+@click.option("--key", "keys", multiple=True)
+@click.option("--include-client", is_flag=True, help="Include the DDIC CLNT field in keys/values.")
+def config_data_compare(from_profile, to_profile, **options):
+    """Key-based differences; DDIC CLNT fields are normalized by default, truncation never means equal."""
+    from sap_adt.adt import configuration
+    try:
+        data = configuration.compare(left=from_profile, right=to_profile, **options)
+    except Exception as exc:
+        _emit_error(errors.classify(exc))
+    _output(handlers.AdtResult(kind="scalar", data=data,
+                               meta={"partial": bool(data["evidence_gaps"])}))
+    if data["evidence_gaps"]:
+        sys.exit(1)
+
+
 @cli.command("run-sql", help_group=_DATA_HELP, help_order=10,
              short_help="[SELECT ONLY] Preview query results.")
 @click.argument("sql")
