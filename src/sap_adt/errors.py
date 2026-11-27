@@ -211,6 +211,9 @@ class ErrorDecision:
             "ok": False,
             "format_version": 1,
             "command": command,
+            "meta": {},
+            "warnings": [],
+            "next_steps": [self.hint] if self.hint else [],
             **({"profile": profile} if profile else {}),
             "error": {
                 "code": self.code,

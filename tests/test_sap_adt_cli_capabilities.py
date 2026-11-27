@@ -153,7 +153,7 @@ class DiscoveryCliTests(unittest.TestCase):
             ["--format", "json", "credentials", "doctor", "--coverage"],
         )
         self.assertEqual(r.exit_code, 0, r.output)
-        d = json.loads(r.output)
+        d = json.loads(r.output)["data"]
         self.assertIn("implemented_available", d)
         self.assertIn("available_not_covered", d)
         self.assertIn("covered_not_available", d)

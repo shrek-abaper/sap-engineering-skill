@@ -2,6 +2,8 @@
 import json
 import os
 import sys
+from contextlib import redirect_stdout
+from io import StringIO
 
 import click
 
@@ -77,6 +79,37 @@ class SapAdtGroup(click.Group):
     command_class = _HelpCommand
     group_class = _HelpGroup
 
+    def main(self, args=None, **kwargs):
+        argv = list(sys.argv[1:] if args is None else args)
+        fmt = os.getenv(output.FORMAT_ENVVAR)
+        for i, arg in enumerate(argv):
+            if arg in ("--format", "-f") and i + 1 < len(argv):
+                fmt = argv[i + 1]
+            elif arg.startswith("--format="):
+                fmt = arg.split("=", 1)[1]
+        if fmt != "json":
+            return super().main(args=argv, **kwargs)
+        standalone = kwargs.pop("standalone_mode", True)
+        try:
+            result = super().main(args=argv, standalone_mode=False, **kwargs)
+        except click.exceptions.Exit as exc:
+            if standalone:
+                raise SystemExit(exc.exit_code)
+            return exc.exit_code
+        except Exception as exc:
+            if isinstance(exc, click.ClickException):
+                failure = errors.decision(errors.BAD_REQUEST, exc.format_message())
+            else:
+                failure = errors.classify(exc)
+            command = " ".join(a for a in argv if not a.startswith("-")) or "sap-adt"
+            click.echo(json.dumps(failure.to_envelope(command), ensure_ascii=False), err=True)
+            if standalone:
+                raise SystemExit(failure.exit_code)
+            raise
+        if standalone:
+            raise SystemExit(0)
+        return result
+
     def format_options(self, ctx, formatter):
         rows = [record for param in self.get_params(ctx)
                 if (record := param.get_help_record(ctx)) is not None]
@@ -125,6 +158,11 @@ def _emit_error(decision, exit_code: int | None = None) -> None:
     except RuntimeError:
         command = _argv_command()
     envelope = decision.to_envelope(command, _profile_name())
+    try:
+        envelope["meta"]["operation"] = policy.operation(
+            _command_path(), click.get_current_context().params)
+    except RuntimeError:
+        pass
     click.echo(json.dumps(envelope, indent=2, ensure_ascii=False), err=True)
     raise SystemExit(decision.exit_code if exit_code is None else exit_code)
 
@@ -186,6 +224,13 @@ def _output(result) -> None:
     except output.FormatUnsupported as exc:
         _gate(errors.BAD_REQUEST, str(exc))
     click.echo(rendered)
+
+
+def _local_output(data, text):
+    if output.get_format() == "json":
+        _output(handlers.AdtResult(kind="scalar", data=data))
+    else:
+        click.echo(text)
 
 
 def _command_path():
@@ -707,9 +752,10 @@ def update_cmd(check_only, major, yes):
             if launcher:
                 click.echo(json.dumps({"update_plan": None, "message": summary}))
             else:
-                click.echo(summary)
+                _local_output({k: report[k] for k in (
+                    "channel", "current", "target", "update_available", "guidance")}, summary)
             return
-        click.echo(summary, err=launcher)
+        click.echo(summary, err=launcher or output.get_format() == "json")
         commands = updater.update_commands(report)
         if report["channel"] == "npm-global" and not launcher:
             raise updater.UpdateError(
@@ -718,7 +764,7 @@ def update_cmd(check_only, major, yes):
             )
         if commands:
             for command in commands:
-                click.echo(f"Command: {json.dumps(command)}", err=launcher)
+                click.echo(f"Command: {json.dumps(command)}", err=launcher or output.get_format() == "json")
         else:
             click.echo("Stage and verify the npm runtime, then update this global package.",
                        err=True)
@@ -737,7 +783,8 @@ def update_cmd(check_only, major, yes):
             }}))
             return
         updater.apply_python_update(report, commands)
-        click.echo(f"Updated and verified sap-adt {report['target']}.")
+        _local_output({"target": report["target"], "updated": True},
+                      f"Updated and verified sap-adt {report['target']}.")
     except updater.UpdateError as exc:
         # In particular, do not call _profile_name(): maintenance must not read
         # or migrate SAP configuration just to render an error.
@@ -814,6 +861,11 @@ def configure(url, username, password, client, language, no_verify_ssl,
     Complete env/dotenv connections need SAP_ALLOW_EXECUTE and explicit
     SAP_ENVIRONMENT. Snippet execution additionally needs allow_write.
     """
+    if output.get_format() == "json" and not (
+            any([url, username, password, client]) or allow_debug is not None
+            or allow_execute is not None):
+        _gate(errors.CONFIRM_REQUIRED,
+              "JSON configure requires explicit flags; use text mode for the interactive wizard.")
     if (any([url, username, password, client]) or allow_debug is not None
             or allow_execute is not None):
         if password:
@@ -840,23 +892,21 @@ def configure(url, username, password, client, language, no_verify_ssl,
             # Profile-scoped is the default; --allow-write/--allow-transport
             # write the profile section, the --global-* legacy flags the
             # top-level fallback. Setting neither leaves existing values.
-            save_config_from_flags(
-                url=url,
-                username=username,
-                password=password,
-                client=client,
-                language=language,
-                verify_ssl=verify_ssl,
-                allow_write=allow_write,
-                allow_transport=allow_transport,
-                profile=profile,
-                environment=environment,
-                profile_scope=True,
-                global_write=global_allow_write,
-                global_transport=global_allow_transport,
-                allow_debug=allow_debug,
-                allow_execute=allow_execute,
-            )
+            def invoke_save():
+                return save_config_from_flags(
+                    url=url, username=username, password=password, client=client,
+                    language=language, verify_ssl=verify_ssl, allow_write=allow_write,
+                    allow_transport=allow_transport, profile=profile,
+                    environment=environment, profile_scope=True,
+                    global_write=global_allow_write, global_transport=global_allow_transport,
+                    allow_debug=allow_debug, allow_execute=allow_execute,
+                )
+            if output.get_format() == "json":
+                with redirect_stdout(StringIO()):
+                    saved = invoke_save()
+                _local_output({"saved": True, "target": policy.target(saved)}, "")
+            else:
+                invoke_save()
         except (ConfigError, ProfileNotFoundError, ValueError) as e:
             _emit_error(errors.classify(e))
     else:
@@ -873,6 +923,14 @@ def status():
         _gate(errors.CONFIG_MISSING,
               "Not configured. Run: sap-adt configure "
               "(manage environments with 'profile list').")
+    if output.get_format() == "json":
+        _local_output({
+            "target": policy.target(config), "language": config.language,
+            "verify_ssl": config.verify_ssl,
+            "capabilities": {k: getattr(config, k) for k in (
+                "allow_write", "allow_transport", "allow_debug", "allow_execute")},
+        }, "")
+        return
     click.echo(f"Profile:         {config.profile_name or '(environment override)'}")
     click.echo(f"URL:             {config.url}")
     click.echo(f"Username:        {config.username}")
@@ -925,6 +983,9 @@ def profile_list():
     if profiles is None:
         _gate(errors.CONFIG_MISSING,
               f"Could not parse {config_module.CONFIG_FILE}. Fix or remove the file.")
+    if output.get_format() == "json":
+        _local_output({"profiles": profiles}, "")
+        return
     if not profiles:
         click.echo("No profiles configured. Run: sap-adt configure")
         return
@@ -951,7 +1012,7 @@ def profile_use(name):
         set_active_profile(name)
     except ValueError as e:
         _gate(errors.PROFILE_NOT_FOUND, str(e))
-    click.echo(f"Active profile is now '{name}'.")
+    _local_output({"active_profile": name}, f"Active profile is now '{name}'.")
 
 
 @profile_group.command("remove")
@@ -962,7 +1023,7 @@ def profile_remove(name):
         remove_profile(name)
     except ValueError as e:
         _gate(errors.PROFILE_NOT_FOUND, str(e))
-    click.echo(f"Profile '{name}' removed.")
+    _local_output({"removed_profile": name}, f"Profile '{name}' removed.")
 
 
 @cli.group("credentials", help_group=_SETUP_HELP, help_order=30,
@@ -1031,7 +1092,8 @@ def credentials_set(profile_name, user, password):
         backend = credentials.save(profile_name, username, secret)
     except KeyStoreError as e:
         _gate(errors.CONFIG_MISSING, str(e))
-    click.echo(f"Password for profile '{profile_name}' stored in keystore '{backend}'.")
+    _local_output({"profile": profile_name, "backend": backend, "stored": True},
+                  f"Password for profile '{profile_name}' stored in keystore '{backend}'.")
 
 
 @credentials_group.command("forget")
@@ -1046,15 +1108,18 @@ def credentials_forget(profile_name):
     if removed:
         # delete() is idempotent: this is a purge across writable backends,
         # not a claim that every one of them held an entry.
-        click.echo(f"Purged password for '{profile_name}' from: {', '.join(removed)}")
+        _local_output({"profile": profile_name, "purged_backends": removed},
+                      f"Purged password for '{profile_name}' from: {', '.join(removed)}")
     else:
-        click.echo(f"No writable keystore available to purge '{profile_name}' from.")
+        _local_output({"profile": profile_name, "purged_backends": []},
+                      f"No writable keystore available to purge '{profile_name}' from.")
 
 
 @credentials_group.command("status")
 def credentials_status():
     """Show which profiles have a stored password — never prints the password."""
-    click.echo(credentials_reports.status_text())
+    text = credentials_reports.status_text()
+    _local_output({"text": text}, text)
 
 
 @credentials_group.command("doctor")
@@ -1068,11 +1133,12 @@ def credentials_doctor(coverage):
         if result.is_error:
             _abort_on_error(result)
         if output.get_format() == "json":
-            click.echo(json.dumps(result.data, indent=2, ensure_ascii=False))
+            _output(handlers.AdtResult(kind="scalar", data=result.data))
         else:
             click.echo(result.text)
         return
-    click.echo(credentials_reports.doctor_text())
+    text = credentials_reports.doctor_text()
+    _local_output({"text": text}, text)
 
 
 @cli.command("run-unit-test", help_group=_DIAGNOSIS_HELP, help_order=30,
@@ -1220,7 +1286,7 @@ def discovery_cmd(emit_markdown):
         )
         with click.open_file(emit_markdown, "w", encoding="utf-8") as f:
             f.write(md)
-        click.echo(f"Wrote generated endpoint table to {emit_markdown}")
+        _local_output({"artifact": emit_markdown}, f"Wrote generated endpoint table to {emit_markdown}")
         return
     _output(handlers.discovery())
 
@@ -2415,9 +2481,19 @@ def transport_collect_cmd(tr_id, output_dir, verbose, legacy_config):
     standalone tr_collector. Writes only to the output directory under the
     current working directory.
     """
+    if not handlers._valid_trkorr(tr_id):
+        _gate(errors.BAD_REQUEST, "Invalid transport number")
     config = _transport_config(legacy_config)
-    collector.run_collect(config, tr_id, output_dir, verbose,
-                          collector_version=get_version())
+    if output.get_format() == "json":
+        with redirect_stdout(StringIO()):
+            manifest = collector.run_collect(config, tr_id, output_dir, verbose,
+                                             collector_version=get_version())
+        _local_output({"manifest": manifest, "output_dir": output_dir or f"review_package/{tr_id}"}, "")
+        if manifest["summary"]["fetch_errors"]:
+            sys.exit(1)
+    else:
+        collector.run_collect(config, tr_id, output_dir, verbose,
+                              collector_version=get_version())
 
 
 @transport_group.command("ping")
@@ -2430,9 +2506,13 @@ def transport_ping_cmd(legacy_config):
     adt_client.set_config(config)
     result = collector_handlers.ping()
     if result.is_error:
+        if output.get_format() == "json":
+            _emit_error(errors.decision(
+                result.error_code or errors.NETWORK_ERROR, result.text,
+                http_status=result.http_status))
         click.echo(result.text, err=True)
         sys.exit(1)
-    click.echo(result.text)
+    _local_output({"connected": True}, result.text)
 
 
 def main(prog_name: str = "sap-adt", args=None) -> None:

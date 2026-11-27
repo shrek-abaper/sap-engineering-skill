@@ -74,12 +74,17 @@ class Envelope:
     data: Optional[dict] = None
     meta: Optional[dict] = None
     error: Optional[dict] = None
+    warnings: Optional[list] = None
+    next_steps: Optional[list] = None
 
     def to_dict(self) -> dict[str, Any]:
         out: dict[str, Any] = {
             "ok": self.ok,
             "format_version": self.format_version,
             "command": self.command,
+            "warnings": self.warnings or [],
+            "next_steps": self.next_steps or [],
+            "meta": self.meta or {},
         }
         if self.profile is not None:
             out["profile"] = self.profile
@@ -111,9 +116,12 @@ def _row_count(kind: str, data: Optional[dict]) -> Optional[int]:
 
 
 def _envelope_dict(result, command, profile) -> dict:
+    from .policy import operation
     kind = getattr(result, "kind", RAW_KIND)
     data = getattr(result, "data", None)
     meta = dict(getattr(result, "meta", None) or {})
+    meta.setdefault("operation", operation(command or "unknown"))
+    gaps = (data or {}).get("evidence_gaps", [])
     rc = _row_count(kind, data)
     if rc is not None:
         meta.setdefault("row_count", rc)
@@ -125,6 +133,8 @@ def _envelope_dict(result, command, profile) -> dict:
         kind=kind,
         data=data,
         meta=meta or None,
+        warnings=gaps,
+        next_steps=(["Inspect evidence_gaps; incomplete evidence is not a pass."] if gaps else []),
     )
     return env.to_dict()
 
@@ -276,7 +286,12 @@ def render(result: Any, fmt: Optional[str] = None,
     """
     kind = getattr(result, "kind", RAW_KIND)
     if kind == RAW_KIND:
-        return result.text
+        if fmt != "json":
+            return result.text
+        from types import SimpleNamespace
+        result = SimpleNamespace(kind="scalar", data={"text": result.text},
+                                 meta=getattr(result, "meta", None))
+        kind = "scalar"
 
     effective = fmt or default_format(kind)
     envelope = _envelope_dict(result, command, profile)

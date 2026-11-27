@@ -25,10 +25,12 @@ class OutputModuleTests(unittest.TestCase):
         self.output = sys.modules["sap_adt.output"]
         self.output.set_format(None)
 
-    def test_raw_render_is_identity_for_every_format(self):
+    def test_raw_render_preserves_text_but_explicit_json_is_an_envelope(self):
         result = self.handlers.AdtResult(text="REPORT zfoo.\n")
-        for fmt in (None, "json", "text", "xml"):
+        for fmt in (None, "text", "xml"):
             self.assertEqual(self.output.render(result, fmt), "REPORT zfoo.\n")
+        self.assertEqual(json.loads(self.output.render(result, "json"))["data"]["text"],
+                         "REPORT zfoo.\n")
 
     def test_raw_render_preserves_xml_and_unicode(self):
         xml = "<?xml version=\"1.0\"?>\n<x>上海</x>"
@@ -102,7 +104,7 @@ class OutputCliPassthroughTests(unittest.TestCase):
         self.assertEqual(r.exit_code, 0, r.output)
         self.assertEqual(r.output, "class zcl_foo.\n\n")
 
-    def test_format_flag_does_not_change_raw_output(self):
+    def test_explicit_json_wraps_legacy_raw_output(self):
         with self._patch_config(), patch.object(
             self.handlers, "get_class",
             return_value=self.handlers.AdtResult("<xml/>"),
@@ -111,7 +113,7 @@ class OutputCliPassthroughTests(unittest.TestCase):
                 self.cli.cli, ["--format", "json", "get-class", "ZCL_FOO"]
             )
         self.assertEqual(r.exit_code, 0, r.output)
-        self.assertEqual(r.output, "<xml/>\n")
+        self.assertEqual(json.loads(r.output)["data"]["text"], "<xml/>")
         self.assertEqual(self.output.get_format(), "json")
 
     def test_format_envvar_is_accepted_and_passthrough(self):

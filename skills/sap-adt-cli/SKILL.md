@@ -207,6 +207,14 @@ are in **references/examples.md**. Keep the requested profile on every call.
 
 ## Output contract
 
+Explicit global `--format json` also envelopes local maintenance and legacy
+text results (legacy payloads use `data.text`). Every envelope has `meta`,
+`warnings` and `next_steps`; errors include a classified `error.category`.
+Usage errors are JSON on stderr in this mode. JSON configure requires explicit
+flags rather than an interactive wizard. Debug serve remains a stream of
+individual JSON envelopes, so its ready event is available immediately.
+Default text/source behavior remains unchanged.
+
 Every read command prints a JSON envelope (source commands print plain ABAP by default):
 
 ```json

@@ -24,7 +24,7 @@ def run_collect(
     output_dir: str,
     verbose: bool,
     collector_version: str,
-) -> None:
+) -> dict:
     """Collect TR_ID's objects and sources into the output directory."""
     adt_client.set_config(config)
 
@@ -37,6 +37,9 @@ def run_collect(
 
     raw = handlers.get_transport_objects(tr_id)
     if raw.is_error:
+        from .. import output
+        if output.get_format() == "json":
+            raise adt_client.AdtHttpError(raw.text, status=raw.http_status)
         click.echo(f"ERROR fetching object list: {raw.text}", err=True)
         raise SystemExit(1)
 
@@ -98,3 +101,4 @@ def run_collect(
     click.echo(f"\nDone. {fetched}/{len(enriched)} sources fetched. {errors} error(s).")
     click.echo(f"Review Package: {out_path.resolve()}")
     click.echo(f"Manifest:       {manifest_path.resolve()}")
+    return manifest
