@@ -10,7 +10,7 @@
 [English](README.md) | [中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> **本仓库已归档，不再更新。** `sap-integration-wiki` 现仅在 [sap-engineering-skill](https://github.com/shrek-abaper/sap-engineering-skill) Monorepo 中维护（[`skills/sap-integration-wiki`](https://github.com/shrek-abaper/sap-engineering-skill/tree/main/skills/sap-integration-wiki)）。最新版本、Issue 与改进请前往该仓库。
+> **本仓库已归档，不再更新。** `sap-integration-wiki` 现仅在 [sap-watt](https://github.com/shrek-abaper/sap-watt) Monorepo 中维护（[`skills/sap-integration-wiki`](https://github.com/shrek-abaper/sap-watt/tree/main/skills/sap-integration-wiki)）。最新版本、Issue 与改进请前往该仓库。
 
 ---
 
@@ -261,7 +261,7 @@ python3 gen-idoc-template.py \
 
 ## 开源协议
 
-MIT 许可证 — 详见 [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)。
+MIT 许可证 — 详见 [LICENSE](https://github.com/shrek-abaper/sap-watt/blob/main/LICENSE)。
 
 ---
 

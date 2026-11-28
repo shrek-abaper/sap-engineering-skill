@@ -18,7 +18,7 @@ Install/readiness guide: [`references/setup.md`](references/setup.md).
 [English](README.md) | [中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> **This repository has been archived and is no longer updated.** `sap-integration-wiki` is now maintained exclusively in the [sap-engineering-skill](https://github.com/shrek-abaper/sap-engineering-skill) monorepo at [`skills/sap-integration-wiki`](https://github.com/shrek-abaper/sap-engineering-skill/tree/main/skills/sap-integration-wiki). Please go there for the latest version, issues, and improvements.
+> **This repository has been archived and is no longer updated.** `sap-integration-wiki` is now maintained exclusively in the [sap-watt](https://github.com/shrek-abaper/sap-watt) monorepo at [`skills/sap-integration-wiki`](https://github.com/shrek-abaper/sap-watt/tree/main/skills/sap-integration-wiki). Please go there for the latest version, issues, and improvements.
 
 ---
 
@@ -273,7 +273,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
-MIT License — see [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE) for details.
+MIT License — see [LICENSE](https://github.com/shrek-abaper/sap-watt/blob/main/LICENSE) for details.
 
 ---
 

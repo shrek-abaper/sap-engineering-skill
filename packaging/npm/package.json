@@ -7,8 +7,8 @@
     "name": "shrek-abaper",
     "url": "https://github.com/shrek-abaper"
   },
-  "homepage": "https://github.com/shrek-abaper/sap-engineering-skill",
-  "repository": "https://github.com/shrek-abaper/sap-engineering-skill",
+  "homepage": "https://github.com/shrek-abaper/sap-watt",
+  "repository": "https://github.com/shrek-abaper/sap-watt",
   "bin": {
     "sap-adt": "scripts/run.js"
   },

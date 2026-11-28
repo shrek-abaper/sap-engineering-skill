@@ -3,7 +3,7 @@
 [English](README.md) | [中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> **本仓库已归档，不再更新。** `sap-transport-gate` 现仅在 [sap-engineering-skill](https://github.com/shrek-abaper/sap-engineering-skill) Monorepo 中维护（[`skills/sap-transport-gate`](https://github.com/shrek-abaper/sap-engineering-skill/tree/main/skills/sap-transport-gate)）。最新版本、Issue 与改进请前往该仓库。
+> **本仓库已归档，不再更新。** `sap-transport-gate` 现仅在 [sap-watt](https://github.com/shrek-abaper/sap-watt) Monorepo 中维护（[`skills/sap-transport-gate`](https://github.com/shrek-abaper/sap-watt/tree/main/skills/sap-transport-gate)）。最新版本、Issue 与改进请前往该仓库。
 
 > SAP 传输请求发布前门禁审查 AI 技能
 
@@ -252,4 +252,4 @@ sap-transport-gate/
 
 ## 许可证
 
-MIT — 详见 [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)
+MIT — 详见 [LICENSE](https://github.com/shrek-abaper/sap-watt/blob/main/LICENSE)

@@ -23,7 +23,7 @@ from sap_adt.version import get_version
 PACKAGE = "sap-adt-cli"
 WATT_PACKAGE = "sap-watt"
 _STABLE = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", re.ASCII)
-_RELEASES = "https://github.com/shrek-abaper/sap-engineering-skill/releases"
+_RELEASES = "https://github.com/shrek-abaper/sap-watt/releases"
 
 
 class UpdateError(Exception):

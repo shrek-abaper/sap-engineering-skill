@@ -17,7 +17,7 @@ read/write ABAP source and metadata, transport request collection).
 The runtime is a native executable per platform — **no Python, pip or venv
 required**. This npm package itself needs **Node.js ≥ 18** (npx + installer);
 if Node.js is not an option, use the desktop installer / portable archive
-from the [repository releases](https://github.com/shrek-abaper/sap-engineering-skill)
+from the [repository releases](https://github.com/shrek-abaper/sap-watt)
 instead.
 
 Linux x86_64 and Windows x86_64 runtimes are provided. Windows support

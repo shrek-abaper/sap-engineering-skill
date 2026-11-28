@@ -9,7 +9,7 @@
     "npm_package": "sap-adt-cli",
     "compatible_versions": ">=1.5.0,<2.0.0",
     "config_dir": "~/.sap-adt-cli",
-    "homepage": "https://github.com/shrek-abaper/sap-engineering-skill",
+    "homepage": "https://github.com/shrek-abaper/sap-watt",
     "npm_range": "^1.5.0",
     "pypi_requirement": ">=1.5.0,<2.0.0",
     "preferred_entry": {

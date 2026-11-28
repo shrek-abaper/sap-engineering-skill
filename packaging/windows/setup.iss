@@ -19,7 +19,7 @@
   #define AppVersion "0.0.0"
 #endif
 #define AppPublisher "shrek-abaper"
-#define AppURL "https://github.com/shrek-abaper/sap-engineering-skill"
+#define AppURL "https://github.com/shrek-abaper/sap-watt"
 
 [Setup]
 AppId={{9C9C0D2E-3F2A-4B1C-9E1A-5A0A0D7C1A11}

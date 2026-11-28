@@ -27,6 +27,14 @@ product or an embedded LLM/agent. Its lifecycle scope is a direction; current
 capabilities start with ADT/ABAP. Companion Skills and agents provide reasoning.
 Read-only is the default, not a promise that authorized execution is harmless.
 
+## Repository address
+
+The canonical repository is [shrek-abaper/sap-watt](https://github.com/shrek-abaper/sap-watt).
+It was renamed from `shrek-abaper/sap-engineering-skill`; GitHub redirects the
+old repository and release download URLs. Existing packages, native asset names,
+Skill/plugin IDs, configuration and credentials do not need migration.
+The old repository name must not be reused, or those redirects would stop working.
+
 ## Watt installation and migration (1.6.7+)
 
 With Node.js >=18:

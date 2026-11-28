@@ -11,7 +11,7 @@ Install/readiness guide: [`references/setup.md`](references/setup.md).
 [English](README.md) | [中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> **This repository has been archived and is no longer updated.** `abap-code-review` is now maintained exclusively in the [sap-engineering-skill](https://github.com/shrek-abaper/sap-engineering-skill) monorepo at [`skills/abap-code-review`](https://github.com/shrek-abaper/sap-engineering-skill/tree/main/skills/abap-code-review). Please go there for the latest version, issues, and improvements.
+> **This repository has been archived and is no longer updated.** `abap-code-review` is now maintained exclusively in the [sap-watt](https://github.com/shrek-abaper/sap-watt) monorepo at [`skills/abap-code-review`](https://github.com/shrek-abaper/sap-watt/tree/main/skills/abap-code-review). Please go there for the latest version, issues, and improvements.
 
 An AI agent skill for SAP ABAP pre-release code review. Performs a comprehensive security and quality assessment across 9 dimensions and produces a formal, sign-off-ready Markdown report.
 

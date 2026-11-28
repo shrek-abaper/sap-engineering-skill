@@ -1,14 +1,17 @@
 """Release manifest must ship the desktop installer for the current CLI."""
 import hashlib
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import build_manifest  # noqa: E402
+import check_release  # noqa: E402
 
 
 class DesktopInstallerManifestTests(unittest.TestCase):
@@ -84,6 +87,54 @@ class DesktopInstallerManifestTests(unittest.TestCase):
             }}))
             self.assertEqual(self.run_manifest(root)["unverified_targets"],
                              ["linux-aarch64", "future-target"])
+
+    def check_renamed_marketplace(self, root, manifest, live_source):
+        plugins = root / ".claude-plugin"
+        plugins.mkdir(exist_ok=True)
+        (plugins / "plugin.json").write_text('{"version": "1.2.7"}')
+        (plugins / "marketplace.json").write_text(json.dumps({
+            "plugins": [{"source": live_source}]}))
+        for package, staging, command in (("sap-adt-cli", "npm", "sap-adt"),
+                                          ("sap-watt", "npm-watt", "sap-watt")):
+            directory = root / "dist" / staging
+            directory.mkdir(exist_ok=True)
+            (directory / "package.json").write_text(json.dumps({
+                "name": package, "version": "1.5.3", "bin": {command: "scripts/run.js"}}))
+        release = root / "dist" / "release"
+        (release / "release-manifest.json").write_text(json.dumps(manifest))
+        with patch.object(check_release, "ROOT", root), \
+             patch.object(build_manifest, "ROOT", root), \
+             patch.object(sys, "argv", ["check_release.py", "--release-dir", str(release)]), \
+             redirect_stdout(io.StringIO()):
+            return check_release.main()
+
+    def test_published_archive_survives_repository_rename_without_manifest_rewrite(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.build_fixture(root, with_installer=False)
+            manifest = self.run_manifest(root)
+            market = manifest["marketplace_candidate"]
+            market["state"] = "published"
+            live_source = dict(market["source"])
+            market["source"]["url"] = live_source["url"].replace(
+                "/shrek-abaper/sap-watt/", "/shrek-abaper/sap-engineering-skill/")
+            self.assertEqual(self.check_renamed_marketplace(root, manifest, live_source), 0)
+
+    def test_repository_rename_does_not_allow_different_asset_or_digest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.build_fixture(root, with_installer=False)
+            manifest = self.run_manifest(root)
+            market = manifest["marketplace_candidate"]
+            market["state"] = "published"
+            source = market["source"]
+            for changed in (
+                {**source, "url": source["url"].replace("/sap-watt/", "/other-repo/")},
+                {**source, "url": source["url"] + ".different"},
+                {**source, "sha256": "0" * 64},
+            ):
+                with self.subTest(source=changed):
+                    self.assertEqual(self.check_renamed_marketplace(root, manifest, changed), 1)
 
 
 if __name__ == "__main__":

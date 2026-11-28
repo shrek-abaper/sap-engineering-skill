@@ -11,7 +11,7 @@ Install/readiness guide: [`references/setup.md`](references/setup.md).
 [English](README.md) | [中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> **This repository has been archived and is no longer updated.** `sap-transport-gate` is now maintained exclusively in the [sap-engineering-skill](https://github.com/shrek-abaper/sap-engineering-skill) monorepo at [`skills/sap-transport-gate`](https://github.com/shrek-abaper/sap-engineering-skill/tree/main/skills/sap-transport-gate). Please go there for the latest version, issues, and improvements.
+> **This repository has been archived and is no longer updated.** `sap-transport-gate` is now maintained exclusively in the [sap-watt](https://github.com/shrek-abaper/sap-watt) monorepo at [`skills/sap-transport-gate`](https://github.com/shrek-abaper/sap-watt/tree/main/skills/sap-transport-gate). Please go there for the latest version, issues, and improvements.
 
 > AI-assisted pre-release gate review for SAP Transport Requests.
 
@@ -263,4 +263,4 @@ Each confirmation item specifies: who confirms, what they confirm, based on what
 
 ## License
 
-MIT — see [LICENSE](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)
+MIT — see [LICENSE](https://github.com/shrek-abaper/sap-watt/blob/main/LICENSE)

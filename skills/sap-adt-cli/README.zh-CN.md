@@ -65,7 +65,7 @@ Git 导出现有仓库文件，不伪造 SAP abapGit 序列化。零测试、不
 
 | 智能体 | 使用方式 |
 |--------|----------|
-| Claude Code | 通过[本仓库](https://github.com/shrek-abaper/sap-engineering-skill)插件安装 |
+| Claude Code | 通过[本仓库](https://github.com/shrek-abaper/sap-watt)插件安装 |
 | Codex | 把完整的 Skill 目录复制到 Codex 扫描的位置 |
 | WorkBuddy | 同样复制完整的 Skill 目录 |
 | 其他 `SKILL.md` 智能体 | 使用各自的 Skill 目录或导入界面 |
@@ -74,7 +74,7 @@ Agent 负责驱动工作流，`sap-adt` CLI 负责执行在线 ADT 调用。
 Windows x64 从 CLI 1.5.3 起提供 npm 运行时、便携 ZIP 和未签名的桌面安装器；
 已有 Python ≥ 3.10 时也可用 PyPI。Skill 目录仍需单独复制到 Agent 的 Skill 目录。
 静默安装的已验证范围，以及 GUI、PATH 和提权安装的限制，见
-[Windows 安装指南](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/windows.md)。
+[Windows 安装指南](https://github.com/shrek-abaper/sap-watt/blob/main/docs/installation/windows.md)。
 CLI 1.6.0 新增 macOS 15+ 的 Intel / Apple Silicon 实验性 npm 运行时和便携包，
 发布须通过原生 CI 构建和安装检查。个人 Mac、旧版 macOS、Keychain、
 Gatekeeper/签名以及 macOS 真实 SAP 连接尚未验证，详见
@@ -504,4 +504,4 @@ sap-adt release-transport DEVK900001                           # 需 allow_trans
 
 ## 许可证
 
-[MIT](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)
+[MIT](https://github.com/shrek-abaper/sap-watt/blob/main/LICENSE)

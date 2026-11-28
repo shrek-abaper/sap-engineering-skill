@@ -87,6 +87,6 @@ Native portable executables, Windows installer identity and release asset
 names remain `sap-adt` in this transition. No configuration migration is needed.
 Bare `watt` is not installed.
 
-See the [repository](https://github.com/shrek-abaper/sap-engineering-skill),
-[installation guide](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/runtime-setup.md)
-and [design principles](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/design-principles.md).
+See the [repository](https://github.com/shrek-abaper/sap-watt),
+[installation guide](https://github.com/shrek-abaper/sap-watt/blob/main/docs/installation/runtime-setup.md)
+and [design principles](https://github.com/shrek-abaper/sap-watt/blob/main/docs/design-principles.md).

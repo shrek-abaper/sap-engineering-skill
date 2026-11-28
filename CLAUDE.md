@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-`sap-engineering-skill` is a monorepo of AI agent skills for SAP ABAP engineering. Each skill follows the `SKILL.md` specification and works with compatible AI agents (Claude Code, Codex, WorkBuddy).
+`sap-watt` is the monorepo for Watt, an engineering CLI for SAP lifecycle work, and its companion AI agent skills. ADT/ABAP is the current foundation. Each skill follows the `SKILL.md` specification and works with compatible AI agents (Claude Code, Codex, WorkBuddy).
 
 ### Skills
 
@@ -24,7 +24,7 @@ The three skills `abap-code-review`, `sap-transport-gate`, and `sap-integration-
 ## Repository Structure
 
 ```
-sap-engineering-skill/
+sap-watt/
 ├── src/sap_adt/                  ← ONLY CLI business implementation
 │   ├── cli.py                    ← Click group `sap-adt`
 │   ├── config.py, credentials*.py, errors.py, output.py

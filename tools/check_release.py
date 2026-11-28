@@ -23,7 +23,16 @@ import sys
 import zipfile
 from pathlib import Path
 
+from build_manifest import REPO_URL
+
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def canonical_archive_url(url: str | None) -> str | None:
+    legacy = "https://github.com/shrek-abaper/sap-engineering-skill/releases/download/"
+    if isinstance(url, str) and url.startswith(legacy):
+        return f"{REPO_URL}/releases/download/{url[len(legacy):]}"
+    return url
 
 
 def sha256(path: Path) -> str:
@@ -163,7 +172,11 @@ def main() -> int:
                 problems.append("manifest says published but live marketplace is not archive")
             else:
                 for field in ("url", "sha256"):
-                    if live_source.get(field) != expected.get(field):
+                    actual_value, expected_value = live_source.get(field), expected.get(field)
+                    if field == "url":
+                        actual_value = canonical_archive_url(actual_value)
+                        expected_value = canonical_archive_url(expected_value)
+                    if actual_value != expected_value:
                         problems.append(
                             f"live marketplace archive {field} differs from manifest")
 

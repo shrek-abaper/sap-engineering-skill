@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Open a private security advisory on the GitHub repository
-(https://github.com/shrek-abaper/sap-engineering-skill) or contact the
+(https://github.com/shrek-abaper/sap-watt) or contact the
 maintainer listed in the repository profile. Do not file a public issue for
 credential leaks or gate bypasses.
 

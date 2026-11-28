@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REPO_URL = "https://github.com/shrek-abaper/sap-engineering-skill"
+REPO_URL = "https://github.com/shrek-abaper/sap-watt"
 
 
 def sha256(path: Path) -> str:

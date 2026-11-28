@@ -14,8 +14,8 @@ keywords = ["sap", "watt", "abap", "adt", "engineering", "cli"]
 dependencies = ["sap-adt-cli==0.0.0"]
 
 [project.urls]
-Homepage = "https://github.com/shrek-abaper/sap-engineering-skill"
-Documentation = "https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/runtime-setup.md"
+Homepage = "https://github.com/shrek-abaper/sap-watt"
+Documentation = "https://github.com/shrek-abaper/sap-watt/blob/main/docs/installation/runtime-setup.md"
 
 [project.optional-dependencies]
 keystore = ["sap-adt-cli[keystore]==0.0.0"]

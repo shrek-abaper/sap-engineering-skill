@@ -86,7 +86,7 @@ the Requirements section, then load the skill with your agent:
 
 | Agent | How to use it |
 |-------|---------------|
-| Claude Code | Install the plugin from the [repository](https://github.com/shrek-abaper/sap-engineering-skill) |
+| Claude Code | Install the plugin from the [repository](https://github.com/shrek-abaper/sap-watt) |
 | Codex | Copy the complete skill folder into the directory Codex scans |
 | WorkBuddy | Same folder copy |
 | Other `SKILL.md` agents | Use the agent's own skill directory or import UI |
@@ -95,7 +95,7 @@ The agent drives the workflow; the `sap-adt` CLI performs the online ADT calls.
 On Windows x64, CLI 1.5.3 or newer provides an npm runtime, portable ZIP
 and unsigned desktop installer; Python ≥ 3.10 users can also use PyPI.
 Copy the skill folder into your agent's skill directory separately.
-See the [Windows guide](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/docs/installation/windows.md)
+See the [Windows guide](https://github.com/shrek-abaper/sap-watt/blob/main/docs/installation/windows.md)
 for the verified silent-install scope and remaining GUI/PATH/elevation gaps.
 CLI 1.6.0 adds experimental macOS 15+ npm/portable runtimes for Intel and
 Apple Silicon, gated by native CI build/install checks. Personal Macs,
@@ -567,4 +567,4 @@ all 16 error codes.
 
 ## License
 
-[MIT](https://github.com/shrek-abaper/sap-engineering-skill/blob/main/LICENSE)
+[MIT](https://github.com/shrek-abaper/sap-watt/blob/main/LICENSE)

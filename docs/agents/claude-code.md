@@ -3,7 +3,7 @@
 ## Plugin install (unchanged identity)
 
 ```
-/plugin marketplace add shrek-abaper/sap-engineering-skill
+/plugin marketplace add shrek-abaper/sap-watt
 /plugin install sap-engineering-skills@sap-engineering
 ```
 

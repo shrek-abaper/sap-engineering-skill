@@ -6,7 +6,7 @@
 
 <h4><i>An engineering CLI for SAP lifecycle work · evidence first · explicit authority · traceable outcomes</i></h4>
 
-> Watt supports dependable engineering work across SAP implementation, consulting, development, testing, delivery and operations. People can use it directly; AI agents can call the same contract. Named after the unit of power, Watt aims for steady, sustained and controllable work. Today its foundation is ADT and ABAP, with companion Skills for review, transport risk and integration guidance — broader lifecycle coverage is a direction, not a claim that every SAP task is already supported.
+> Controlled operations and traceable evidence for SAP work, from understanding a system to reviewing and delivering change.
 
 **Independent community project · not an official SAP product · no embedded LLM**
 
@@ -24,13 +24,39 @@
 
 **English** · **[中文](README.zh-CN.md)**
 
-**[Why this project](#why-this-project)** · **[What you can do](#what-you-can-do)** · **[Quick start](#quick-start)** · **[Usage examples](#usage-examples)** · **[How it works](#how-it-works)** · **[Support and safety](#support-and-safety)** · **[Roadmap](#roadmap)** · **[Documentation](#documentation)** · **[License](#contributing-and-license)**
+**[Meet Watt](#meet-watt)** · **[What you can do](#what-you-can-do)** · **[Quick start](#quick-start)** · **[Usage examples](#usage-examples)** · **[How it works](#how-it-works)** · **[Support and safety](#support-and-safety)** · **[Roadmap](#roadmap)** · **[Documentation](#documentation)** · **[License](#contributing-and-license)**
 
 </div>
 
 ---
 
-## Why this project
+## Meet Watt
+
+**Watt is an engineering CLI for SAP lifecycle work.** It provides controlled
+operations and inspectable evidence that people can use directly or AI agents
+can compose into workflows. It is a tool for doing and verifying SAP work,
+not an embedded LLM or a general-purpose conversation assistant.
+
+### Why Watt?
+
+Watt takes its name from the unit of power, named in honor of James Watt.
+Power is the rate of doing work. For this project, the name expresses a goal:
+**steady, sustained and controllable engineering work**, rather than a burst
+of automation whose effects are hard to inspect.
+
+That means gathering facts, making changes within explicit boundaries and
+checking outcomes. The name is a design intention, not a throughput guarantee.
+Watt stands on its own as an independent community project, not an official
+SAP product.
+
+### Who it serves
+
+Watt is for SAP teams, not a single job title. Implementation and functional
+consulting, development, testing, delivery and operations all depend on reliable
+technical facts and controlled actions. People remain responsible for decisions
+and approvals; agents can help interpret evidence and coordinate the work.
+
+### Why this project
 
 SAP work crosses roles and system boundaries. Reading source is only one part:
 teams also need attributable diagnostics, reviewed changes, transport evidence
@@ -39,18 +65,22 @@ deterministic CLI and layers portable `SKILL.md` workflows on top. Its question
 is not just whether an operation can run, but **whether its intent, evidence
 and outcome can be inspected and trusted**.
 
-### Design principles
+### Core principles
 
-1. **Evidence over assertion.** An HTTP 2xx means *accepted*, never *done*. Writes are read back, activation is checked against the active version, and unlock, release and activation results are reported as `accepted`, `verified`, `failed` or `unknown`. Missing evidence is reported as a gap, never filled in by assumption.
-2. **Governed by default.** Read-only until a profile grants write capability; production profiles refuse every write-class operation; every change shows a preview and asks for confirmation; passwords live in the OS keystore, never in config or chat.
-3. **Bound intent.** A write is bound to target system, client, user, object, transport, remote baseline and upload hash. If anything drifts between review and execution, nothing is written. Automation (`--yes`) skips the prompt, not the checks. *(CLI 1.6.2+.)*
-4. **Deterministic contract, portable orchestration.** The CLI gives agents a stable JSON envelope, a closed error-code set and tiered exit codes. Scenarios live in plain `SKILL.md` folders — no vendor lock-in, low token overhead, scriptable in CI.
-5. **Measured, not assumed.** ADT behavior that SAP does not document — lock ownership, silent unlock no-ops, activation reply formats — is measured on real systems, recorded with sanitized fixtures, and labeled with the release it was verified on. What has not been verified is stated as such.
+1. **Evidence first.** Separate observed facts, hypotheses and missing evidence. An accepted request is not a verified outcome.
+2. **Explicit authority.** Read-only by default; changes, execution and debugging need their own authorization. Human approval stays human.
+3. **Clear tool boundaries.** The CLI supplies deterministic operations and structured results; Skills supply workflows and references; agents supply reasoning.
+4. **Verified progress.** Expand through tested SAP scenarios. State what is supported and what remains unverified, rather than promising universal coverage.
+5. **Compatibility is reliability.** Preserve working scripts, configuration and credential identifiers as the product evolves.
 
-**ADT is the starting point, not the product boundary.** The CLI supplies
-verified operations; Skills and agents supply interpretation and orchestration.
-Watt does not replace human approval or claim to be a universal assistant.
-Read the [name, scope and design principles](docs/design-principles.md).
+**ADT and ABAP are the current foundation, not the long-term boundary.**
+Today Watt covers source and metadata access, diagnostic evidence, governed
+changes, testing and execution. Companion Skills add code review, transport risk
+assessment and integration guidance. Broader lifecycle coverage is a direction,
+not a claim that every SAP task is already supported.
+
+For the mechanisms behind these principles, see
+[engineering principles and boundaries](docs/design-principles.md).
 
 ---
 
@@ -84,7 +114,7 @@ Two independent steps: install the skills into your agent, and — only if you n
 **Claude Code** installs them from this repository's plugin marketplace:
 
 ```text
-/plugin marketplace add shrek-abaper/sap-engineering-skill
+/plugin marketplace add shrek-abaper/sap-watt
 /plugin install sap-engineering-skills@sap-engineering
 ```
 
@@ -106,7 +136,7 @@ sap-watt --version
 
 The npm package installs a launcher; `sap-watt install` fetches, verifies and installs the platform runtime. A normal `sap-watt` call never downloads or upgrades anything. Linux x86_64 and Windows x86_64 runtimes are available, plus experimental macOS 15+ runtimes for Intel and Apple Silicon.
 
-On Windows without Node.js or Python, download the unsigned `sap-adt-<ver>-windows-x86_64-setup.exe` from the [releases](https://github.com/shrek-abaper/sap-engineering-skill/releases). See the [Windows guide](docs/installation/windows.md) for verified scope and limitations.
+On Windows without Node.js or Python, download the unsigned `sap-adt-<ver>-windows-x86_64-setup.exe` from the [releases](https://github.com/shrek-abaper/sap-watt/releases). See the [Windows guide](docs/installation/windows.md) for verified scope and limitations.
 
 Without a global install, npx keeps nothing on `PATH`: run `npx "sap-watt@^1.6.7" install` and keep that package prefix on every later call.
 
@@ -265,7 +295,7 @@ Direction, not commitments; each item ships only with offline regression and rea
 
 | Document | Contents |
 |---|---|
-| [docs/design-principles.md](docs/design-principles.md) | Watt's independent name, lifecycle direction, evidence and authorization principles, compatibility |
+| [docs/design-principles.md](docs/design-principles.md) | Evidence semantics, authorization mechanisms, tool boundaries, verification limits and compatibility |
 | [docs/installation/](docs/installation/) | CLI channels (npm, npx, PyPI, portable, source), credential precedence, readiness checks, diagnostics matrix |
 | [docs/agents/](docs/agents/) | Claude Code plugin details and generic `SKILL.md` agent guidance |
 | [docs/authentication/](docs/authentication/) | SAP↔AI authentication playbook: Basic, SPNEGO, X.509, OIDC/OAuth2, gateway and client patterns (synced copy; authoritative version in `sap-functional-skill`) |

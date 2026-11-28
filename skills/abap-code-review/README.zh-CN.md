@@ -3,7 +3,7 @@
 [English](README.md) | [中文](README.zh-CN.md)
 
 > [!IMPORTANT]
-> **本仓库已归档，不再更新。** `abap-code-review` 现仅在 [sap-engineering-skill](https://github.com/shrek-abaper/sap-engineering-skill) Monorepo 中维护（[`skills/abap-code-review`](https://github.com/shrek-abaper/sap-engineering-skill/tree/main/skills/abap-code-review)）。最新版本、Issue 与改进请前往该仓库。
+> **本仓库已归档，不再更新。** `abap-code-review` 现仅在 [sap-watt](https://github.com/shrek-abaper/sap-watt) Monorepo 中维护（[`skills/abap-code-review`](https://github.com/shrek-abaper/sap-watt/tree/main/skills/abap-code-review)）。最新版本、Issue 与改进请前往该仓库。
 
 适用于 SAP ABAP 发布前代码审查的 AI Agent Skill。通过 9 个维度对 ABAP 程序进行全面的安全与质量评估，并生成可用于正式签字流转的 Markdown 报告。
 

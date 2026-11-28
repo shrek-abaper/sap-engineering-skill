@@ -19,6 +19,13 @@ package owns only `sap-watt`; no default bare `watt` executable is installed.
 Keep native filenames, tag prefix, Windows AppId and existing configuration.
 Only switch marketplace after its new archive is live and checksum-verified.
 
+The canonical repository is now `shrek-abaper/sap-watt`. Historical tags,
+published packages and release manifests retain their original contents and
+may reference the old repository address; do not republish a version to change
+its URLs. Future builds use the new address. The release checker accepts only
+the known repository-rename alias for an otherwise identical release asset URL;
+artifact paths and SHA-256 checks remain exact.
+
 CLI **1.6.6** / plugin/docs **1.3.7** adds atomic-executor
 target expectations, explicit JSON normalization, enhancement metadata and
 bounded impact, Unit gates/evidence, diagnosis packages, transport analysis,

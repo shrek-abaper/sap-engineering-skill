@@ -1,4 +1,4 @@
-title = "sap-engineering-skill gitleaks configuration"
+title = "sap-watt gitleaks configuration"
 
 # Keep the built-in provider rules (AWS, private keys, ...) and add one
 # project rule for hardcoded SAP password/secret literals.
