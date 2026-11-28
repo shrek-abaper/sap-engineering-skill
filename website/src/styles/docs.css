@@ -1,0 +1,17 @@
+:root {
+  --sl-color-accent-low: #20320c;
+  --sl-color-accent: #8bbb39;
+  --sl-color-accent-high: #d3f5a1;
+  --sl-font: 'Inter', 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #e8f4d5;
+  --sl-color-accent: #426d0e;
+  --sl-color-accent-high: #253e08;
+}
+
+.site-title img { border-radius: 0.4rem; }
+.sl-markdown-content table { font-size: 0.88rem; }
+.sl-markdown-content :is(td, th) { min-width: 6rem; }
+.sl-markdown-content td code { overflow-wrap: anywhere; white-space: normal; }

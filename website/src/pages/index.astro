@@ -1,0 +1,167 @@
+---
+import compatibility from '../../../compatibility.json';
+import { cliVersion as version } from '../../.generated/runtime.json';
+import '../styles/home.css';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const href = (route = '') => `${base}${route}`;
+const github = 'https://github.com/shrek-abaper/sap-watt';
+const npmRange = compatibility.cli.preferred_entry.npm_range;
+const scenarios = [
+  { n: '01', tag: 'UNDERSTAND', title: '先看清系统，再作出判断。', text: '从对象、源码和引用关系入手，收集可归因的技术事实，让开发分析与顾问讨论建立在同一份证据上。', link: '系统理解与影响证据', to: 'reference/workflows/executor/' },
+  { n: '02', tag: 'BUILD & VERIFY', title: '让每次变更，都有验证依据。', text: '将候选检查、受控写入、质量检查与 Unit 回归组织为工作流。区分操作已受理与结果已验证。', link: '受控开发与验证', to: 'reference/workflows/core-workflows/' },
+  { n: '03', tag: 'REVIEW & DELIVER', title: '交付的不只是代码，还有信心的依据。', text: '围绕代码与传输请求核对风险、需求和测试材料。明确证据缺口，把最终审批留给负责人。', link: '审查与交付场景', to: 'guides/capabilities/' },
+];
+const capabilities = [
+  { icon: '⌕', title: '系统理解', text: '对象搜索 · 源码与 DDIC · 静态引用', commands: ['search-object', 'get-class', 'where-used'] },
+  { icon: '{ }', title: '受控开发', text: '候选检查 · 对象创建 · 多对象变更', commands: ['check-source', 'write-source', 'apply-change-set'] },
+  { icon: '✓', title: '质量验证', text: '语法与 ATC · Unit 回归 · 质量证据', commands: ['run-atc', 'run-unit-test', 'quality-check'] },
+  { icon: '↳', title: '诊断与执行', text: 'Dump 取证 · 受控执行 · 实验性调试', commands: ['diagnose', 'run-function', 'debug …'] },
+  { icon: '⇄', title: '传输与交付', text: '材料采集 · 差异与风险 · 证据打包', commands: ['transport collect', 'transport analyze', 'delivery pack'] },
+  { icon: '▤', title: '数据与集成观察', text: 'SELECT 预览 · 配置比较 · 只读 OData', commands: ['run-sql', 'config-data compare', 'odata-read'] },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Watt：面向 SAP 全生命周期的 AI 工程底座。CLI 提供可靠能力，Skills 承载场景工作流，Agent 在明确授权与可追溯证据的基础上协同工作。" />
+    <meta name="theme-color" content="#10130f" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Watt — Power your SAP Engineering." />
+    <meta property="og:description" content="CLI 让操作可靠，Skills 让经验复用，Agent 让工作协同。" />
+    <meta property="og:url" content={new URL(base, Astro.site).href} />
+    <link rel="canonical" href={new URL(base, Astro.site)} />
+    <link rel="icon" type="image/svg+xml" href={href('favicon.svg')} />
+    <title>Watt — 面向 SAP 全生命周期的 AI 工程底座</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳转到正文</a>
+    <header class="site-header">
+      <div class="shell nav-inner">
+        <a class="brand" href={base} aria-label="Watt 首页">
+          <img src={href('favicon.svg')} alt="" width="34" height="34" />
+          <span>Watt<span class="brand-dot">.</span></span>
+        </a>
+        <nav class="main-nav" aria-label="主导航">
+          <a href="#philosophy">设计理念</a>
+          <a href="#capabilities">当前能力</a>
+          <a href={href('reference/commands/')}>CLI 清单</a>
+          <a href={href('guides/getting-started/')}>文档 <span aria-hidden="true">↗</span></a>
+        </nav>
+        <a class="nav-github" href={github} aria-label="在 GitHub 查看 Watt">GitHub <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero shell" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <a class="release-label" href={`${github}/releases`}><span class="status-dot"></span> OPEN SOURCE · CLI {version} <span aria-hidden="true">↗</span></a>
+          <p class="eyebrow hero-eyebrow">POWER YOUR SAP ENGINEERING.</p>
+          <h1 id="hero-title">让 SAP 工程，<br />拥有 <span class="accent">AI 的行动力。</span></h1>
+          <p class="hero-position">面向 SAP 全生命周期的 AI 工程底座</p>
+          <p class="hero-description">以 CLI 沉淀可组合的原子能力，以 Skills 承载领域知识与场景工作流。让 AI 不止理解问题，更能在明确授权下协同工作，以证据验证结果。</p>
+          <div class="actions">
+            <a class="button button-primary" href={href('guides/getting-started/')}>开始使用 <span aria-hidden="true">↗</span></a>
+            <a class="button button-secondary" href="#philosophy">了解设计理念 <span aria-hidden="true">↓</span></a>
+          </div>
+          <p class="hero-footnote">从 ADT / ABAP 出发，逐步拓展生命周期场景。<br />无需 SAP 连接，也能从离线代码审查开始。</p>
+        </div>
+        <div class="hero-visual" aria-label="CLI、Skills 与 Agent 的分层协作示意，不是实际系统运行记录">
+          <div class="visual-caption"><span class="status-dot"></span> THE ENGINEERING STACK <span>01 / 03</span></div>
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <div class="stack-node node-agent"><span class="node-icon">◎</span><div><strong>Agent</strong><small>理解意图 · 推理与协调</small></div><span class="node-id">03</span></div>
+          <div class="stack-connector"><span></span><i>CONTEXT → WORKFLOW</i></div>
+          <div class="stack-node node-skill"><span class="node-icon">◇</span><div><strong>Skills</strong><small>领域知识 · 场景工作流</small></div><span class="node-id">02</span></div>
+          <div class="stack-connector"><span></span><i>WORKFLOW → OPERATIONS</i></div>
+          <div class="stack-node node-cli"><span class="node-icon">&gt;_</span><div><strong>CLI</strong><small>可组合 · 有边界 · 可验证</small></div><span class="node-id">01</span></div>
+          <div class="visual-foundation"><span>SAP SYSTEMS</span><span>SOURCE & TRANSPORTS</span><span>EVIDENCE</span></div>
+          <div class="visual-note"><span>明确授权</span><span>证据追溯</span><span>人工审批</span></div>
+        </div>
+      </section>
+
+      <div class="trust-strip">
+        <div class="shell trust-inner"><span>为 SAP 团队构建</span><span>开发与技术顾问</span><span>实施与功能顾问</span><span>测试与交付团队</span><a href={`${github}/blob/main/LICENSE`}>MIT 开源 <span aria-hidden="true">↗</span></a></div>
+      </div>
+
+      <section class="section shell" id="scenarios" aria-labelledby="scenarios-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">BUILT AROUND THE WORK</p><h2 id="scenarios-title">从一个任务开始，<br />让工程经验成为工作流。</h2></div>
+          <p class="section-intro">不是替换你的专业判断，<br />而是让分析、开发与交付中的技术工作<br />更可复用、更可检查。</p>
+        </div>
+        <div class="scenario-grid">
+          {scenarios.map((scene) => (
+            <article class="scenario-card">
+              <div class="card-top"><span>{scene.tag}</span><span>{scene.n}</span></div>
+              <h3>{scene.title}</h3><p>{scene.text}</p>
+              <a class="text-link" href={href(scene.to)}>{scene.link} <span aria-hidden="true">↗</span></a>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="philosophy section" id="philosophy" aria-labelledby="philosophy-title">
+        <div class="shell">
+          <div class="section-heading">
+            <div><p class="eyebrow">THE DESIGN PHILOSOPHY</p><h2 id="philosophy-title">原子能力，场景编排，<br /><span class="accent">可信协作。</span></h2></div>
+            <p class="section-intro">将系统操作、领域流程与智能推理解耦。<br />能力可以组合，经验可以复用，<br />授权与证据不能省略。</p>
+          </div>
+          <div class="layer-list">
+            <article class="layer-row"><span class="layer-number">01</span><div class="layer-title"><h3>CLI</h3><span>可靠的能力底座</span></div><p>将 SAP 操作封装为契约明确的工程能力。以结构化结果、稳定错误语义与受控操作边界，为人和 Agent 提供共同的执行接口。</p><span class="layer-keyword">OPERATIONS</span></article>
+            <article class="layer-row"><span class="layer-number">02</span><div class="layer-title"><h3>Skills</h3><span>可复用的领域方法</span></div><p>把领域知识、操作顺序与质量准则组织为场景工作流。让代码审查、传输评估与问题诊断，不再每次从一段提示词重新开始。</p><span class="layer-keyword">WORKFLOWS</span></article>
+            <article class="layer-row"><span class="layer-number">03</span><div class="layer-title"><h3>Agent</h3><span>面向任务的智能协同</span></div><p>由你选择的 Agent 理解目标、结合上下文推理，并遵循 Skills 调用工具。Watt 不内嵌大模型，不取代人员的责任与审批。</p><span class="layer-keyword">REASONING</span></article>
+          </div>
+          <div class="philosophy-bottom"><p>CLI 让操作可靠，Skills 让经验复用，Agent 让工作协同。</p><a class="text-link" href={href('principles/')}>阅读工程原则 <span aria-hidden="true">↗</span></a></div>
+        </div>
+      </section>
+
+      <section class="section shell" id="capabilities" aria-labelledby="capabilities-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">AVAILABLE TODAY</p><h2 id="capabilities-title">愿景有方向，<br />能力有边界。</h2></div>
+          <div class="section-intro"><p>当前以 ADT / ABAP 为基础，<br />已提供以下工程能力。</p><a class="text-link" href={href('guides/capabilities/')}>查看能力与四个 Skills <span aria-hidden="true">↗</span></a></div>
+        </div>
+        <div class="capability-grid">
+          {capabilities.map((item) => (
+            <a class="capability-card" href={href('reference/commands/')}>
+              <div class="capability-title"><span class="capability-icon" aria-hidden="true">{item.icon}</span><span aria-hidden="true">↗</span></div>
+              <h3>{item.title}</h3><p>{item.text}</p>
+              <div class="command-tags">{item.commands.map((command) => <code>{command}</code>)}</div>
+            </a>
+          ))}
+        </div>
+        <div class="capability-note"><p>在线能力依赖版本、SAP 端点与权限。调试为实验性；执行与调试可能改变业务数据，需独立授权。</p><a class="text-link" href={href('reference/commands/')}>完整 CLI 清单 <span aria-hidden="true">→</span></a></div>
+      </section>
+
+      <section class="start-section section shell" id="get-started" aria-labelledby="start-title">
+        <div class="start-copy"><p class="eyebrow">YOUR FIRST STEP</p><h2 id="start-title">今天，就从<br />一个真实问题开始。</h2><p>先用已有源码体验离线审查，<br />或安装 CLI，连接你有权访问的 SAP 系统。</p><a class="button button-primary" href={href('guides/getting-started/')}>选择你的上手路径 <span aria-hidden="true">↗</span></a><p class="small-note">兼容现有 sap-adt，无需为品牌更名迁移。</p></div>
+        <div class="terminal">
+          <div class="terminal-bar"><div class="terminal-dots"><span></span><span></span><span></span></div><span>GET STARTED / npm</span><span>⌘</span></div>
+          <div class="terminal-body">
+            <p class="terminal-comment"># 1. 安装启动器与平台运行时</p>
+            <pre><code><span class="prompt">$</span> npm install -g "sap-watt@{npmRange}"{'\n'}<span class="prompt">$</span> sap-watt install</code></pre>
+            <p class="terminal-comment"># 2. 在本地配置连接</p>
+            <pre><code><span class="prompt">$</span> sap-watt configure{'\n'}<span class="prompt">$</span> sap-watt status</code></pre>
+            <div class="terminal-notice"><span class="status-dot"></span> 默认只读 · 密码仅在本地输入</div>
+          </div>
+          <div class="terminal-footer">安装示例，非运行记录 · <a href={href('installation/runtime/')}>其他安装方式 ↗</a></div>
+        </div>
+      </section>
+
+      <section class="safety-section shell" aria-labelledby="safety-title">
+        <div><p class="eyebrow">TRUST IS AN ENGINEERING PROPERTY</p><h2 id="safety-title">让能力扩展，让边界始终清晰。</h2></div>
+        <div class="safety-grid">
+          <div><h3>证据优先</h3><p>事实、假设和缺口分开表达。受理不等于验证，未知不冒充成功。</p></div>
+          <div><h3>明确授权</h3><p>写入、传输、执行与调试独立设限。自动化不等于绕过审批。</p></div>
+          <div><h3>可追溯结果</h3><p>重要结论指向真实材料。风险评估提供依据，不自动批准发布。</p></div>
+        </div>
+        <a class="text-link" href={href('principles/')}>理解安全与支持边界 <span aria-hidden="true">↗</span></a>
+      </section>
+    </main>
+    <footer class="site-footer shell">
+      <div class="footer-top"><a class="brand" href={base}><img src={href('favicon.svg')} alt="" width="30" height="30" /><span>Watt.</span></a><p>Power your SAP Engineering.</p><nav aria-label="页脚导航"><a href={href('guides/getting-started/')}>文档</a><a href={`${github}/releases`}>Releases</a><a href={`${github}/issues`}>反馈</a><a href={github}>GitHub ↗</a></nav></div>
+      <div class="footer-bottom"><p>独立社区项目，非 SAP 官方产品。不内嵌 LLM。本网站不连接 SAP，也不收集 SAP 凭据。</p><span>MIT LICENSE · BUILT IN THE OPEN</span></div>
+    </footer>
+  </body>
+</html>

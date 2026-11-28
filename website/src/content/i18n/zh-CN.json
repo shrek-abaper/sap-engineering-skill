@@ -1,0 +1,14 @@
+{
+  "search.label": "搜索文档",
+  "page.editLink": "在 GitHub 上编辑原文",
+  "pagefind.clear_search": "清除",
+  "pagefind.load_more": "加载更多",
+  "pagefind.search_label": "搜索文档",
+  "pagefind.filters_label": "筛选",
+  "pagefind.zero_results": "未找到与「[SEARCH_TERM]」相关的结果",
+  "pagefind.many_results": "找到 [COUNT] 条与「[SEARCH_TERM]」相关的结果",
+  "pagefind.one_result": "找到 1 条与「[SEARCH_TERM]」相关的结果",
+  "pagefind.alt_search": "没有完全匹配的结果，显示「[DIFFERENT_TERM]」的结果",
+  "pagefind.search_suggestion": "未找到完全匹配的结果，请尝试其他关键词",
+  "pagefind.searching": "正在搜索「[SEARCH_TERM]」…"
+}

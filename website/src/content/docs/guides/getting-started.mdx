@@ -1,0 +1,91 @@
+---
+title: 选择你的第一条路径
+description: 不连接 SAP 先体验离线审查，或安装 Watt CLI 开始受控的在线工程工作。
+---
+
+import { Steps, LinkCard } from '@astrojs/starlight/components';
+import compatibility from '../../../../../compatibility.json';
+
+Watt 由 **CLI、Skills 与你选择的 AI Agent** 协同工作，不内嵌大模型。
+你不需要一次安装所有组件：离线审查只需 Skills；在线操作才需要 CLI 和 SAP 连接。
+
+## 路径 A：不连接 SAP，先体验
+
+<Steps>
+
+1. **把 Skills 加入 Agent。**
+
+   Claude Code 可通过插件市场安装：
+
+   ```text
+   /plugin marketplace add shrek-abaper/sap-watt
+   /plugin install sap-engineering-skills@sap-engineering
+   ```
+
+   插件只安装 Skill 文档，不安装 CLI。其他 Agent 请复制完整 Skill 目录，包含 `references/`，不要只复制 `SKILL.md`。
+
+2. **提供一份可分享的 ABAP 源码。**
+
+   不要上传密码、客户数据或未经授权的专有代码。使用本地 Agent 时，同样需要了解其模型的数据处理方式。
+
+3. **给出具体任务。**
+
+   ```text
+   请审查这份 ABAP 程序的代码质量和发布风险。
+   我没有功能规格，请将功能完整性标为 N/A。
+   每项发现请引用真实代码和相应规则，列出缺失证据。
+   ```
+
+   这是示例请求，不是已执行结果。审查建议不替代人工审批。
+
+</Steps>
+
+<LinkCard title="Agent 接入说明" href="/sap-watt/agents/generic-skills/" description="Claude Code、Codex 与其他兼容 SKILL.md 的 Agent" />
+
+## 路径 B：安装 CLI，连接 SAP
+
+<Steps>
+
+1. **选择安装渠道。**
+
+   npm 渠道需要 Node.js ≥ 18。以下安装范围读取自仓库的兼容性声明：
+
+   <pre><code>{`npm install -g "sap-watt@${compatibility.cli.preferred_entry.npm_range}"\nsap-watt install\nsap-watt --version`}</code></pre>
+
+   npm 首先安装启动器；`sap-watt install` 才下载并校验平台运行时。普通命令不会自动安装或升级。
+   Python、便携包与 Windows 安装方式见完整安装指南。
+
+2. **在自己的终端配置连接。**
+
+   ```bash
+   sap-watt configure
+   sap-watt status
+   sap-watt credentials doctor
+   ```
+
+   密码只在本地输入，保存在现有 keystore 后端；不要粘贴到网页、聊天或命令行参数中。
+   `status` 仅检查本地状态，不代表已经连接 SAP。
+
+3. **从已授权的只读任务开始。**
+
+   ```bash
+   sap-watt search-object "Z*"
+   ```
+
+   需要可达的 SAP ADT 端点和匹配权限。没有访问权限或端点不支持时，应报告限制，而不是假定操作成功。
+
+</Steps>
+
+<LinkCard title="完整安装与运行准备" href="/sap-watt/installation/runtime/" description="平台支持、安装渠道、兼容范围、配置优先级和诊断矩阵" />
+
+## 已经使用 sap-adt？
+
+继续使用即可。兼容的 `sap-adt` 与 `sap-watt` 使用相同子命令与配置，一次任务保持同一个命令前缀。
+无需为品牌更名迁移脚本、凭据或 Skill ID。具体能力仍需检查对应最低版本与命令选项。
+
+## 开启写入、执行或调试之前
+
+默认只读。源码写入、传输变更、执行和调试有各自独立的授权边界。
+执行和调试可能改变业务数据，即使源码写入被禁用也一样。不要为了完成一次诊断而自动升级权限。
+
+<LinkCard title="理解安全边界" href="/sap-watt/principles/" description="证据优先、明确授权、结果验证与人工责任" />

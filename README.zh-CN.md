@@ -24,6 +24,8 @@
 
 **[English](README.md)** · **中文**
 
+**[项目网站与文档](https://shrek-abaper.github.io/sap-watt/)** · **[开始使用](https://shrek-abaper.github.io/sap-watt/guides/getting-started/)** · **[完整 CLI 清单](https://shrek-abaper.github.io/sap-watt/reference/commands/)**
+
 **[认识 Watt](#认识-watt)** · **[能帮你做什么](#能帮你做什么)** · **[快速开始](#快速开始)** · **[使用示例](#使用示例)** · **[工作方式](#工作方式)** · **[支持范围与安全边界](#支持范围与安全边界)** · **[路线图](#路线图)** · **[文档导航](#文档导航)** · **[许可证](#参与贡献与许可证)**
 
 </div>

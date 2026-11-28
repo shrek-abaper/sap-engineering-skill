@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.astro/
+.generated/
+src/content/docs/installation/
+src/content/docs/agents/
+src/content/docs/reference/
+src/content/docs/principles.md
+.playwright-cli/
+.tools/

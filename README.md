@@ -24,6 +24,8 @@
 
 **English** · **[中文](README.zh-CN.md)**
 
+**[Website & docs](https://shrek-abaper.github.io/sap-watt/)** · **[Get started](https://shrek-abaper.github.io/sap-watt/guides/getting-started/)** · **[CLI reference](https://shrek-abaper.github.io/sap-watt/reference/commands/)**
+
 **[Meet Watt](#meet-watt)** · **[What you can do](#what-you-can-do)** · **[Quick start](#quick-start)** · **[Usage examples](#usage-examples)** · **[How it works](#how-it-works)** · **[Support and safety](#support-and-safety)** · **[Roadmap](#roadmap)** · **[Documentation](#documentation)** · **[License](#contributing-and-license)**
 
 </div>
