@@ -31,7 +31,14 @@ export default defineConfig({
           ],
         },
         { label: '安装与配置', items: [{ autogenerate: { directory: 'installation' } }] },
-        { label: '接入 AI Agent', items: [{ autogenerate: { directory: 'agents' } }] },
+        {
+          label: '接入 AI Agent',
+          items: [
+            { label: 'Claude Code', slug: 'agents/claude-code' },
+            { label: 'WorkBuddy', slug: 'agents/workbuddy' },
+            { label: 'Codex 与其他 Agent', slug: 'agents/generic-skills' },
+          ],
+        },
         {
           label: 'CLI 与工作流',
           items: [

@@ -1,6 +1,9 @@
-# Generic SKILL.md agents (Codex, WorkBuddy-class tools, other agents)
+# Generic SKILL.md agents (Codex and other agents)
 
 The skills are plain `SKILL.md` folders. Two supported ways to use them:
+
+For WorkBuddy, prefer the [SkillHub marketplace installation guide](workbuddy.md).
+The manual methods below remain a fallback when marketplace installation is unavailable.
 
 ## A. Copy one complete skill folder (recommended)
 
@@ -31,7 +34,7 @@ and `sap-engineering-skills-<plugin_version>.zip` (all four).
 |---|---|
 | Claude Code | Install the plugin from this repository's marketplace |
 | Codex | Copy the complete skill folders into the directory it scans |
-| WorkBuddy-class agents | Copy the complete skill folders into the directory it scans |
+| WorkBuddy | Prefer the [SkillHub marketplace](workbuddy.md); use manual import as a fallback |
 | Other SKILL.md-compatible agents | Use the agent's own skill directory or import UI |
 
 Discovery paths differ between agents: some read `~/.agents/skills/`, others

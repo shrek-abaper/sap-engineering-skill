@@ -14,6 +14,7 @@ export const documents = [
   ['installation/python', 'docs/installation/python-source.md', 'Python 与源码安装'],
   ['installation/portable', 'docs/installation/portable.md', '便携运行时'],
   ['agents/claude-code', 'docs/agents/claude-code.md', 'Claude Code'],
+  ['agents/workbuddy', 'docs/agents/workbuddy.md', 'WorkBuddy'],
   ['agents/generic-skills', 'docs/agents/generic-skills.md', 'Codex 与其他 Agent'],
   ['principles', 'docs/design-principles.md', '设计理念与工程边界'],
   ['reference/commands', 'skills/sap-adt-cli/SKILL.md', '完整 CLI 清单', 'Command index'],
