@@ -4,16 +4,16 @@
     "name": "shrek-abaper",
     "url": "https://github.com/shrek-abaper"
   },
-  "description": "SAP ABAP engineering skills for AI coding agents.",
+  "description": "Watt companion skills for evidence-first SAP lifecycle work.",
   "plugins": [
     {
       "name": "sap-engineering-skills",
       "source": {
         "source": "archive",
-        "url": "https://github.com/shrek-abaper/sap-engineering-skill/releases/download/sap-adt-v1.6.6/sap-engineering-skills-1.3.7.zip",
-        "sha256": "9c6b3e309c8aa899ee163efff43efc065a720a5056b24f8c1c733e3743c516d0"
+        "url": "https://github.com/shrek-abaper/sap-engineering-skill/releases/download/sap-adt-v1.6.7/sap-engineering-skills-1.3.8.zip",
+        "sha256": "644ae23e5dcab1859e63731140c056322c2263f6df1b6298dacec4fd0037ec7b"
       },
-      "description": "ADT CLI, ABAP code review, Transport Request release gate, and SAP integration wiki."
+      "description": "Watt engineering CLI guidance, ABAP review, transport release assessment, and SAP integration knowledge."
     }
   ]
 }
