@@ -4,9 +4,9 @@
 
 <h3>Power your SAP Engineering.</h3>
 
-<h4><i>An engineering CLI for SAP lifecycle work · evidence first · explicit authority · traceable outcomes</i></h4>
+<h4><i>An AI engineering toolchain for SAP development and delivery teams</i></h4>
 
-> Controlled operations and traceable evidence for SAP work, from understanding a system to reviewing and delivering change.
+> Evidence-backed SAP engineering, from action to delivery.
 
 **Independent community project · not an official SAP product · no embedded LLM**
 
@@ -34,10 +34,11 @@
 
 ## Meet Watt
 
-**Watt is an engineering CLI for SAP lifecycle work.** It provides controlled
-operations and inspectable evidence that people can use directly or AI agents
-can compose into workflows. It is a tool for doing and verifying SAP work,
-not an embedded LLM or a general-purpose conversation assistant.
+**Watt is an AI engineering toolchain for SAP development and delivery teams.**
+It combines a CLI for controlled operations with Skills that capture domain
+methods and workflows. People can use the CLI directly or work through their
+choice of agent. Watt provides tools and guidance, not an embedded LLM or a
+general-purpose conversation assistant.
 
 ### Why Watt?
 
@@ -62,24 +63,27 @@ and approvals; agents can help interpret evidence and coordinate the work.
 
 SAP work crosses roles and system boundaries. Reading source is only one part:
 teams also need attributable diagnostics, reviewed changes, transport evidence
-and clear approval boundaries. Watt turns current ADT capabilities into a
-deterministic CLI and layers portable `SKILL.md` workflows on top. Its question
-is not just whether an operation can run, but **whether its intent, evidence
-and outcome can be inspected and trusted**.
+and clear approval boundaries.
+
+**Our mission:** help SAP teams reuse professional expertise and ground
+analysis, changes and delivery in evidence.
+
+**Our vision:** make trustworthy human–AI collaboration an everyday way of
+working across the SAP lifecycle.
 
 ### Core principles
 
 1. **Evidence first.** Separate observed facts, hypotheses and missing evidence. An accepted request is not a verified outcome.
-2. **Explicit authority.** Read-only by default; changes, execution and debugging need their own authorization. Human approval stays human.
-3. **Clear tool boundaries.** The CLI supplies deterministic operations and structured results; Skills supply workflows and references; agents supply reasoning.
-4. **Verified progress.** Expand through tested SAP scenarios. State what is supported and what remains unverified, rather than promising universal coverage.
-5. **Compatibility is reliability.** Preserve working scripts, configuration and credential identifiers as the product evolves.
+2. **Explicit authority.** Read-only by default; source writes, transports, execution and debugging retain their distinct authorization rules. Automation does not bypass authorization or approval.
+3. **Respect for expertise.** AI helps organize information and carry out work; people retain responsibility for decisions and approvals.
+4. **Openness and compatibility.** Make methods reusable without binding them to one agent. Preserve working scripts, configuration and credential identifiers; never require migration merely for a brand change.
 
 **ADT and ABAP are the current foundation, not the long-term boundary.**
 Today Watt covers source and metadata access, diagnostic evidence, governed
 changes, testing and execution. Companion Skills add code review, transport risk
-assessment and integration guidance. Broader lifecycle coverage is a direction,
-not a claim that every SAP task is already supported.
+assessment and integration guidance. Broader lifecycle coverage is a direction
+to pursue through verified scenarios, not a claim that every SAP task is
+already supported.
 
 For the mechanisms behind these principles, see
 [engineering principles and boundaries](docs/design-principles.md).
@@ -121,6 +125,8 @@ Two independent steps: install the skills into your agent, and — only if you n
 ```
 
 The four skills then appear under the `sap-engineering-skills` namespace (for example `/sap-engineering-skills:sap-adt-cli`). Update through `/plugin` → Manage, or `claude plugin update sap-engineering-skills@sap-engineering`. The plugin distributes skill documentation only and does not install the CLI. This plugin source requires Claude Code ≥ 2.1.224.
+
+**WorkBuddy** users can find the four skills in its skill market / SkillHub. Start with the [WorkBuddy guide](docs/agents/workbuddy.md) for the publisher's SkillHub space, installation and a first offline task. Manual import is a fallback; installing a skill does not install the CLI.
 
 **Other agents** load plain `SKILL.md` folders: copy the complete skill folder — references included, not just `SKILL.md` — into the directory your agent scans. Some discover `~/.agents/skills/`; others use their own directory or an import UI. See [docs/agents/generic-skills.md](docs/agents/generic-skills.md) for the documented flows and [Supported agents](#supported-agents) below.
 
@@ -227,8 +233,9 @@ Review output is an input to your release process, not the approval itself. A de
 
 | Component | What it is |
 |---|---|
-| **Skill** | A folder containing `SKILL.md` (workflow steps, hard constraints), check rules and reference files. Your agent loads it; no executable code is involved. |
 | **CLI** | Watt (`sap-watt`, compatible `sap-adt`), a separate deterministic program for SAP operations and evidence. Packaged for npm and PyPI; one implementation lives in this repository. No embedded LLM. |
+| **Skill** | A folder containing `SKILL.md` (workflow steps, hard constraints), check rules and reference files. Your agent loads it; no executable code is involved. |
+| **Agent** | Your chosen agent interprets goals, reasons about context and coordinates tools using Skills. It is not embedded in Watt and does not replace human responsibility or approval. |
 | **Plugin** | How Claude Code installs and updates the four skill folders from this repository. Documentation only — the CLI is always installed separately. |
 
 The repository is a single distribution point for the four skills and the CLI source, but you do not need its build layout to use either. The same skill folders can be loaded by other agents that support `SKILL.md`; discovery paths vary.
@@ -270,7 +277,7 @@ ECC 6.0 and S/4HANA are the target systems. Online use requires the ADT services
 |---|---|
 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Plugin install from this repository (see Quick start) |
 | Codex | Generic `SKILL.md` agent — copy the complete skill folders into the directory it scans; see [docs/agents/generic-skills.md](docs/agents/generic-skills.md) |
-| WorkBuddy | Same generic folder flow — copy the complete skill folders into the directory it scans |
+| WorkBuddy | Install from its skill market / SkillHub, with manual import as a fallback; see [docs/agents/workbuddy.md](docs/agents/workbuddy.md) |
 | Amazon Kiro, Cline, Trae and similar tools | Use the agent's own skill directory or import UI; paths vary by tool |
 
 Discovery paths vary between agents — see [docs/agents/](docs/agents/).
@@ -299,7 +306,7 @@ Direction, not commitments; each item ships only with offline regression and rea
 |---|---|
 | [docs/design-principles.md](docs/design-principles.md) | Evidence semantics, authorization mechanisms, tool boundaries, verification limits and compatibility |
 | [docs/installation/](docs/installation/) | CLI channels (npm, npx, PyPI, portable, source), credential precedence, readiness checks, diagnostics matrix |
-| [docs/agents/](docs/agents/) | Claude Code plugin details and generic `SKILL.md` agent guidance |
+| [docs/agents/](docs/agents/) | Claude Code plugin, WorkBuddy / SkillHub onboarding and generic `SKILL.md` agent guidance |
 | [docs/authentication/](docs/authentication/) | SAP↔AI authentication playbook: Basic, SPNEGO, X.509, OIDC/OAuth2, gateway and client patterns (synced copy; authoritative version in `sap-functional-skill`) |
 | [docs/development/](docs/development/) | Architecture, build and release tooling, migration notes, archived refactor history |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Local test baseline, secret scanning, WSL/DPAPI verification checklist |

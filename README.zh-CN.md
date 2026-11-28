@@ -4,9 +4,9 @@
 
 <h3>Power your SAP Engineering.</h3>
 
-<h4><i>面向 SAP 全生命周期工作的工程 CLI · 证据优先 · 授权明确 · 结果可追溯</i></h4>
+<h4><i>面向 SAP 开发与交付团队的 AI 工程工具链</i></h4>
 
-> 以受控操作和可追溯证据，支持从理解系统到评审与交付变更的 SAP 工程工作。
+> 让 SAP 工程，行动有据，交付有凭。
 
 **独立社区项目 · 非 SAP 官方产品 · CLI 不内嵌大模型**
 
@@ -34,9 +34,9 @@
 
 ## 认识 Watt
 
-**Watt 是面向 SAP 全生命周期工作的工程 CLI。** 它提供受控操作与可检查的证据，
-既可由人直接使用，也可供 AI Agent 组合进工作流程。它是执行与核验 SAP 工作的工具，
-不内嵌大模型，也不定位为通用对话助手。
+**Watt 是面向 SAP 开发与交付团队的 AI 工程工具链。** 它由提供受控原子能力的
+CLI 和承载领域方法与工作流的 Skills 组成，既可由人直接使用 CLI，也可由所选
+Agent 结合 Skills 协同完成任务。Watt 不内嵌大模型，也不定位为通用对话助手。
 
 ### 为什么叫 Watt
 
@@ -56,21 +56,22 @@ Watt 面向 SAP 团队，不以某一种岗位为界。实施、功能顾问、�
 ### 为什么做这个项目
 
 SAP 工作横跨角色与系统边界。读取源码只是其中一环，还需要有出处的诊断、
-经过评审的变更、传输证据以及清晰的审批边界。Watt 把当前的 ADT 能力收敛为
-确定的命令行契约，以可移植的 `SKILL.md` 承载工作流程。关注的不只是操作能否
-执行，更是**意图、证据与结果能否被检查和信任**。
+经过评审的变更、传输证据以及清晰的审批边界。
+
+**使命：** 帮助 SAP 团队复用专业经验，让分析、变更与交付有据可依。
+
+**愿景：** 让可信的人机协作，成为 SAP 全生命周期工作的日常方式。
 
 ### 核心理念
 
 1. **证据优先。** 区分观察到的事实、推断与缺失证据；请求被受理，不等于结果已核验。
-2. **授权明确。** 默认只读；变更、执行和调试各自需要授权，人工审批仍由人负责。
-3. **工具边界清晰。** CLI 提供确定的操作与结构化结果，Skill 提供流程与参考，Agent 负责理解与推理。
-4. **通过验证逐步扩展。** 从真实 SAP 场景出发，明确已支持与未验证的范围，不承诺无所不能。
-5. **兼容也是可靠性。** 产品演进不应破坏已有脚本、连接配置与凭据标识。
+2. **授权明确。** 默认只读；写入、传输、执行与调试各自保留授权规则，自动化不绕过授权与审批。
+3. **尊重专业。** AI 协助组织信息和完成工作，人员保留决策与审批责任。
+4. **开放与兼容。** 让方法能够复用，不绑定单一 Agent；保留既有脚本、配置与凭据标识，不为品牌变化强迫迁移。
 
 **以 ADT 与 ABAP 为当前起点，不以它们为长期边界。** 当前能力包括源码与元数据
 访问、诊断证据、受控变更、测试与执行；配套 Skill 提供代码评审、传输风险研判和
-集成指导。全生命周期是拓展方向，不代表已经覆盖全部 SAP 工作。
+集成指导。全生命周期是通过场景验证逐步推进的拓展方向，不代表已经覆盖全部 SAP 工作。
 
 这些理念如何落实到工程机制，详见[工程原则与能力边界](docs/design-principles.md#中文工程约束)。
 
@@ -109,6 +110,8 @@ SAP 工作横跨角色与系统边界。读取源码只是其中一环，还需�
 ```
 
 四个 Skill 统一位于 `sap-engineering-skills` 命名空间下（例如 `/sap-engineering-skills:sap-adt-cli`）。更新可在 `/plugin` 面板操作，或执行 `claude plugin update sap-engineering-skills@sap-engineering`。插件只分发 Skill 文档，不会安装 CLI。该插件源要求 Claude Code ≥ 2.1.224。
+
+**WorkBuddy** 可在技能市场 / SkillHub 搜索这四个 Skill。发布者的 SkillHub 空间、安装步骤与首次离线体验见 [WorkBuddy 接入指南](docs/agents/workbuddy.md)。手动导入作为备用方式；安装 Skill 不会同时安装 CLI。
 
 **其他 Agent** 直接加载 `SKILL.md` 目录：把完整的 Skill 目录（含 `references/`，不能只复制 `SKILL.md`）放入你的 Agent 会扫描的位置。部分工具读取 `~/.agents/skills/`，另一些使用自己的目录或导入界面。具体流程见 [docs/agents/generic-skills.md](docs/agents/generic-skills.md)，以及下方的[支持的 Agent](#支持的-agent)。
 
@@ -210,8 +213,9 @@ ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升�
 
 | 组件 | 说明 |
 |---|---|
-| **Skill** | 一个包含 `SKILL.md`（工作流步骤、硬性约束）、检查规则与参考资料的目录。由你的 Agent 加载，本身不含可执行代码。 |
 | **CLI** | Watt（`sap-watt`，兼容 `sap-adt`），提供受控 SAP 操作与证据的独立程序。通过 npm 与 PyPI 分发，复用同一实现，不内嵌大模型。 |
+| **Skill** | 一个包含 `SKILL.md`（工作流步骤、硬性约束）、检查规则与参考资料的目录。由你的 Agent 加载，本身不含可执行代码。 |
+| **Agent** | 由你选择的 Agent 理解目标、结合上下文推理，并遵循 Skills 协调工具完成任务。不内嵌于 Watt，也不替代人员责任与审批。 |
 | **Plugin** | Claude Code 从本仓库安装和更新四个 Skill 目录的方式。只包含文档，CLI 始终需要单独安装。 |
 
 本仓库是四个 Skill 与 CLI 源码的统一分发点，但使用其中任何一项都不需要了解仓库的构建布局。同一套 Skill 目录可被其他支持 `SKILL.md` 的 Agent 加载；发现路径各不相同。
@@ -252,7 +256,7 @@ ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升�
 |---|---|
 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | 通过本仓库插件安装（见快速开始） |
 | Codex | 通用 `SKILL.md` Agent：把完整的 Skill 目录复制到它扫描的位置，流程见 [docs/agents/generic-skills.md](docs/agents/generic-skills.md) |
-| WorkBuddy | 与 Codex 相同的通用目录流程：把完整的 Skill 目录复制到它扫描的位置 |
+| WorkBuddy | 优先从技能市场 / SkillHub 安装，手动导入作为备用；详见 [WorkBuddy 接入指南](docs/agents/workbuddy.md) |
 | Amazon Kiro、Cline、Trae 等工具 | 使用各自的 Skill 目录或导入界面；路径因工具而异 |
 
 不同 Agent 的发现路径不同，详见 [docs/agents/](docs/agents/)。
@@ -281,7 +285,7 @@ ST22。Python 包与原生 npm 运行时提供相同命令和 JSON 契约。升�
 |---|---|
 | [docs/design-principles.md](docs/design-principles.md#中文工程约束) | 证据语义、授权机制、工具边界、验证范围与兼容约束 |
 | [docs/installation/](docs/installation/) | CLI 安装渠道（npm、npx、PyPI、便携包、源码）、凭据优先级、就绪检查与诊断矩阵 |
-| [docs/agents/](docs/agents/) | Claude Code 插件细节与通用 `SKILL.md` Agent 说明 |
+| [docs/agents/](docs/agents/) | Claude Code 插件、WorkBuddy / SkillHub 接入与通用 `SKILL.md` Agent 说明 |
 | [docs/authentication/](docs/authentication/) | SAP↔AI 认证手册：Basic、SPNEGO、X.509、OIDC/OAuth2、网关与客户端模式（同步副本，权威版本在 `sap-functional-skill`） |
 | [docs/development/](docs/development/) | 架构、构建与发布工具、迁移说明、已归档的重构历史 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 本地测试基线、密钥扫描、WSL/DPAPI 验证清单 |

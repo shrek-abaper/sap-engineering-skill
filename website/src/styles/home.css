@@ -91,6 +91,11 @@ h2 { font-size: clamp(27px, 3vw, 38px); line-height: 1.45; font-weight: 570; let
 .text-link { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; color: var(--accent); font-size: 11px; font-weight: 500; }
 .text-link:hover { text-decoration: underline; text-underline-offset: 5px; }
 .scenario-card .text-link { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); }
+.purpose-section { padding-top: 0; }
+.purpose-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
+.purpose-grid article { border-top: 1px solid var(--line); padding-top: 24px; }
+.purpose-grid h3 { color: var(--accent); font-size: 13px; font-weight: 550; }
+.purpose-grid p { font-size: 21px; line-height: 1.75; margin-top: 16px; }
 .philosophy { background: #191f15; border-block: 1px solid var(--line); }
 .layer-list { border-top: 1px solid #3a4530; }
 .layer-row { display: grid; grid-template-columns: 35px 200px 1fr 105px; align-items: center; gap: 25px; padding: 29px 0; border-bottom: 1px solid #3a4530; }
@@ -130,7 +135,7 @@ h2 { font-size: clamp(27px, 3vw, 38px); line-height: 1.45; font-weight: 570; let
 .terminal-footer a { color: #d1e0bb; }
 .safety-section { padding: 40px 42px; background: #1b2216; border: 1px solid #404f31; border-radius: 8px; margin-bottom: 80px; }
 .safety-section h2 { font-size: 25px; }
-.safety-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 45px; margin-top: 30px; }
+.safety-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; margin-top: 30px; }
 .safety-grid h3 { font-size: 13px; font-weight: 550; }
 .safety-grid p { font-size: 11px; color: #afbea0; line-height: 1.95; margin-top: 10px; }
 .safety-section > .text-link { margin-top: 26px; }
@@ -164,6 +169,7 @@ h2 { font-size: clamp(27px, 3vw, 38px); line-height: 1.45; font-weight: 570; let
   .capability-card { padding: 22px; }
   .start-section { gap: 45px; }
   .terminal-body { padding: 24px; }
+  .safety-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -196,6 +202,9 @@ h2 { font-size: clamp(27px, 3vw, 38px); line-height: 1.45; font-weight: 570; let
   .scenario-card { padding: 24px; }
   .scenario-card h3 { margin-top: 23px; max-width: none; font-size: 19px; }
   .scenario-card p { font-size: 12px; margin-bottom: 24px; }
+  .purpose-section { padding-top: 0; }
+  .purpose-grid { grid-template-columns: 1fr; gap: 28px; }
+  .purpose-grid p { font-size: 19px; }
   .layer-row { grid-template-columns: 22px 1fr; gap: 14px; padding: 24px 0; }
   .layer-row > p { grid-column: 2; font-size: 12px; }
   .layer-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; }

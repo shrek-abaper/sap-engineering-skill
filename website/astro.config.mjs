@@ -11,7 +11,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Watt',
-      description: '面向 SAP 全生命周期的 AI 工程底座。CLI 提供可靠能力，Skills 承载场景工作流。',
+      description: '面向 SAP 开发与交付团队的 AI 工程工具链。以受控操作、场景工作流和可追溯证据，支持分析、变更与交付。',
       defaultLocale: 'root',
       locales: { root: { label: '简体中文', lang: 'zh-CN' } },
       logo: { src: './src/assets/watt.svg', replacesTitle: false },
