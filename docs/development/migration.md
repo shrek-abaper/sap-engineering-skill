@@ -1,5 +1,17 @@
 # Migration notes
 
+## Archived Skill repositories (August 2026)
+
+The following Skills were previously maintained in standalone repositories
+tracked via git subtree. Those repositories are archived and read-only; all
+updates now happen in this monorepo. Do not pull from or push to these remotes.
+
+| Historical remote | Archived repository | Current Skill path |
+|---|---|---|
+| `pub-abap-code-review` | https://github.com/shrek-abaper/abap-code-review | `skills/abap-code-review/` |
+| `pub-sap-transport-gate` | https://github.com/shrek-abaper/sap-transport-gate | `skills/sap-transport-gate/` |
+| `pub-sap-integration-wiki` | https://github.com/shrek-abaper/sap-integration-wiki | `skills/sap-integration-wiki/` |
+
 ## PyPI distribution rename — 1.4.x → 1.5.0
 
 The PyPI project was renamed from `sap-adt` to **`sap-adt-cli`**; the old

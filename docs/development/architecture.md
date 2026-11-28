@@ -56,6 +56,75 @@ source-write commands retain their independent gate; SAP development
 permissions are still needed for the temporary Class. No persistent cookies
 or native RFC dependencies are added.
 
+## Debugger session ownership
+
+An operator-started foreground `debug serve` process owns a dedicated
+`requests.Session`, CSRF token and stateful ADT context across CLI calls.
+Other commands use authenticated loopback IPC and an explicit random session
+handle. A stateful header alone cannot preserve an exited client's context;
+persisted cookies or session/lock identifiers are not ownership evidence.
+The CLI never silently starts a daemon, backgrounds business execution,
+installs SAP objects, introduces a workflow engine or persists SAP cookies.
+Native distributions do not need an external Python interpreter for the owner.
+
+### Authorization and scope
+
+- `serve`, `breakpoint`, `listen`, `attach`, `step` and `continue` require
+  independent, default-disabled, profile-only `allow_debug`, a non-production
+  environment and fresh confirmation. Source/transport permissions and legacy
+  global switches never grant debug authority. Complete env/dotenv connections
+  use `SAP_ALLOW_DEBUG` and an explicit `SAP_ENVIRONMENT`.
+- Stack/variable reads require an already authorized attached session, not
+  source-write permission. Cleanup remains available after debug/write flags
+  are disabled. Attaching pauses a work process; stepping, continuing and
+  detaching may let application writes proceed even with `allow_write=false`.
+- One owner handles one debuggee and one independently named external breakpoint
+  scope, bound to profile, origin, client and user. Variable reads expand only
+  an explicit parent or explicit IDs within count/value budgets, never a
+  recursive memory dump.
+- No variable modification, arbitrary evaluation, system/foreign-user debugging,
+  jump-to-line, terminate-debuggee or bulk deletion of another tool's breakpoints.
+  Normal detach, expiry and Ctrl-C use `detachDebugger`, never `terminateDebuggee`.
+
+### IPC and cleanup
+
+- Listener/control deadlines, idle/hard lifetimes, serialized actions and bounded
+  IPC prevent unbounded work. Interrupted or ambiguous state-changing calls are
+  never replayed; generic HTTP 500 is not successful continuation or permission
+  to retry a step.
+- The private descriptor contains an IPC capability token and port, not SAP
+  credentials, source or variables. POSIX files/directories are user-only;
+  Windows uses a protected current-user DACL. No SAP credentials cross IPC.
+  No pickle, shell commands, remote URLs or arbitrary RPC methods are accepted;
+  responses are not logged.
+- Cleanup deletes only tracked breakpoints and this listener, attempts detach
+  even after an earlier cleanup failure, and does not change repository-write
+  lock semantics. Owner death loses the SAP context. Stale-descriptor removal
+  with `cleanup --discard-local --yes` must report unknown remote state and
+  manual ADT/Basis follow-up; it cannot safely recover a session or kill a PID.
+
+### Result and verification contracts
+
+Debug commands use format-version 1 `kind=debug` envelopes with `data.session`,
+`data.state`, `data.operation`, operation-specific evidence and
+`data.evidence_gaps`; incomplete cleanup sets `meta.partial=true`.
+Accepted cleanup or local owner closure is distinct from independently verified
+remote release; report `remote_cleanup_verified=false` when it is unverified.
+The closed error registry and exit tiers apply; `DEBUG_DISABLED` is a tier-3
+policy refusal, not advice to enable source writes. Timeouts are `timed_out`,
+not hits or successful attachments. Unknown responses are errors, not empty
+evidence. XML passthrough is unsupported.
+
+Synthetic integration must cover cross-process cookie/context affinity, CSRF
+including DELETE, timeouts, profile mismatch, authorization/production gates,
+denied IPC, concurrent-action rejection, malformed responses, non-replayed step
+errors, independent cleanup phases, expired/abrupt owners, UTF-8 and installed
+wheel/native-runtime behavior. Live discovery does not prove debug authorization
+or attachment. Live attachment requires an explicitly approved non-business
+target; never create or interrupt business execution merely to obtain a test.
+Unverified paths remain experimental; implementation completion does not
+authorize tagging, pushing or publishing.
+
 ## No compatibility shims
 
 The old skill-local script entry points (`skills/*/scripts/sap_adt_cli.py`,
